@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Volume2, VolumeX } from "lucide-react";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 
 const serif = Cormorant_Garamond({
@@ -104,7 +105,7 @@ export default function StartHerePage() {
     const audio = audioRef.current;
     if (!audio) return;
 
-    audio.volume = 0.28;
+    audio.volume = 0.7;
     audio.loop = true;
 
     if (soundOn) {
@@ -162,42 +163,13 @@ export default function StartHerePage() {
 
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,176,123,0.18),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.7),transparent_30%)]" />
 
-      <motion.div
-        animate={{
-          opacity: [0.2, 0.35, 0.2],
-          scale: [1, 1.08, 1],
-        }}
-        transition={{
-          duration: 12,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.45), transparent 25%)",
-          filter: "blur(80px)",
-        }}
-      />
-
       <section className="relative z-10 mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <a
-            href="/"
-            className="inline-block text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]"
-          >
-            ← Stone Harbor
-          </a>
-
-          <button
-            onClick={toggleSound}
-            className="group relative w-fit overflow-hidden rounded-full border border-stone-300 bg-white/70 px-6 py-3 text-xs font-bold uppercase tracking-[0.25em] text-stone-700 shadow-sm backdrop-blur-xl transition hover:border-[#a9793d] hover:bg-white"
-          >
-            <span className="relative z-10">
-              {soundOn ? "Mute Nature Sounds" : "Play Nature Sounds"}
-            </span>
-          </button>
-        </div>
+        <a
+          href="/"
+          className="mb-8 inline-block text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]"
+        >
+          ← Stone Harbor
+        </a>
 
         <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
           <AnimatePresence mode="wait">
@@ -376,22 +348,10 @@ export default function StartHerePage() {
               }}
             />
 
-            <motion.div
-              animate={{
-                opacity: [0.12, 0.22, 0.12],
-              }}
-              transition={{
-                duration: 10,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="absolute inset-0 bg-white/5"
-            />
-
             <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-white/10" />
 
-            <div className="absolute bottom-8 left-8 right-8 text-white">
+            <div className="absolute bottom-8 left-8 right-24 text-white">
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-white/75">
                 {activeLabel}
               </p>
@@ -400,6 +360,18 @@ export default function StartHerePage() {
                 Begin with one honest answer.
               </h2>
             </div>
+
+            <button
+              onClick={toggleSound}
+              className="absolute bottom-8 right-8 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-white/30 bg-white/15 text-white shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-2xl transition duration-300 hover:scale-110 hover:bg-white/25"
+              aria-label={soundOn ? "Mute Nature Sounds" : "Play Nature Sounds"}
+            >
+              {soundOn ? (
+                <Volume2 className="h-6 w-6" />
+              ) : (
+                <VolumeX className="h-6 w-6" />
+              )}
+            </button>
           </motion.div>
         </div>
       </section>
