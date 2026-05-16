@@ -14,8 +14,14 @@ const sans = Inter({
   weight: ["400", "500", "600", "700"],
 });
 
+type Profile = {
+  email: string | null;
+  display_name: string | null;
+  role: string | null;
+};
+
 export default function DashboardPage() {
-  const [email, setEmail] = useState<string | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function checkUser() {
@@ -28,7 +34,18 @@ export default function DashboardPage() {
       return;
     }
 
-    setEmail(user.email ?? null);
+    const { data } = await supabase
+      .from("profiles")
+      .select("email, display_name, role")
+      .eq("id", user.id)
+      .single();
+
+    setProfile({
+      email: data?.email ?? user.email ?? null,
+      display_name: data?.display_name ?? null,
+      role: data?.role ?? "member",
+    });
+
     setLoading(false);
   }
 
@@ -80,16 +97,23 @@ export default function DashboardPage() {
           <h1
             className={`${serif.className} max-w-5xl text-5xl font-medium leading-tight md:text-7xl`}
           >
-            Welcome back to your harbor.
+            Welcome back
+            {profile?.display_name ? `, ${profile.display_name}` : ""}.
           </h1>
 
           <p className="mt-6 max-w-3xl text-lg leading-relaxed text-stone-600 md:text-xl">
             You are logged in as{" "}
-            <span className="font-semibold text-stone-900">{email}</span>.
+            <span className="font-semibold text-stone-900">
+              {profile?.email}
+            </span>
+            .
           </p>
 
           <div className="mt-12 grid gap-6 md:grid-cols-3">
-            <div className="rounded-[2rem] border border-stone-200 bg-[#f8f4ed] p-7">
+            <a
+              href="/journal"
+              className="rounded-[2rem] border border-stone-200 bg-[#f8f4ed] p-7 transition hover:-translate-y-1 hover:border-[#a9793d]/50 hover:bg-white hover:shadow-md"
+            >
               <p className="mb-4 text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
                 Phase 2
               </p>
@@ -100,9 +124,12 @@ export default function DashboardPage() {
                 A private space for daily reflection, clarity, and emotional
                 processing.
               </p>
-            </div>
+            </a>
 
-            <div className="rounded-[2rem] border border-stone-200 bg-[#f8f4ed] p-7">
+            <a
+              href="/members-blog"
+              className="rounded-[2rem] border border-stone-200 bg-[#f8f4ed] p-7 transition hover:-translate-y-1 hover:border-[#a9793d]/50 hover:bg-white hover:shadow-md"
+            >
               <p className="mb-4 text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
                 Phase 3
               </p>
@@ -113,9 +140,12 @@ export default function DashboardPage() {
                 Protected articles, lessons, and recovery resources for members
                 only.
               </p>
-            </div>
+            </a>
 
-            <div className="rounded-[2rem] border border-stone-200 bg-[#f8f4ed] p-7">
+            <a
+              href="/community"
+              className="rounded-[2rem] border border-stone-200 bg-[#f8f4ed] p-7 transition hover:-translate-y-1 hover:border-[#a9793d]/50 hover:bg-white hover:shadow-md"
+            >
               <p className="mb-4 text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
                 Phase 4+
               </p>
@@ -125,7 +155,7 @@ export default function DashboardPage() {
               <p className="mt-4 leading-relaxed text-stone-600">
                 Photos, posts, friends, and privacy-controlled member sharing.
               </p>
-            </div>
+            </a>
           </div>
         </div>
       </section>

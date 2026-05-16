@@ -38,6 +38,9 @@ export default function Home() {
     },
   };
 
+  const selectedJourney =
+    journeyOptions[selectedPath as keyof typeof journeyOptions];
+
   return (
     <main
       className={`${sans.className} min-h-screen bg-[#f3efe7] text-stone-900`}
@@ -78,6 +81,24 @@ export default function Home() {
           }}
         />
 
+        <motion.div
+          animate={{
+            x: ["-3%", "3%", "-3%"],
+            opacity: [0.12, 0.24, 0.12],
+          }}
+          transition={{
+            duration: 9,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="pointer-events-none absolute bottom-0 left-0 right-0 h-[38%]"
+          style={{
+            background:
+              "linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.22) 45%, transparent 70%)",
+            filter: "blur(18px)",
+          }}
+        />
+
         <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/18 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/15" />
 
@@ -101,16 +122,20 @@ export default function Home() {
           <div className="flex gap-4">
             <a
               href="/login"
-              className="hidden rounded-full border border-white/25 bg-white/10 px-6 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white backdrop-blur-2xl transition hover:bg-white/20 md:inline-flex"
+              className="group relative hidden overflow-hidden rounded-full border border-white/35 bg-white/18 px-7 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_8px_30px_rgba(0,0,0,0.28)] backdrop-blur-3xl transition duration-500 hover:scale-105 hover:bg-white/26 md:inline-flex"
             >
-              Member Login
+              <span className="absolute inset-0 bg-gradient-to-br from-white/35 via-white/12 to-transparent opacity-85" />
+              <span className="absolute left-3 top-2 h-6 w-20 rounded-full bg-white/25 blur-xl" />
+              <span className="relative z-10">Member Login</span>
             </a>
 
             <a
               href="/join"
-              className="rounded-full border border-white/30 bg-white/8 px-8 py-4 text-sm font-bold uppercase tracking-[0.25em] text-white backdrop-blur-3xl transition hover:scale-105 hover:bg-white/14"
+              className="group relative overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#c4934e]/28 px-8 py-4 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.3)] backdrop-blur-3xl transition duration-500 hover:scale-105 hover:bg-[#c4934e]/38"
             >
-              Join
+              <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/40 via-white/12 to-transparent opacity-85" />
+              <span className="absolute left-4 top-2 h-6 w-24 rounded-full bg-white/20 blur-xl" />
+              <span className="relative z-10">Join</span>
             </a>
           </div>
         </nav>
@@ -142,16 +167,18 @@ export default function Home() {
           <div className="mt-10 flex flex-col gap-5 sm:flex-row">
             <a
               href="/start-here"
-              className="rounded-full bg-white/15 px-10 py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white backdrop-blur-3xl transition hover:scale-105"
+              className="group relative overflow-hidden rounded-full border border-white/40 bg-white/18 px-10 py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_10px_35px_rgba(0,0,0,0.25)] backdrop-blur-3xl transition duration-500 hover:scale-105 hover:bg-white/26"
             >
-              Start Recovery
+              <span className="absolute inset-0 bg-gradient-to-br from-white/35 via-white/10 to-transparent opacity-85" />
+              <span className="relative z-10">Start Recovery</span>
             </a>
 
             <a
               href="/roadmap"
-              className="rounded-full border border-white/30 bg-white/5 px-10 py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white backdrop-blur-3xl transition hover:scale-105"
+              className="group relative overflow-hidden rounded-full border border-white/30 bg-white/12 px-10 py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-3xl transition duration-500 hover:scale-105 hover:bg-white/20"
             >
-              View Roadmap
+              <span className="absolute inset-0 bg-gradient-to-br from-white/28 via-white/8 to-transparent opacity-80" />
+              <span className="relative z-10">View Roadmap</span>
             </a>
           </div>
         </motion.div>
@@ -176,8 +203,19 @@ export default function Home() {
               title: "Strength",
               text: "Rebuild your identity, boundaries, and the confidence to move forward.",
             },
-          ].map((item) => (
-            <div key={item.number} className="border-l border-stone-300 pl-8">
+          ].map((item, index) => (
+            <motion.div
+              key={item.number}
+              initial={{ opacity: 0, y: 45 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.8,
+                delay: index * 0.15,
+                ease: "easeOut",
+              }}
+              viewport={{ once: true, amount: 0.4 }}
+              className="border-l border-stone-300 pl-8"
+            >
               <p className="mb-6 text-sm font-semibold text-[#a9793d]">
                 {item.number}
               </p>
@@ -193,7 +231,7 @@ export default function Home() {
               <p className="max-w-xs leading-relaxed text-stone-600">
                 {item.text}
               </p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
@@ -201,7 +239,12 @@ export default function Home() {
       {/* INTERACTIVE RECOVERY JOURNEY */}
       <section className="bg-[#efe8dc] px-8 py-20 md:px-20">
         <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-[0.9fr_1.1fr] md:items-center">
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 45 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9 }}
+            viewport={{ once: true, amount: 0.3 }}
+          >
             <p className="mb-5 text-sm font-semibold uppercase tracking-[0.4em] text-[#a9793d]">
               Your Recovery Journey
             </p>
@@ -211,55 +254,65 @@ export default function Home() {
             >
               Where are you right now?
             </h2>
-          </div>
 
-          <div className="rounded-[2rem] bg-white/80 p-6 shadow-sm backdrop-blur-xl">
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-stone-600">
+              Choose the answer that feels closest. Stone Harbor will guide you
+              toward the next grounded step.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 45 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.15 }}
+            viewport={{ once: true, amount: 0.3 }}
+            className="rounded-[2rem] bg-white/80 p-6 shadow-sm backdrop-blur-xl"
+          >
             <div className="grid gap-3">
               {Object.entries(journeyOptions).map(([key, option]) => (
                 <button
                   key={key}
                   onClick={() => setSelectedPath(key)}
-                  className={`rounded-2xl border px-6 py-5 text-left transition ${
+                  className={`group relative overflow-hidden rounded-2xl border px-6 py-5 text-left shadow-sm backdrop-blur-xl transition duration-300 hover:scale-[1.015] hover:shadow-md ${
                     selectedPath === key
-                      ? "border-[#a9793d] bg-[#f3efe7] shadow-sm"
-                      : "border-stone-200 bg-white/70"
+                      ? "border-[#a9793d]/50 bg-[#f4d7a1]/35"
+                      : "border-white/60 bg-white/45 hover:border-[#a9793d]/40 hover:bg-white/70"
                   }`}
                 >
-                  <span className="text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
+                  <span className="absolute inset-0 bg-gradient-to-br from-white/45 via-white/10 to-transparent opacity-70" />
+                  <span className="relative z-10 text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
                     {option.label}
                   </span>
                 </button>
               ))}
             </div>
 
-            <div className="mt-8 rounded-[1.5rem] bg-[#f5f0e8] p-8">
+            <motion.div
+              key={selectedPath}
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45 }}
+              className="mt-8 rounded-[1.5rem] border border-white/60 bg-white/45 p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_12px_35px_rgba(0,0,0,0.08)] backdrop-blur-2xl"
+            >
               <h3
                 className={`${serif.className} text-4xl font-medium text-stone-900`}
               >
-                {
-                  journeyOptions[selectedPath as keyof typeof journeyOptions]
-                    .title
-                }
+                {selectedJourney.title}
               </h3>
 
               <p className="mt-4 leading-relaxed text-stone-600">
-                {
-                  journeyOptions[selectedPath as keyof typeof journeyOptions]
-                    .text
-                }
+                {selectedJourney.text}
               </p>
 
               <a
                 href="/start-here"
-                className="mt-7 inline-flex rounded-full bg-[#a9793d] px-8 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white"
+                className="group relative mt-7 inline-flex overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/65 px-8 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-2xl transition duration-300 hover:scale-105 hover:bg-[#8d6432]/80"
               >
-                {
-                  journeyOptions[selectedPath as keyof typeof journeyOptions]
-                    .action
-                }
+                <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
+                <span className="relative z-10">{selectedJourney.action}</span>
               </a>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
@@ -288,16 +341,18 @@ export default function Home() {
           <div className="flex flex-col items-start gap-5 md:items-center">
             <a
               href="/join"
-              className="rounded-full bg-[#a9793d] px-12 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white"
+              className="group relative overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/65 px-12 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.2)] backdrop-blur-2xl transition duration-300 hover:scale-105 hover:bg-[#8d6432]/80"
             >
-              Start Recovery
+              <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
+              <span className="relative z-10">Start Recovery</span>
             </a>
 
             <a
               href="/login"
-              className="border-b border-[#a9793d] pb-1 text-sm font-semibold uppercase tracking-[0.25em] text-stone-600"
+              className="group relative overflow-hidden rounded-full border border-stone-300/70 bg-white/45 px-10 py-4 text-sm font-bold uppercase tracking-[0.25em] text-stone-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_8px_25px_rgba(0,0,0,0.08)] backdrop-blur-2xl transition duration-300 hover:scale-105 hover:border-[#a9793d]/50 hover:bg-white/70"
             >
-              Member Login
+              <span className="absolute inset-0 bg-gradient-to-br from-white/55 via-white/15 to-transparent opacity-80" />
+              <span className="relative z-10">Member Login</span>
             </a>
           </div>
         </div>
