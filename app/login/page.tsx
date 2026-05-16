@@ -16,21 +16,11 @@ const sans = Inter({
 
 export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
-  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-
-  async function createProfile(userId: string, userEmail: string) {
-    await supabase.from("profiles").upsert({
-      id: userId,
-      email: userEmail,
-      display_name: displayName || null,
-      role: "member",
-    });
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -39,7 +29,7 @@ export default function LoginPage() {
     setMessage("");
 
     if (mode === "signup") {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
       });
@@ -50,17 +40,10 @@ export default function LoginPage() {
         return;
       }
 
-      if (data.user) {
-        await createProfile(data.user.id, data.user.email ?? email);
-      }
-
-      setMessage("Account created. Redirecting to profile setup...");
+      setMessage(
+        "Account created. Check your email to confirm your account, then log in.",
+      );
       setLoading(false);
-
-      setTimeout(() => {
-        window.location.href = "/welcome";
-      }, 1000);
-
       return;
     }
 
@@ -80,7 +63,7 @@ export default function LoginPage() {
 
     setTimeout(() => {
       window.location.href = "/dashboard";
-    }, 900);
+    }, 1000);
   }
 
   return (
@@ -107,9 +90,9 @@ export default function LoginPage() {
           </h1>
 
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-stone-600">
-            Log in to access your protected member dashboard. This is the home
-            for your journal, profile, member resources, and future Stone Harbor
-            community features.
+            Log in to access your protected member dashboard. This will become
+            the home for your journal, recovery path, private resources, and
+            future member features.
           </p>
         </div>
 
@@ -144,21 +127,6 @@ export default function LoginPage() {
               Sign Up
             </button>
           </div>
-
-          {mode === "signup" && (
-            <>
-              <label className="mb-2 block text-sm font-bold uppercase tracking-[0.2em] text-stone-600">
-                Display Name
-              </label>
-
-              <input
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="mb-6 w-full rounded-2xl border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
-                placeholder="Your display name"
-              />
-            </>
-          )}
 
           <label className="mb-2 block text-sm font-bold uppercase tracking-[0.2em] text-stone-600">
             Email

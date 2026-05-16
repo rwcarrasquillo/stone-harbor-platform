@@ -118,7 +118,9 @@ export default function JournalPage() {
   }
 
   function formatEntryDateTime(dateValue: string) {
-    return new Date(dateValue).toLocaleString([], {
+    const entryDate = new Date(dateValue);
+
+    return entryDate.toLocaleString([], {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -195,28 +197,10 @@ export default function JournalPage() {
 
       <button
         onClick={toggleSound}
-        className="fixed bottom-8 right-8 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/30 text-stone-800 shadow-[0_8px_24px_rgba(0,0,0,0.14)] backdrop-blur-2xl transition duration-300 hover:scale-110 hover:bg-white/45"
+        className="fixed bottom-8 right-8 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-white/40 bg-white/30 text-xl text-stone-800 shadow-[0_8px_30px_rgba(0,0,0,0.18)] backdrop-blur-2xl transition duration-300 hover:scale-110 hover:bg-white/45"
         aria-label={soundOn ? "Mute Nature Sounds" : "Play Nature Sounds"}
       >
-        {soundOn ? (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="h-4 w-4"
-          >
-            <path d="M14.5 3.5a1 1 0 0 1 1.7.7v15.6a1 1 0 0 1-1.7.7L9.2 16H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h4.2l5.3-4.5ZM18.4 8.2a1 1 0 0 1 1.4 0 5.5 5.5 0 0 1 0 7.8 1 1 0 0 1-1.4-1.4 3.5 3.5 0 0 0 0-5 1 1 0 0 1 0-1.4Zm-2.6 2.6a1 1 0 0 1 1.4 0 1.8 1.8 0 0 1 0 2.4 1 1 0 0 1-1.4-1.4.2.2 0 0 0 0-.3 1 1 0 0 1 0-1.4Z" />
-          </svg>
-        ) : (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="h-4 w-4"
-          >
-            <path d="M14.5 3.5a1 1 0 0 1 1.7.7v15.6a1 1 0 0 1-1.7.7L9.2 16H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h4.2l5.3-4.5ZM18.3 9.7l-1.6 1.6-1.6-1.6a1 1 0 1 0-1.4 1.4l1.6 1.6-1.6 1.6a1 1 0 1 0 1.4 1.4l1.6-1.6 1.6 1.6a1 1 0 0 0 1.4-1.4l-1.6-1.6 1.6-1.6a1 1 0 1 0-1.4-1.4Z" />
-          </svg>
-        )}
+        {soundOn ? "🔊" : "🔇"}
       </button>
 
       <section className="mx-auto max-w-7xl">
@@ -237,6 +221,7 @@ export default function JournalPage() {
         </div>
 
         <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+          {/* WRITE ENTRY */}
           <div className="rounded-[3rem] border border-white/50 bg-white/75 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.08)] backdrop-blur-2xl md:p-12">
             <p className="mb-5 text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]">
               Private Journal
@@ -307,6 +292,7 @@ export default function JournalPage() {
             </form>
           </div>
 
+          {/* ENTRIES */}
           <div className="rounded-[3rem] border border-white/50 bg-white/60 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.06)] backdrop-blur-2xl md:p-10">
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
