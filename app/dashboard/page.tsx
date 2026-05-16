@@ -97,7 +97,7 @@ export default function DashboardPage() {
 
         <div className="rounded-[3rem] border border-white/50 bg-white/75 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.08)] backdrop-blur-2xl md:p-14">
           <p className="mb-5 text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]">
-            Member Dashboard
+            Member Dashboard Updated
           </p>
 
           <h1
