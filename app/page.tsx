@@ -203,19 +203,8 @@ export default function Home() {
               title: "Strength",
               text: "Rebuild your identity, boundaries, and the confidence to move forward.",
             },
-          ].map((item, index) => (
-            <motion.div
-              key={item.number}
-              initial={{ opacity: 0, y: 45 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.8,
-                delay: index * 0.15,
-                ease: "easeOut",
-              }}
-              viewport={{ once: true, amount: 0.4 }}
-              className="border-l border-stone-300 pl-8"
-            >
+          ].map((item) => (
+            <div key={item.number} className="border-l border-stone-300 pl-8">
               <p className="mb-6 text-sm font-semibold text-[#a9793d]">
                 {item.number}
               </p>
@@ -231,20 +220,15 @@ export default function Home() {
               <p className="max-w-xs leading-relaxed text-stone-600">
                 {item.text}
               </p>
-            </motion.div>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* INTERACTIVE RECOVERY JOURNEY */}
+      {/* INTERACTIVE JOURNEY */}
       <section className="bg-[#efe8dc] px-8 py-20 md:px-20">
         <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-[0.9fr_1.1fr] md:items-center">
-          <motion.div
-            initial={{ opacity: 0, y: 45 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9 }}
-            viewport={{ once: true, amount: 0.3 }}
-          >
+          <div>
             <p className="mb-5 text-sm font-semibold uppercase tracking-[0.4em] text-[#a9793d]">
               Your Recovery Journey
             </p>
@@ -259,41 +243,28 @@ export default function Home() {
               Choose the answer that feels closest. Stone Harbor will guide you
               toward the next grounded step.
             </p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 45 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.15 }}
-            viewport={{ once: true, amount: 0.3 }}
-            className="rounded-[2rem] bg-white/80 p-6 shadow-sm backdrop-blur-xl"
-          >
+          <div className="rounded-[2rem] bg-white/80 p-6 shadow-sm backdrop-blur-xl">
             <div className="grid gap-3">
               {Object.entries(journeyOptions).map(([key, option]) => (
                 <button
                   key={key}
                   onClick={() => setSelectedPath(key)}
-                  className={`group relative overflow-hidden rounded-2xl border px-6 py-5 text-left shadow-sm backdrop-blur-xl transition duration-300 hover:scale-[1.015] hover:shadow-md ${
+                  className={`rounded-2xl border px-6 py-5 text-left transition ${
                     selectedPath === key
-                      ? "border-[#a9793d]/50 bg-[#f4d7a1]/35"
-                      : "border-white/60 bg-white/45 hover:border-[#a9793d]/40 hover:bg-white/70"
+                      ? "border-[#a9793d] bg-[#f3efe7]"
+                      : "border-stone-200 bg-white/70"
                   }`}
                 >
-                  <span className="absolute inset-0 bg-gradient-to-br from-white/45 via-white/10 to-transparent opacity-70" />
-                  <span className="relative z-10 text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
+                  <span className="text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
                     {option.label}
                   </span>
                 </button>
               ))}
             </div>
 
-            <motion.div
-              key={selectedPath}
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45 }}
-              className="mt-8 rounded-[1.5rem] border border-white/60 bg-white/45 p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_12px_35px_rgba(0,0,0,0.08)] backdrop-blur-2xl"
-            >
+            <div className="mt-8 rounded-[1.5rem] bg-[#f5f0e8] p-8">
               <h3
                 className={`${serif.className} text-4xl font-medium text-stone-900`}
               >
@@ -306,13 +277,13 @@ export default function Home() {
 
               <a
                 href="/start-here"
-                className="group relative mt-7 inline-flex overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/65 px-8 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-2xl transition duration-300 hover:scale-105 hover:bg-[#8d6432]/80"
+                className="group relative mt-7 inline-flex overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/65 px-8 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white backdrop-blur-2xl transition duration-300 hover:scale-105"
               >
                 <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
                 <span className="relative z-10">{selectedJourney.action}</span>
               </a>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -341,7 +312,7 @@ export default function Home() {
           <div className="flex flex-col items-start gap-5 md:items-center">
             <a
               href="/join"
-              className="group relative overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/65 px-12 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.2)] backdrop-blur-2xl transition duration-300 hover:scale-105 hover:bg-[#8d6432]/80"
+              className="group relative overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/65 px-12 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white backdrop-blur-2xl transition duration-300 hover:scale-105"
             >
               <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
               <span className="relative z-10">Start Recovery</span>
@@ -354,6 +325,143 @@ export default function Home() {
               <span className="absolute inset-0 bg-gradient-to-br from-white/55 via-white/15 to-transparent opacity-80" />
               <span className="relative z-10">Member Login</span>
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* HELP & SUPPORT */}
+      <section className="bg-[#f7f2ea] px-8 py-20 md:px-20">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-12 text-center">
+            <p className="mb-4 text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]">
+              Immediate Support
+            </p>
+
+            <h2
+              className={`${serif.className} text-5xl font-medium text-stone-900 md:text-7xl`}
+            >
+              If today feels too heavy,
+              <br />
+              reach for help now.
+            </h2>
+
+            <p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-stone-600">
+              Stone Harbor is a place for healing, but immediate support
+              matters. If you are in crisis, unsafe, emotionally overwhelmed, or
+              need urgent guidance, these resources are available right now.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              {
+                label: "U.S. Crisis Line",
+                title: "Call or Text 988",
+                text: "24/7 Suicide & Crisis Lifeline for emotional distress, panic, depression, or urgent support.",
+                button: "Call 988",
+                href: "tel:988",
+                buttonStyle: "border-[#f4d7a1]/50 bg-[#a9793d]/65",
+              },
+              {
+                label: "Emergency",
+                title: "Call 911",
+                text: "If you or someone else is in immediate physical danger or requires emergency intervention.",
+                button: "Call 911",
+                href: "tel:911",
+                buttonStyle: "border-red-300/50 bg-red-500/60",
+              },
+              {
+                label: "Veterans",
+                title: "Dial 988 → Press 1",
+                text: "Veteran-specific crisis support with responders trained for military and service-related challenges.",
+                button: "Veteran Support",
+                href: "tel:988",
+                buttonStyle: "border-[#f4d7a1]/50 bg-[#a9793d]/65",
+              },
+              {
+                label: "Relationship Safety",
+                title: "800-799-7233",
+                text: "National Domestic Violence Hotline for emotional abuse, coercion, unsafe relationships, or crisis planning.",
+                button: "Call Hotline",
+                href: "tel:8007997233",
+                buttonStyle: "border-[#f4d7a1]/50 bg-[#a9793d]/65",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="flex h-full min-h-[340px] flex-col rounded-[2rem] border border-white/60 bg-white/60 p-6 shadow-[0_10px_30px_rgba(0,0,0,0.05)] backdrop-blur-2xl"
+              >
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-[#a9793d]">
+                  {item.label}
+                </p>
+
+                <h3
+                  className={`${serif.className} min-h-[72px] text-3xl font-medium leading-tight text-stone-900`}
+                >
+                  {item.title}
+                </h3>
+
+                <p className="mt-3 flex-grow text-sm leading-relaxed text-stone-600">
+                  {item.text}
+                </p>
+
+                <div className="mt-6">
+                  <a
+                    href={item.href}
+                    className={`group relative inline-flex h-[48px] w-full items-center justify-center overflow-hidden rounded-full border px-4 text-xs font-bold uppercase tracking-[0.2em] text-white backdrop-blur-xl transition duration-300 hover:scale-[1.02] ${item.buttonStyle}`}
+                  >
+                    <span className="absolute inset-0 bg-gradient-to-br from-white/20 via-white/10 to-transparent opacity-70" />
+                    <span className="relative z-10">{item.button}</span>
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* LOCAL HELP */}
+          <div className="mt-12 rounded-[2rem] border border-[#a9793d]/20 bg-[#efe8dc] p-8 text-center">
+            <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
+              Local Help
+            </p>
+
+            <h3
+              className={`${serif.className} mt-4 text-4xl font-medium text-stone-900 md:text-5xl`}
+            >
+              Support closer to home.
+            </h3>
+
+            <p className="mx-auto mt-5 max-w-3xl text-lg leading-relaxed text-stone-700">
+              For local counseling, shelters, county behavioral health services,
+              crisis centers, or men’s support groups, dial 211 or contact your
+              local county mental health department. You can also ask your
+              physician, employer assistance program, or nearest hospital for
+              urgent referrals.
+            </p>
+
+            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <a
+                href="tel:211"
+                className="group relative inline-flex h-[52px] w-[240px] items-center justify-center overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/65 px-6 text-sm font-bold uppercase tracking-[0.18em] text-white backdrop-blur-xl transition duration-300 hover:scale-105"
+              >
+                <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
+                <span className="relative z-10">Dial 211</span>
+              </a>
+
+              <a
+                href="https://www.findhelp.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative inline-flex h-[52px] w-[240px] items-center justify-center overflow-hidden rounded-full border border-stone-300 bg-white/55 px-6 text-sm font-bold uppercase tracking-[0.18em] text-stone-700 backdrop-blur-xl transition duration-300 hover:scale-105 hover:bg-white/75"
+              >
+                <span className="absolute inset-0 bg-gradient-to-br from-white/50 via-white/10 to-transparent opacity-80" />
+                <span className="relative z-10">Find Resources</span>
+              </a>
+            </div>
+
+            <p className="mt-6 text-sm leading-relaxed text-stone-500">
+              If you are in immediate danger, call 911. If emotional crisis is
+              urgent, call or text 988.
+            </p>
           </div>
         </div>
       </section>

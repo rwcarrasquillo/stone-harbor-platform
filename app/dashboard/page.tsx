@@ -18,6 +18,9 @@ type Profile = {
   email: string | null;
   display_name: string | null;
   role: string | null;
+  bio?: string | null;
+  healing_stage?: string | null;
+  privacy_level?: string | null;
 };
 
 export default function DashboardPage() {
@@ -36,7 +39,7 @@ export default function DashboardPage() {
 
     const { data } = await supabase
       .from("profiles")
-      .select("email, display_name, role")
+      .select("email, display_name, role, bio, healing_stage, privacy_level")
       .eq("id", user.id)
       .single();
 
@@ -44,6 +47,9 @@ export default function DashboardPage() {
       email: data?.email ?? user.email ?? null,
       display_name: data?.display_name ?? null,
       role: data?.role ?? "member",
+      bio: data?.bio ?? null,
+      healing_stage: data?.healing_stage ?? null,
+      privacy_level: data?.privacy_level ?? "private",
     });
 
     setLoading(false);
@@ -109,7 +115,53 @@ export default function DashboardPage() {
             .
           </p>
 
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <div className="rounded-[2rem] border border-stone-200 bg-[#f8f4ed] p-6">
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-[#a9793d]">
+                Stage
+              </p>
+              <p className="text-lg font-semibold capitalize text-stone-800">
+                {profile?.healing_stage || "Not set"}
+              </p>
+            </div>
+
+            <div className="rounded-[2rem] border border-stone-200 bg-[#f8f4ed] p-6">
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-[#a9793d]">
+                Privacy
+              </p>
+              <p className="text-lg font-semibold capitalize text-stone-800">
+                {profile?.privacy_level || "Private"}
+              </p>
+            </div>
+
+            <div className="rounded-[2rem] border border-stone-200 bg-[#f8f4ed] p-6">
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-[#a9793d]">
+                Role
+              </p>
+              <p className="text-lg font-semibold capitalize text-stone-800">
+                {profile?.role || "Member"}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <a
+              href="/welcome"
+              className="rounded-[2rem] border border-stone-200 bg-[#f8f4ed] p-7 transition hover:-translate-y-1 hover:border-[#a9793d]/50 hover:bg-white hover:shadow-md"
+            >
+              <p className="mb-4 text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
+                Profile
+              </p>
+
+              <h2 className={`${serif.className} text-4xl font-medium`}>
+                My Profile
+              </h2>
+
+              <p className="mt-4 leading-relaxed text-stone-600">
+                Update your display name, privacy defaults, and healing stage.
+              </p>
+            </a>
+
             <a
               href="/journal"
               className="rounded-[2rem] border border-stone-200 bg-[#f8f4ed] p-7 transition hover:-translate-y-1 hover:border-[#a9793d]/50 hover:bg-white hover:shadow-md"
@@ -117,9 +169,11 @@ export default function DashboardPage() {
               <p className="mb-4 text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
                 Phase 2
               </p>
+
               <h2 className={`${serif.className} text-4xl font-medium`}>
                 Journal
               </h2>
+
               <p className="mt-4 leading-relaxed text-stone-600">
                 A private space for daily reflection, clarity, and emotional
                 processing.
@@ -133,9 +187,11 @@ export default function DashboardPage() {
               <p className="mb-4 text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
                 Phase 3
               </p>
+
               <h2 className={`${serif.className} text-4xl font-medium`}>
                 Member Blog
               </h2>
+
               <p className="mt-4 leading-relaxed text-stone-600">
                 Protected articles, lessons, and recovery resources for members
                 only.
@@ -149,9 +205,11 @@ export default function DashboardPage() {
               <p className="mb-4 text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
                 Phase 4+
               </p>
+
               <h2 className={`${serif.className} text-4xl font-medium`}>
                 Community
               </h2>
+
               <p className="mt-4 leading-relaxed text-stone-600">
                 Photos, posts, friends, and privacy-controlled member sharing.
               </p>
