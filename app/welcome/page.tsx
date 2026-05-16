@@ -38,15 +38,8 @@ export default function WelcomePage() {
   const [healingStage, setHealingStage] = useState("clarity");
   const [privacyLevel, setPrivacyLevel] = useState("private");
 
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [coverUrl, setCoverUrl] = useState("");
-
-  const [avatarUploading, setAvatarUploading] = useState(false);
-  const [coverUploading, setCoverUploading] = useState(false);
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const [message, setMessage] = useState("");
 
   async function loadProfile() {
@@ -88,97 +81,9 @@ export default function WelcomePage() {
       setFavoriteQuote(data.favorite_quote ?? "");
       setHealingStage(data.healing_stage ?? "clarity");
       setPrivacyLevel(data.privacy_level ?? "private");
-      setAvatarUrl(data.avatar_url ?? "");
-      setCoverUrl(data.cover_url ?? "");
     }
 
     setLoading(false);
-  }
-
-  async function uploadProfileImage(
-    file: File,
-    type: "avatar" | "cover",
-  ): Promise<string | null> {
-    if (!userId) return null;
-
-    const fileExtension = file.name.split(".").pop();
-    const safeExtension = fileExtension ? fileExtension.toLowerCase() : "png";
-
-    const filePath = `${userId}/${type}-${Date.now()}.${safeExtension}`;
-
-    const { error } = await supabase.storage
-      .from("profile-images")
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: true,
-      });
-
-    if (error) {
-      setMessage(`${type} upload error: ${error.message}`);
-      return null;
-    }
-
-    const { data } = supabase.storage
-      .from("profile-images")
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
-  }
-
-  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setAvatarUploading(true);
-    setMessage("");
-
-    const publicUrl = await uploadProfileImage(file, "avatar");
-
-    if (publicUrl) {
-      setAvatarUrl(publicUrl);
-
-      if (userId) {
-        await supabase
-          .from("profiles")
-          .update({
-            avatar_url: publicUrl,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", userId);
-      }
-
-      setMessage("Avatar uploaded.");
-    }
-
-    setAvatarUploading(false);
-  }
-
-  async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setCoverUploading(true);
-    setMessage("");
-
-    const publicUrl = await uploadProfileImage(file, "cover");
-
-    if (publicUrl) {
-      setCoverUrl(publicUrl);
-
-      if (userId) {
-        await supabase
-          .from("profiles")
-          .update({
-            cover_url: publicUrl,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", userId);
-      }
-
-      setMessage("Cover image uploaded.");
-    }
-
-    setCoverUploading(false);
   }
 
   async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
@@ -216,8 +121,6 @@ export default function WelcomePage() {
       favorite_quote: favoriteQuote.trim() || null,
       healing_stage: healingStage,
       privacy_level: privacyLevel,
-      avatar_url: avatarUrl || null,
-      cover_url: coverUrl || null,
       updated_at: new Date().toISOString(),
     });
 
@@ -283,66 +186,6 @@ export default function WelcomePage() {
           onSubmit={saveProfile}
           className="rounded-[2.5rem] border border-white/60 bg-white/75 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.08)] backdrop-blur-2xl"
         >
-          {/* COVER + AVATAR */}
-          <div className="mb-10 overflow-hidden rounded-[2rem] border border-stone-200 bg-[#f8f4ed]">
-            <div
-              className="relative h-64 bg-cover bg-center"
-              style={{
-                backgroundImage: coverUrl
-                  ? `url(${coverUrl})`
-                  : "linear-gradient(135deg, #d8b07b, #8d6432)",
-              }}
-            >
-              <label className="absolute right-5 top-5 cursor-pointer rounded-full border border-white/40 bg-white/30 px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white shadow-lg backdrop-blur-xl transition hover:bg-white/45">
-                {coverUploading ? "Uploading..." : "Upload Cover"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleCoverUpload}
-                  className="hidden"
-                  disabled={coverUploading}
-                />
-              </label>
-
-              <div className="absolute -bottom-14 left-8">
-                <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-[#f8f4ed] bg-[#efe8dc] shadow-xl">
-                  {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt="Profile avatar"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-5xl text-[#a9793d]">⚓</span>
-                  )}
-                </div>
-
-                <label className="mt-4 inline-flex cursor-pointer rounded-full border border-[#a9793d]/30 bg-white/70 px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-stone-700 shadow-sm backdrop-blur-xl transition hover:bg-white">
-                  {avatarUploading ? "Uploading..." : "Upload Avatar"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="hidden"
-                    disabled={avatarUploading}
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div className="px-8 pb-8 pt-24">
-              <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
-                Profile Images
-              </p>
-
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-stone-600">
-                Upload a profile avatar and cover image. These will be used
-                across your dashboard, future friend system, and member
-                community features.
-              </p>
-            </div>
-          </div>
-
           <div className="grid gap-6 md:grid-cols-2">
             <Field
               label="Display Name"
@@ -350,38 +193,29 @@ export default function WelcomePage() {
               setValue={setDisplayName}
               required
             />
-
             <Field
               label="Username"
               value={username}
               setValue={setUsername}
               placeholder="letters, numbers, underscores"
             />
-
             <Field label="Full Name" value={fullName} setValue={setFullName} />
-
             <Field
               label="Location"
               value={location}
               setValue={setLocation}
               placeholder="City, State"
             />
-
             <Field label="Hometown" value={hometown} setValue={setHometown} />
-
             <Field label="Website" value={website} setValue={setWebsite} />
-
             <Field label="Phone" value={phone} setValue={setPhone} />
-
             <Field
               label="Birthday"
               value={birthday}
               setValue={setBirthday}
               type="date"
             />
-
             <Field label="Pronouns" value={pronouns} setValue={setPronouns} />
-
             <Field
               label="Languages"
               value={languages}
@@ -445,20 +279,17 @@ export default function WelcomePage() {
 
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <TextArea label="Bio" value={bio} setValue={setBio} />
-
             <TextArea
               label="Work"
               value={work}
               setValue={setWork}
               placeholder="Job, career, company, industry..."
             />
-
             <TextArea
               label="Education"
               value={education}
               setValue={setEducation}
             />
-
             <TextArea
               label="Interests"
               value={interests}
@@ -478,7 +309,7 @@ export default function WelcomePage() {
 
           <button
             type="submit"
-            disabled={saving || avatarUploading || coverUploading}
+            disabled={saving}
             className="group relative mt-8 w-full overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/70 px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.18)] backdrop-blur-2xl transition duration-300 hover:scale-[1.02] hover:bg-[#8d6432]/80 disabled:opacity-60"
           >
             <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
@@ -584,7 +415,7 @@ function SelectField({
         className="w-full rounded-2xl border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
       >
         {options.map(([value, label]) => (
-          <option key={value || label} value={value}>
+          <option key={value} value={value}>
             {label}
           </option>
         ))}
