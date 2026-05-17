@@ -442,7 +442,7 @@ export default function WelcomePage() {
         <div className="mb-8 flex items-center justify-between">
           <a
             href="/dashboard"
-            className="text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]"
+            className="rounded-none text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]"
           >
             ← Dashboard
           </a>
@@ -460,7 +460,7 @@ export default function WelcomePage() {
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-transparent" />
 
-              <label className="absolute right-4 top-4 z-20 cursor-pointer border border-white/30 bg-black/30 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white backdrop-blur-md transition hover:bg-black/45">
+              <label className="absolute right-4 top-4 z-20 cursor-pointer rounded-none border border-white/30 bg-black/30 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white backdrop-blur-md transition hover:bg-black/45">
                 Change Cover
                 <input
                   type="file"
@@ -482,7 +482,7 @@ export default function WelcomePage() {
                     <span className="text-5xl text-[#a9793d]">⚓</span>
                   )}
 
-                  <label className="absolute bottom-0 left-0 right-0 cursor-pointer bg-black/45 py-2 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm transition hover:bg-black/60">
+                  <label className="absolute bottom-0 left-0 right-0 cursor-pointer rounded-none bg-black/45 py-2 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm transition hover:bg-black/60">
                     Change
                     <input
                       type="file"
@@ -561,7 +561,7 @@ export default function WelcomePage() {
                       type="button"
                       onClick={useCurrentLocation}
                       disabled={detectingLocation}
-                      className="flex h-8 w-8 items-center justify-center border border-stone-300 bg-white text-stone-500 transition hover:border-[#a9793d] hover:text-[#a9793d] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-8 w-8 items-center justify-center rounded-none border border-stone-300 bg-white text-stone-500 transition hover:border-[#a9793d] hover:text-[#a9793d] disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label="Use current location"
                       title="Use current location"
                     >
@@ -710,7 +710,7 @@ export default function WelcomePage() {
                   type="button"
                   onClick={saveProfile}
                   disabled={saving || uploadingAvatar || uploadingCover}
-                  className="bg-[#a9793d] px-8 py-4 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-md transition hover:bg-[#8d6432] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-none bg-[#a9793d] px-8 py-4 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-md transition hover:bg-[#8d6432] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving || uploadingAvatar || uploadingCover
                     ? "Saving..."
@@ -719,7 +719,7 @@ export default function WelcomePage() {
 
                 <a
                   href="/dashboard"
-                  className="border border-stone-300 bg-white px-8 py-4 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d]"
+                  className="rounded-none border border-stone-300 bg-white px-8 py-4 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d]"
                 >
                   Cancel
                 </a>
@@ -791,7 +791,7 @@ function CompanyInput({
               key={`${company.name}-${company.domain}`}
               type="button"
               onClick={() => onSelect(company)}
-              className="flex w-full items-center gap-3 border-b border-stone-100 px-4 py-3 text-left transition hover:bg-[#f3efe7]"
+              className="flex w-full items-center gap-3 rounded-none border-b border-stone-100 px-4 py-3 text-left transition hover:bg-[#f3efe7]"
             >
               <img
                 src={company.logo}
@@ -870,19 +870,13 @@ function TextArea({
 
 function SelectInput({
   label,
-
   value,
-
   options,
-
   onChange,
 }: {
   label: string;
-
   value: string;
-
   options: string[];
-
   onChange: (value: string) => void;
 }) {
   return (
@@ -894,7 +888,7 @@ function SelectInput({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-[46px] w-full appearance-none border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-700 transition focus:border-[#a9793d] focus:outline-none"
+        className="h-[46px] w-full appearance-none rounded-none border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-700 transition focus:border-[#a9793d] focus:outline-none"
       >
         {options.map((option) => (
           <option key={option} value={option}>
