@@ -112,7 +112,7 @@ export default function LoginPage() {
                   href="/register"
                   className="pt-2 text-base font-bold uppercase tracking-[0.12em] text-white transition hover:text-[#d8a24a]"
                 >
-                  Join
+                  Register
                 </Link>
               </div>
 
