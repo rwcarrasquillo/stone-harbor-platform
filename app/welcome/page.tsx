@@ -46,7 +46,6 @@ export default function WelcomePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const [message, setMessage] = useState("");
 
   async function loadProfile() {
@@ -95,16 +94,11 @@ export default function WelcomePage() {
     setLoading(false);
   }
 
-  async function uploadProfileImage(
-    file: File,
-    type: "avatar" | "cover",
-  ): Promise<string | null> {
+  async function uploadProfileImage(file: File, type: "avatar" | "cover") {
     if (!userId) return null;
 
-    const fileExtension = file.name.split(".").pop();
-    const safeExtension = fileExtension ? fileExtension.toLowerCase() : "png";
-
-    const filePath = `${userId}/${type}-${Date.now()}.${safeExtension}`;
+    const fileExtension = file.name.split(".").pop()?.toLowerCase() || "png";
+    const filePath = `${userId}/${type}-${Date.now()}.${fileExtension}`;
 
     const { error } = await supabase.storage
       .from("profile-images")
@@ -127,7 +121,7 @@ export default function WelcomePage() {
 
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !userId) return;
 
     setAvatarUploading(true);
     setMessage("");
@@ -137,17 +131,19 @@ export default function WelcomePage() {
     if (publicUrl) {
       setAvatarUrl(publicUrl);
 
-      if (userId) {
-        await supabase
-          .from("profiles")
-          .update({
-            avatar_url: publicUrl,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", userId);
-      }
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          avatar_url: publicUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
 
-      setMessage("Avatar uploaded.");
+      if (error) {
+        setMessage(`Avatar save error: ${error.message}`);
+      } else {
+        setMessage("Avatar uploaded.");
+      }
     }
 
     setAvatarUploading(false);
@@ -155,7 +151,7 @@ export default function WelcomePage() {
 
   async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !userId) return;
 
     setCoverUploading(true);
     setMessage("");
@@ -165,15 +161,25 @@ export default function WelcomePage() {
     if (publicUrl) {
       setCoverUrl(publicUrl);
 
-      if (userId) {
-        await supabase
-          .from("profiles")
-          .update({
-            cover_url: publicUrl,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", userId);
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          cover_url: publicUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+
+      if (profileError) {
+        setMessage(`Cover save error: ${profileError.message}`);
+        setCoverUploading(false);
+        return;
       }
+
+      await supabase.from("profile_cover_images").insert({
+        user_id: userId,
+        image_url: publicUrl,
+        caption: "Profile cover image",
+      });
 
       setMessage("Cover image uploaded.");
     }
@@ -183,7 +189,6 @@ export default function WelcomePage() {
 
   async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
     if (!userId) return;
 
     setSaving(true);
@@ -227,13 +232,12 @@ export default function WelcomePage() {
       return;
     }
 
-    setMessage("Profile saved. Redirecting to your dashboard...");
+    setMessage("Profile saved. Redirecting...");
+    setSaving(false);
 
     setTimeout(() => {
       window.location.href = "/dashboard";
-    }, 1000);
-
-    setSaving(false);
+    }, 900);
   }
 
   useEffect(() => {
@@ -281,10 +285,9 @@ export default function WelcomePage() {
 
         <form
           onSubmit={saveProfile}
-          className="rounded-[2.5rem] border border-white/60 bg-white/75 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.08)] backdrop-blur-2xl"
+          className="border border-white/60 bg-white p-8 shadow-[0_20px_80px_rgba(0,0,0,0.08)]"
         >
-          {/* COVER + AVATAR */}
-          <div className="mb-10 overflow-hidden rounded-[2rem] border border-stone-200 bg-[#f8f4ed]">
+          <div className="mb-10 overflow-hidden border border-stone-200 bg-[#f8f4ed]">
             <div
               className="relative h-64 bg-cover bg-center"
               style={{
@@ -317,7 +320,7 @@ export default function WelcomePage() {
                   )}
                 </div>
 
-                <label className="mt-4 inline-flex cursor-pointer rounded-full border border-[#a9793d]/30 bg-white/70 px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-stone-700 shadow-sm backdrop-blur-xl transition hover:bg-white">
+                <label className="mt-4 inline-flex cursor-pointer rounded-full border border-[#a9793d]/30 bg-white px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-stone-700 shadow-sm transition hover:bg-[#f8f4ed]">
                   {avatarUploading ? "Uploading..." : "Upload Avatar"}
                   <input
                     type="file"
@@ -336,9 +339,9 @@ export default function WelcomePage() {
               </p>
 
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-stone-600">
-                Upload a profile avatar and cover image. These will be used
-                across your dashboard, future friend system, and member
-                community features.
+                Upload a profile avatar and cover image. Cover images are saved
+                to your history so you can browse previous banners from the
+                dashboard.
               </p>
             </div>
           </div>
@@ -350,38 +353,29 @@ export default function WelcomePage() {
               setValue={setDisplayName}
               required
             />
-
             <Field
               label="Username"
               value={username}
               setValue={setUsername}
               placeholder="letters, numbers, underscores"
             />
-
             <Field label="Full Name" value={fullName} setValue={setFullName} />
-
             <Field
               label="Location"
               value={location}
               setValue={setLocation}
               placeholder="City, State"
             />
-
             <Field label="Hometown" value={hometown} setValue={setHometown} />
-
             <Field label="Website" value={website} setValue={setWebsite} />
-
             <Field label="Phone" value={phone} setValue={setPhone} />
-
             <Field
               label="Birthday"
               value={birthday}
               setValue={setBirthday}
               type="date"
             />
-
             <Field label="Pronouns" value={pronouns} setValue={setPronouns} />
-
             <Field
               label="Languages"
               value={languages}
@@ -445,25 +439,16 @@ export default function WelcomePage() {
 
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <TextArea label="Bio" value={bio} setValue={setBio} />
-
-            <TextArea
-              label="Work"
-              value={work}
-              setValue={setWork}
-              placeholder="Job, career, company, industry..."
-            />
-
+            <TextArea label="Work" value={work} setValue={setWork} />
             <TextArea
               label="Education"
               value={education}
               setValue={setEducation}
             />
-
             <TextArea
               label="Interests"
               value={interests}
               setValue={setInterests}
-              placeholder="Fitness, reading, hiking..."
             />
           </div>
 
@@ -479,16 +464,13 @@ export default function WelcomePage() {
           <button
             type="submit"
             disabled={saving || avatarUploading || coverUploading}
-            className="group relative mt-8 w-full overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/70 px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.18)] backdrop-blur-2xl transition duration-300 hover:scale-[1.02] hover:bg-[#8d6432]/80 disabled:opacity-60"
+            className="mt-8 w-full rounded-full border border-[#f4d7a1]/50 bg-[#a9793d] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white transition hover:bg-[#8d6432] disabled:opacity-60"
           >
-            <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
-            <span className="relative z-10">
-              {saving ? "Saving..." : "Save Profile"}
-            </span>
+            {saving ? "Saving..." : "Save Profile"}
           </button>
 
           {message && (
-            <div className="mt-6 rounded-2xl bg-[#f5f0e8] px-4 py-4 text-center">
+            <div className="mt-6 bg-[#f5f0e8] px-4 py-4 text-center">
               <p className="text-sm font-semibold text-stone-700">{message}</p>
             </div>
           )}
@@ -498,6 +480,15 @@ export default function WelcomePage() {
   );
 }
 
+type FieldProps = {
+  label: string;
+  value: string;
+  setValue: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+  required?: boolean;
+};
+
 function Field({
   label,
   value,
@@ -505,14 +496,7 @@ function Field({
   placeholder,
   type = "text",
   required = false,
-}: {
-  label: string;
-  value: string;
-  setValue: (value: string) => void;
-  placeholder?: string;
-  type?: string;
-  required?: boolean;
-}) {
+}: FieldProps) {
   return (
     <div>
       <label className="mb-2 block text-sm font-bold uppercase tracking-[0.2em] text-stone-600">
@@ -524,12 +508,20 @@ function Field({
         type={type}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="w-full rounded-2xl border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
+        className="w-full border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
         placeholder={placeholder}
       />
     </div>
   );
 }
+
+type TextAreaProps = {
+  label: string;
+  value: string;
+  setValue: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+};
 
 function TextArea({
   label,
@@ -537,13 +529,7 @@ function TextArea({
   setValue,
   placeholder,
   rows = 5,
-}: {
-  label: string;
-  value: string;
-  setValue: (value: string) => void;
-  placeholder?: string;
-  rows?: number;
-}) {
+}: TextAreaProps) {
   return (
     <div>
       <label className="mb-2 block text-sm font-bold uppercase tracking-[0.2em] text-stone-600">
@@ -554,24 +540,21 @@ function TextArea({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         rows={rows}
-        className="w-full resize-none rounded-2xl border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
+        className="w-full resize-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
         placeholder={placeholder}
       />
     </div>
   );
 }
 
-function SelectField({
-  label,
-  value,
-  setValue,
-  options,
-}: {
+type SelectFieldProps = {
   label: string;
   value: string;
   setValue: (value: string) => void;
   options: [string, string][];
-}) {
+};
+
+function SelectField({ label, value, setValue, options }: SelectFieldProps) {
   return (
     <div>
       <label className="mb-2 block text-sm font-bold uppercase tracking-[0.2em] text-stone-600">
@@ -581,11 +564,11 @@ function SelectField({
       <select
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="w-full rounded-2xl border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
+        className="w-full border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
       >
-        {options.map(([value, label]) => (
-          <option key={value || label} value={value}>
-            {label}
+        {options.map(([optionValue, optionLabel]) => (
+          <option key={optionValue || optionLabel} value={optionValue}>
+            {optionLabel}
           </option>
         ))}
       </select>

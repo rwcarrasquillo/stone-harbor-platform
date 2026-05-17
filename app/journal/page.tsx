@@ -195,28 +195,10 @@ export default function JournalPage() {
 
       <button
         onClick={toggleSound}
-        className="fixed bottom-8 right-8 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/30 text-stone-800 shadow-[0_8px_24px_rgba(0,0,0,0.14)] backdrop-blur-2xl transition duration-300 hover:scale-110 hover:bg-white/45"
+        className="fixed bottom-8 right-8 z-50 flex h-11 w-11 items-center justify-center rounded-none border border-white/40 bg-white/30 text-stone-800 shadow-[0_8px_24px_rgba(0,0,0,0.14)] backdrop-blur-2xl transition duration-300 hover:scale-110 hover:bg-white/45"
         aria-label={soundOn ? "Mute Nature Sounds" : "Play Nature Sounds"}
       >
-        {soundOn ? (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="h-4 w-4"
-          >
-            <path d="M14.5 3.5a1 1 0 0 1 1.7.7v15.6a1 1 0 0 1-1.7.7L9.2 16H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h4.2l5.3-4.5ZM18.4 8.2a1 1 0 0 1 1.4 0 5.5 5.5 0 0 1 0 7.8 1 1 0 0 1-1.4-1.4 3.5 3.5 0 0 0 0-5 1 1 0 0 1 0-1.4Zm-2.6 2.6a1 1 0 0 1 1.4 0 1.8 1.8 0 0 1 0 2.4 1 1 0 0 1-1.4-1.4.2.2 0 0 0 0-.3 1 1 0 0 1 0-1.4Z" />
-          </svg>
-        ) : (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="h-4 w-4"
-          >
-            <path d="M14.5 3.5a1 1 0 0 1 1.7.7v15.6a1 1 0 0 1-1.7.7L9.2 16H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h4.2l5.3-4.5ZM18.3 9.7l-1.6 1.6-1.6-1.6a1 1 0 1 0-1.4 1.4l1.6 1.6-1.6 1.6a1 1 0 1 0 1.4 1.4l1.6-1.6 1.6 1.6a1 1 0 0 0 1.4-1.4l-1.6-1.6 1.6-1.6a1 1 0 1 0-1.4-1.4Z" />
-          </svg>
-        )}
+        {soundOn ? "♪" : "×"}
       </button>
 
       <section className="mx-auto max-w-7xl">
@@ -237,7 +219,7 @@ export default function JournalPage() {
         </div>
 
         <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-[3rem] border border-white/50 bg-white/75 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.08)] backdrop-blur-2xl md:p-12">
+          <div className="rounded-none border border-white/50 bg-white/75 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.08)] backdrop-blur-2xl md:p-12">
             <p className="mb-5 text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]">
               Private Journal
             </p>
@@ -260,7 +242,7 @@ export default function JournalPage() {
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="mb-6 w-full rounded-2xl border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
+                className="mb-6 w-full rounded-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
                 placeholder="Optional title"
               />
 
@@ -271,7 +253,7 @@ export default function JournalPage() {
               <select
                 value={mood}
                 onChange={(e) => setMood(e.target.value)}
-                className="mb-6 w-full rounded-2xl border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
+                className="mb-6 w-full rounded-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
               >
                 <option value="grounded">Grounded</option>
                 <option value="confused">Confused</option>
@@ -290,14 +272,14 @@ export default function JournalPage() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={9}
-                className="mb-8 w-full resize-none rounded-2xl border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
+                className="mb-8 w-full resize-none rounded-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
                 placeholder="What do you need to say today?"
               />
 
               <button
                 type="submit"
                 disabled={saving}
-                className="group relative w-full overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/70 px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.18)] backdrop-blur-2xl transition duration-300 hover:scale-[1.02] hover:bg-[#8d6432]/80 disabled:opacity-60"
+                className="group relative w-full overflow-hidden rounded-none border border-[#f4d7a1]/50 bg-[#a9793d]/70 px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.18)] backdrop-blur-2xl transition duration-300 hover:scale-[1.02] hover:bg-[#8d6432]/80 disabled:opacity-60"
               >
                 <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
                 <span className="relative z-10">
@@ -307,7 +289,7 @@ export default function JournalPage() {
             </form>
           </div>
 
-          <div className="rounded-[3rem] border border-white/50 bg-white/60 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.06)] backdrop-blur-2xl md:p-10">
+          <div className="rounded-none border border-white/50 bg-white/60 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.06)] backdrop-blur-2xl md:p-10">
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="mb-3 text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]">
@@ -325,7 +307,7 @@ export default function JournalPage() {
                   setSearchTerm("");
                   setSortOption("newest");
                 }}
-                className="w-fit rounded-full border border-stone-300 bg-white/60 px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-stone-600 transition hover:border-[#a9793d] hover:bg-white"
+                className="w-fit rounded-none border border-stone-300 bg-white/60 px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-stone-600 transition hover:border-[#a9793d] hover:bg-white"
               >
                 Reset
               </button>
@@ -340,7 +322,7 @@ export default function JournalPage() {
                 <input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-2xl border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
+                  className="w-full rounded-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
                   placeholder="Search title, mood, or content"
                 />
               </div>
@@ -353,7 +335,7 @@ export default function JournalPage() {
                 <select
                   value={sortOption}
                   onChange={(e) => setSortOption(e.target.value as SortOption)}
-                  className="w-full rounded-2xl border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
+                  className="w-full rounded-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
                 >
                   <option value="newest">Newest First</option>
                   <option value="oldest">Oldest First</option>
@@ -364,11 +346,11 @@ export default function JournalPage() {
             </div>
 
             {entries.length === 0 ? (
-              <div className="rounded-[2rem] bg-[#f8f4ed] p-8 text-stone-600">
+              <div className="rounded-none bg-[#f8f4ed] p-8 text-stone-600">
                 No journal entries yet. Start with one honest sentence.
               </div>
             ) : filteredAndSortedEntries.length === 0 ? (
-              <div className="rounded-[2rem] bg-[#f8f4ed] p-8 text-stone-600">
+              <div className="rounded-none bg-[#f8f4ed] p-8 text-stone-600">
                 No entries match your search.
               </div>
             ) : (
@@ -376,7 +358,7 @@ export default function JournalPage() {
                 {filteredAndSortedEntries.map((entry) => (
                   <article
                     key={entry.id}
-                    className="rounded-[2rem] border border-stone-200 bg-[#f8f4ed] p-6"
+                    className="rounded-none border border-stone-200 bg-[#f8f4ed] p-6"
                   >
                     <div className="mb-4 flex items-start justify-between gap-4">
                       <div>
@@ -397,7 +379,7 @@ export default function JournalPage() {
 
                       <button
                         onClick={() => deleteEntry(entry.id)}
-                        className="rounded-full border border-stone-300 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-stone-500 transition hover:border-red-300 hover:text-red-600"
+                        className="rounded-none border border-stone-300 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-stone-500 transition hover:border-red-300 hover:text-red-600"
                       >
                         Delete
                       </button>

@@ -1,192 +1,221 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Cormorant_Garamond, Inter } from "next/font/google";
+import { supabase } from "@/lib/supabaseClient";
 
 const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const sans = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
 
+const sans = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+type JourneyKey = "clarity" | "calm" | "strength";
+
+type PanelProps = {
+  children: React.ReactNode;
+  bg: string;
+};
+
+const journeyOptions: Record<
+  JourneyKey,
+  {
+    label: string;
+    title: string;
+    text: string;
+    action: string;
+  }
+> = {
+  clarity: {
+    label: "I feel confused",
+    title: "Start with clarity.",
+    text: "You may still be questioning what happened. Begin by naming patterns, separating facts from emotional noise, and rebuilding trust in your own perception.",
+    action: "Begin Clarity",
+  },
+  calm: {
+    label: "I feel overwhelmed",
+    title: "Start with calm.",
+    text: "Your nervous system may be carrying prolonged stress. Begin with grounding, breath, rest, and emotional regulation.",
+    action: "Find Calm",
+  },
+  strength: {
+    label: "I am ready to rebuild",
+    title: "Start with strength.",
+    text: "You are ready to restore discipline, confidence, boundaries, and identity. The next step is rebuilding your life with structure.",
+    action: "Build Strength",
+  },
+};
+
 export default function Home() {
-  const [selectedPath, setSelectedPath] = useState("clarity");
+  const [selectedPath, setSelectedPath] = useState<JourneyKey>("clarity");
+  const [memberName, setMemberName] = useState<string | null>(null);
 
-  const journeyOptions = {
-    clarity: {
-      label: "I feel confused",
-      title: "Start with clarity.",
-      text: "You may still be questioning what happened. Begin by naming patterns, separating facts from emotional noise, and rebuilding trust in your own perception.",
-      action: "Begin Clarity",
-    },
-    calm: {
-      label: "I feel overwhelmed",
-      title: "Start with calm.",
-      text: "Your nervous system may be carrying prolonged stress. Begin with grounding, breath, rest, and emotional regulation.",
-      action: "Find Calm",
-    },
-    strength: {
-      label: "I am ready to rebuild",
-      title: "Start with strength.",
-      text: "You are ready to restore discipline, confidence, boundaries, and identity. The next step is rebuilding your life with structure.",
-      action: "Build Strength",
-    },
-  };
+  const selectedJourney = useMemo(
+    () => journeyOptions[selectedPath],
+    [selectedPath],
+  );
 
-  const selectedJourney =
-    journeyOptions[selectedPath as keyof typeof journeyOptions];
+  useEffect(() => {
+    async function loadMember() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name, username, email")
+        .eq("id", user.id)
+        .single();
+
+      setMemberName(
+        data?.display_name ||
+          data?.username ||
+          data?.email ||
+          user.email ||
+          "Member",
+      );
+    }
+
+    loadMember();
+  }, []);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  }
 
   return (
     <main
-      className={`${sans.className} min-h-screen bg-[#f3efe7] text-stone-900`}
+      className={`${sans.className} relative min-h-screen overflow-hidden bg-[#0A0A0B] text-stone-900`}
     >
-      {/* HERO */}
-      <section className="relative min-h-[760px] overflow-hidden">
-        <motion.div
-          initial={{ scale: 1.08 }}
-          animate={{
-            scale: [1.08, 1.14, 1.08],
-            x: [0, -12, 0],
-            y: [0, -8, 0],
-          }}
-          transition={{
-            duration: 22,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/forest-hero.png')" }}
-        />
+      <div className="fixed inset-0 z-0 bg-[#0A0A0B]" />
 
-        <motion.div
-          animate={{
-            x: ["-10%", "10%", "-10%"],
-            opacity: [0.18, 0.32, 0.18],
-          }}
-          transition={{
-            duration: 28,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(circle at 30% 45%, rgba(255,255,255,0.28), transparent 35%), radial-gradient(circle at 65% 55%, rgba(255,255,255,0.18), transparent 30%)",
-            filter: "blur(34px)",
-          }}
-        />
+      <motion.div
+        animate={{
+          scale: [1, 1.08, 1],
+          x: ["0%", "-1.5%", "0%"],
+          y: ["0%", "1.5%", "0%"],
+        }}
+        transition={{
+          duration: 24,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        className="fixed inset-0 z-0 bg-cover bg-center opacity-45 grayscale"
+        style={{ backgroundImage: "url('/forest-hero.png')" }}
+      />
 
-        <motion.div
-          animate={{
-            x: ["-3%", "3%", "-3%"],
-            opacity: [0.12, 0.24, 0.12],
-          }}
-          transition={{
-            duration: 9,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="pointer-events-none absolute bottom-0 left-0 right-0 h-[38%]"
-          style={{
-            background:
-              "linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.22) 45%, transparent 70%)",
-            filter: "blur(18px)",
-          }}
-        />
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-black/65 via-black/35 to-black/80" />
 
-        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/18 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/15" />
+      <div className="pointer-events-none fixed inset-0 z-0 opacity-[0.06]">
+        <div className="h-full w-full bg-[linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] bg-[size:120px_120px]" />
+      </div>
 
-        {/* NAV */}
-        <nav className="relative z-20 flex items-center justify-between px-10 py-8 md:px-16">
-          <a
-            href="/"
-            className="text-2xl font-semibold uppercase tracking-[0.35em] text-white md:text-3xl"
-          >
-            Stone Harbor
+      <div className="pointer-events-none fixed left-8 top-0 z-10 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+      <div className="pointer-events-none fixed right-8 top-0 z-10 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+
+      <header className="fixed left-0 top-0 z-50 w-full border-b border-stone-300 bg-[#f3efe7] shadow-[0_18px_60px_rgba(0,0,0,0.15)]">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
+          <a href="/" className="flex flex-col leading-none no-underline">
+            <span className="text-xl font-semibold uppercase tracking-[0.45em] text-[#c4934e]">
+              Stone Harbor
+            </span>
+
+            <span className="mt-2 text-[0.68rem] font-bold uppercase tracking-[0.42em] text-[#c4934e]">
+              Men&apos;s Mental Wellness
+            </span>
           </a>
 
-          <div className="hidden gap-10 text-sm font-bold uppercase tracking-[0.3em] text-white/90 md:flex">
+          <div className="hidden gap-10 text-sm font-bold uppercase tracking-[0.28em] text-stone-700 md:flex">
             <a href="/start-here">Start</a>
             <a href="/roadmap">Roadmap</a>
             <a href="/resources">Resources</a>
             <a href="/about">About</a>
-            <a href="/login">Login</a>
           </div>
 
-          <div className="flex gap-4">
-            <a
-              href="/login"
-              className="group relative hidden overflow-hidden rounded-full border border-white/35 bg-white/18 px-7 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_8px_30px_rgba(0,0,0,0.28)] backdrop-blur-3xl transition duration-500 hover:scale-105 hover:bg-white/26 md:inline-flex"
-            >
-              <span className="absolute inset-0 bg-gradient-to-br from-white/35 via-white/12 to-transparent opacity-85" />
-              <span className="absolute left-3 top-2 h-6 w-20 rounded-full bg-white/25 blur-xl" />
-              <span className="relative z-10">Member Login</span>
-            </a>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex gap-3">
+              {memberName ? (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-none border border-[#c4934e] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black"
+                >
+                  Logout
+                </button>
+              ) : (
+                <a
+                  href="/login"
+                  className="rounded-none border border-[#c4934e] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black"
+                >
+                  Login
+                </a>
+              )}
 
-            <a
-              href="/join"
-              className="group relative overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#c4934e]/28 px-8 py-4 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.3)] backdrop-blur-3xl transition duration-500 hover:scale-105 hover:bg-[#c4934e]/38"
-            >
-              <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/40 via-white/12 to-transparent opacity-85" />
-              <span className="absolute left-4 top-2 h-6 w-24 rounded-full bg-white/20 blur-xl" />
-              <span className="relative z-10">Join</span>
-            </a>
+              <a
+                href={memberName ? "/dashboard" : "/register"}
+                className="rounded-none border border-[#c4934e] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black"
+              >
+                {memberName ? "Dashboard" : "Join"}
+              </a>
+            </div>
+
+            {memberName && (
+              <p className="max-w-[220px] truncate text-right text-xs font-bold uppercase tracking-[0.18em] text-stone-600">
+                {memberName}
+              </p>
+            )}
           </div>
         </nav>
+      </header>
 
-        {/* HERO CONTENT */}
-        <motion.div
-          initial={{ opacity: 0, y: 45 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.4 }}
-          className="relative z-10 px-10 pt-20 md:px-28"
-        >
-          <p className="mb-5 text-sm font-semibold uppercase tracking-[0.45em] text-[#d8b07b] md:text-base">
-            Men&apos;s Mental Wellness
-          </p>
-
-          <h1
-            className={`${serif.className} max-w-4xl text-7xl font-medium leading-[0.92] text-white md:text-[8.5rem]`}
-          >
-            The storm
-            <br />
-            changed you.
-          </h1>
-
-          <p className="mt-10 max-w-xl text-xl leading-relaxed text-white/95 md:text-2xl">
-            Now rebuild what remains — with clarity, calm, strength, and
-            purpose.
-          </p>
-
-          <div className="mt-10 flex flex-col gap-5 sm:flex-row">
-            <a
-              href="/start-here"
-              className="group relative overflow-hidden rounded-full border border-white/40 bg-white/18 px-10 py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_10px_35px_rgba(0,0,0,0.25)] backdrop-blur-3xl transition duration-500 hover:scale-105 hover:bg-white/26"
+      <section className="relative z-20 min-h-screen px-6 pb-20 pt-24">
+        <div className="mx-auto flex min-h-[80vh] max-w-7xl items-start pt-24 md:pt-32">
+          <div>
+            <motion.h1
+              initial={{ opacity: 0, y: 35 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className={`${serif.className} max-w-5xl text-7xl font-semibold leading-[0.9] text-white md:text-[8.5rem]`}
             >
-              <span className="absolute inset-0 bg-gradient-to-br from-white/35 via-white/10 to-transparent opacity-85" />
-              <span className="relative z-10">Start Recovery</span>
-            </a>
+              The storm
+              <br />
+              changed you.
+            </motion.h1>
 
-            <a
-              href="/roadmap"
-              className="group relative overflow-hidden rounded-full border border-white/30 bg-white/12 px-10 py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-3xl transition duration-500 hover:scale-105 hover:bg-white/20"
-            >
-              <span className="absolute inset-0 bg-gradient-to-br from-white/28 via-white/8 to-transparent opacity-80" />
-              <span className="relative z-10">View Roadmap</span>
-            </a>
+            <p className="mt-10 max-w-xl text-xl leading-relaxed text-white md:text-2xl">
+              Now rebuild what remains — with clarity, calm, strength, and
+              purpose.
+            </p>
+
+            <div className="mt-10 flex flex-col gap-5 sm:flex-row">
+              <a
+                href="/start-here"
+                className="rounded-none border border-white/20 bg-white/[0.06] px-10 py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white transition hover:bg-white/[0.12]"
+              >
+                Start Recovery
+              </a>
+
+              <a
+                href="/roadmap"
+                className="rounded-none border border-white/20 bg-white/[0.06] px-10 py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white transition hover:bg-white/[0.12]"
+              >
+                View Roadmap
+              </a>
+            </div>
           </div>
-        </motion.div>
+        </div>
       </section>
 
-      {/* RECOVERY STRIP */}
-      <section className="bg-[#f5f0e8] px-8 py-16 md:px-20">
-        <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-3">
+      <FloatingWarmPanel bg="bg-[#f3efe7]">
+        <div className="grid gap-8 md:grid-cols-3">
           {[
             {
               number: "01",
@@ -223,11 +252,10 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
+      </FloatingWarmPanel>
 
-      {/* INTERACTIVE JOURNEY */}
-      <section className="bg-[#efe8dc] px-8 py-20 md:px-20">
-        <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-[0.9fr_1.1fr] md:items-center">
+      <FloatingWarmPanel bg="bg-[#efe8dc]">
+        <div className="grid gap-12 md:grid-cols-[0.9fr_1.1fr] md:items-center">
           <div>
             <p className="mb-5 text-sm font-semibold uppercase tracking-[0.4em] text-[#a9793d]">
               Your Recovery Journey
@@ -245,16 +273,16 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="rounded-[2rem] bg-white/80 p-6 shadow-sm backdrop-blur-xl">
+          <div className="border border-stone-200 bg-white p-6 shadow-[0_18px_60px_rgba(0,0,0,0.12)]">
             <div className="grid gap-3">
               {Object.entries(journeyOptions).map(([key, option]) => (
                 <button
                   key={key}
-                  onClick={() => setSelectedPath(key)}
-                  className={`rounded-2xl border px-6 py-5 text-left transition ${
+                  onClick={() => setSelectedPath(key as JourneyKey)}
+                  className={`border px-6 py-5 text-left transition ${
                     selectedPath === key
                       ? "border-[#a9793d] bg-[#f3efe7]"
-                      : "border-stone-200 bg-white/70"
+                      : "border-stone-200 bg-white"
                   }`}
                 >
                   <span className="text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
@@ -264,207 +292,48 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="mt-8 rounded-[1.5rem] bg-[#f5f0e8] p-8">
-              <h3
-                className={`${serif.className} text-4xl font-medium text-stone-900`}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectedPath}
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+                className="mt-8 border border-stone-200 bg-[#f5f0e8] p-8"
               >
-                {selectedJourney.title}
-              </h3>
-
-              <p className="mt-4 leading-relaxed text-stone-600">
-                {selectedJourney.text}
-              </p>
-
-              <a
-                href="/start-here"
-                className="group relative mt-7 inline-flex overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/65 px-8 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white backdrop-blur-2xl transition duration-300 hover:scale-105"
-              >
-                <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
-                <span className="relative z-10">{selectedJourney.action}</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* LOWER CTA */}
-      <section className="bg-[#ebe4d8] px-8 py-14 md:px-20">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 md:grid-cols-[0.2fr_1.3fr_0.8fr]">
-          <div className="flex justify-center">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full border border-[#b48347] text-4xl text-[#a9793d]">
-              ⚓
-            </div>
-          </div>
-
-          <div>
-            <h2
-              className={`${serif.className} text-4xl font-medium text-stone-900 md:text-5xl`}
-            >
-              You are rebuilding.
-            </h2>
-
-            <p className="mt-4 max-w-3xl leading-relaxed text-stone-600">
-              Stone Harbor is a private space for healing, recovery, identity
-              rebuilding, and future connection.
-            </p>
-          </div>
-
-          <div className="flex flex-col items-start gap-5 md:items-center">
-            <a
-              href="/join"
-              className="group relative overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/65 px-12 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white backdrop-blur-2xl transition duration-300 hover:scale-105"
-            >
-              <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
-              <span className="relative z-10">Start Recovery</span>
-            </a>
-
-            <a
-              href="/login"
-              className="group relative overflow-hidden rounded-full border border-stone-300/70 bg-white/45 px-10 py-4 text-sm font-bold uppercase tracking-[0.25em] text-stone-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_8px_25px_rgba(0,0,0,0.08)] backdrop-blur-2xl transition duration-300 hover:scale-105 hover:border-[#a9793d]/50 hover:bg-white/70"
-            >
-              <span className="absolute inset-0 bg-gradient-to-br from-white/55 via-white/15 to-transparent opacity-80" />
-              <span className="relative z-10">Member Login</span>
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* HELP & SUPPORT */}
-      <section className="bg-[#f7f2ea] px-8 py-20 md:px-20">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-12 text-center">
-            <p className="mb-4 text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]">
-              Immediate Support
-            </p>
-
-            <h2
-              className={`${serif.className} text-5xl font-medium text-stone-900 md:text-7xl`}
-            >
-              If today feels too heavy,
-              <br />
-              reach for help now.
-            </h2>
-
-            <p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-stone-600">
-              Stone Harbor is a place for healing, but immediate support
-              matters. If you are in crisis, unsafe, emotionally overwhelmed, or
-              need urgent guidance, these resources are available right now.
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-            {[
-              {
-                label: "U.S. Crisis Line",
-                title: "Call or Text 988",
-                text: "24/7 Suicide & Crisis Lifeline for emotional distress, panic, depression, or urgent support.",
-                button: "Call 988",
-                href: "tel:988",
-                buttonStyle: "border-[#f4d7a1]/50 bg-[#a9793d]/65",
-              },
-              {
-                label: "Emergency",
-                title: "Call 911",
-                text: "If you or someone else is in immediate physical danger or requires emergency intervention.",
-                button: "Call 911",
-                href: "tel:911",
-                buttonStyle: "border-red-300/50 bg-red-500/60",
-              },
-              {
-                label: "Veterans",
-                title: "Dial 988 → Press 1",
-                text: "Veteran-specific crisis support with responders trained for military and service-related challenges.",
-                button: "Veteran Support",
-                href: "tel:988",
-                buttonStyle: "border-[#f4d7a1]/50 bg-[#a9793d]/65",
-              },
-              {
-                label: "Relationship Safety",
-                title: "800-799-7233",
-                text: "National Domestic Violence Hotline for emotional abuse, coercion, unsafe relationships, or crisis planning.",
-                button: "Call Hotline",
-                href: "tel:8007997233",
-                buttonStyle: "border-[#f4d7a1]/50 bg-[#a9793d]/65",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="flex h-full min-h-[340px] flex-col rounded-[2rem] border border-white/60 bg-white/60 p-6 shadow-[0_10px_30px_rgba(0,0,0,0.05)] backdrop-blur-2xl"
-              >
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-[#a9793d]">
-                  {item.label}
-                </p>
-
                 <h3
-                  className={`${serif.className} min-h-[72px] text-3xl font-medium leading-tight text-stone-900`}
+                  className={`${serif.className} text-4xl font-medium text-stone-900`}
                 >
-                  {item.title}
+                  {selectedJourney.title}
                 </h3>
 
-                <p className="mt-3 flex-grow text-sm leading-relaxed text-stone-600">
-                  {item.text}
+                <p className="mt-4 leading-relaxed text-stone-600">
+                  {selectedJourney.text}
                 </p>
 
-                <div className="mt-6">
-                  <a
-                    href={item.href}
-                    className={`group relative inline-flex h-[48px] w-full items-center justify-center overflow-hidden rounded-full border px-4 text-xs font-bold uppercase tracking-[0.2em] text-white backdrop-blur-xl transition duration-300 hover:scale-[1.02] ${item.buttonStyle}`}
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-br from-white/20 via-white/10 to-transparent opacity-70" />
-                    <span className="relative z-10">{item.button}</span>
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* LOCAL HELP */}
-          <div className="mt-12 rounded-[2rem] border border-[#a9793d]/20 bg-[#efe8dc] p-8 text-center">
-            <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
-              Local Help
-            </p>
-
-            <h3
-              className={`${serif.className} mt-4 text-4xl font-medium text-stone-900 md:text-5xl`}
-            >
-              Support closer to home.
-            </h3>
-
-            <p className="mx-auto mt-5 max-w-3xl text-lg leading-relaxed text-stone-700">
-              For local counseling, shelters, county behavioral health services,
-              crisis centers, or men’s support groups, dial 211 or contact your
-              local county mental health department. You can also ask your
-              physician, employer assistance program, or nearest hospital for
-              urgent referrals.
-            </p>
-
-            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <a
-                href="tel:211"
-                className="group relative inline-flex h-[52px] w-[240px] items-center justify-center overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/65 px-6 text-sm font-bold uppercase tracking-[0.18em] text-white backdrop-blur-xl transition duration-300 hover:scale-105"
-              >
-                <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
-                <span className="relative z-10">Dial 211</span>
-              </a>
-
-              <a
-                href="https://www.findhelp.org"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative inline-flex h-[52px] w-[240px] items-center justify-center overflow-hidden rounded-full border border-stone-300 bg-white/55 px-6 text-sm font-bold uppercase tracking-[0.18em] text-stone-700 backdrop-blur-xl transition duration-300 hover:scale-105 hover:bg-white/75"
-              >
-                <span className="absolute inset-0 bg-gradient-to-br from-white/50 via-white/10 to-transparent opacity-80" />
-                <span className="relative z-10">Find Resources</span>
-              </a>
-            </div>
-
-            <p className="mt-6 text-sm leading-relaxed text-stone-500">
-              If you are in immediate danger, call 911. If emotional crisis is
-              urgent, call or text 988.
-            </p>
+                <a
+                  href="/start-here"
+                  className="mt-7 inline-flex rounded-none border border-[#f4d7a1]/50 bg-[#a9793d] px-8 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white transition hover:scale-105 hover:bg-[#8d6432]"
+                >
+                  {selectedJourney.action}
+                </a>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
-      </section>
+      </FloatingWarmPanel>
     </main>
+  );
+}
+
+function FloatingWarmPanel({ children, bg }: PanelProps) {
+  return (
+    <section className="relative z-20 w-full py-0">
+      <div
+        className={`w-full border-y border-white/30 px-6 py-12 shadow-[0_35px_120px_rgba(0,0,0,0.32)] md:px-20 md:py-16 ${bg}`}
+      >
+        <div className="mx-auto max-w-7xl">{children}</div>
+      </div>
+    </section>
   );
 }
