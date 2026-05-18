@@ -1,8 +1,27 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+} from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { Cormorant_Garamond, Inter } from "next/font/google";
+import {
+  Flame,
+  MoodAngry,
+  MoodConfused,
+  MoodGrounded,
+  MoodHopeful,
+  MoodSad,
+  MoodStrong,
+  SoundOff,
+  SoundOn,
+  Speech,
+  type IconProps,
+} from "@/app/components/icons";
 
 const serif = Cormorant_Garamond({
   subsets: ["latin"],
@@ -34,6 +53,22 @@ function moodColor(value: string | null | undefined) {
   return (
     moodOptions.find((o) => o.value === value.toLowerCase())?.color ?? "#a9793d"
   );
+}
+
+const moodIcons: Record<string, ComponentType<IconProps>> = {
+  grounded: MoodGrounded,
+  confused: MoodConfused,
+  angry: MoodAngry,
+  sad: MoodSad,
+  hopeful: MoodHopeful,
+  strong: MoodStrong,
+};
+
+function moodIconFor(
+  value: string | null | undefined,
+): ComponentType<IconProps> | null {
+  if (!value) return null;
+  return moodIcons[value.toLowerCase()] ?? null;
 }
 
 function moodLabel(value: string | null | undefined) {
@@ -391,7 +426,7 @@ export default function JournalPage() {
         aria-label={soundOn ? "Mute Nature Sounds" : "Play Nature Sounds"}
         title={soundOn ? "Mute Nature Sounds" : "Play Nature Sounds"}
       >
-        {soundOn ? "♪" : "○"}
+        {soundOn ? <SoundOn size={16} /> : <SoundOff size={16} />}
       </button>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 py-10 md:px-8">
@@ -434,9 +469,12 @@ export default function JournalPage() {
             </p>
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
-              Writing Streak
-            </p>
+            <div className="flex items-center gap-2">
+              <Flame size={14} className="text-[#a9793d]" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+                Writing Streak
+              </p>
+            </div>
             <p
               className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
             >
@@ -457,9 +495,12 @@ export default function JournalPage() {
             </p>
           </div>
           <div className="md:col-span-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
-              Today&apos;s Prompt
-            </p>
+            <div className="flex items-center gap-2">
+              <Speech size={14} className="text-[#a9793d]" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+                Today&apos;s Prompt
+              </p>
+            </div>
             <p
               className={`${serif.className} mt-2 text-xl italic leading-snug text-stone-900 md:text-2xl`}
             >
@@ -510,6 +551,7 @@ export default function JournalPage() {
               <div className="mb-6 flex flex-wrap gap-2">
                 {moodOptions.map((option) => {
                   const active = mood === option.value;
+                  const Icon = moodIcons[option.value];
                   return (
                     <button
                       key={option.value}
@@ -525,9 +567,10 @@ export default function JournalPage() {
                           : undefined,
                       }}
                     >
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: option.color }}
+                      <Icon
+                        size={14}
+                        strokeWidth={1.5}
+                        style={{ color: option.color }}
                       />
                       {option.label}
                     </button>
@@ -647,6 +690,7 @@ export default function JournalPage() {
               <div className="max-h-[720px] space-y-5 overflow-y-auto pr-2">
                 {filteredAndSortedEntries.map((entry) => {
                   const color = moodColor(entry.mood);
+                  const EntryMoodIcon = moodIconFor(entry.mood);
                   return (
                     <article
                       key={entry.id}
@@ -663,10 +707,18 @@ export default function JournalPage() {
                               backgroundColor: "white",
                             }}
                           >
-                            <span
-                              className="h-1.5 w-1.5 rounded-full"
-                              style={{ backgroundColor: color }}
-                            />
+                            {EntryMoodIcon ? (
+                              <EntryMoodIcon
+                                size={12}
+                                strokeWidth={1.5}
+                                style={{ color }}
+                              />
+                            ) : (
+                              <span
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={{ backgroundColor: color }}
+                              />
+                            )}
                             {moodLabel(entry.mood)}
                           </span>
                           <h2
@@ -722,18 +774,22 @@ export default function JournalPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
-                {moodOptions.map((option) => (
-                  <span
-                    key={option.value}
-                    className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500"
-                  >
+                {moodOptions.map((option) => {
+                  const Icon = moodIcons[option.value];
+                  return (
                     <span
-                      className="h-2.5 w-2.5"
-                      style={{ backgroundColor: option.color }}
-                    />
-                    {option.label}
-                  </span>
-                ))}
+                      key={option.value}
+                      className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500"
+                    >
+                      <Icon
+                        size={14}
+                        strokeWidth={1.5}
+                        style={{ color: option.color }}
+                      />
+                      {option.label}
+                    </span>
+                  );
+                })}
               </div>
             </div>
             <div className="grid grid-cols-10 gap-1.5 sm:grid-cols-15 md:grid-cols-30">

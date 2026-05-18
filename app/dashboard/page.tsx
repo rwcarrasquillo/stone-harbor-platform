@@ -1,8 +1,29 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { Cormorant_Garamond, Inter } from "next/font/google";
+import {
+  Anchor as AnchorIcon,
+  Book,
+  Briefcase,
+  Cap,
+  ChevronDown,
+  ChevronUp,
+  Compass,
+  Edit as EditIcon,
+  Flame,
+  Globe,
+  Link as LinkIcon,
+  Logout,
+  Message,
+  Pin,
+  Roadmap,
+  Settings,
+  Speech,
+  Spark,
+  type IconProps,
+} from "@/app/components/icons";
 
 const serif = Cormorant_Garamond({
   subsets: ["latin"],
@@ -74,6 +95,7 @@ type DashboardCardProps = {
   title: string;
   text: string;
   badge?: number;
+  Icon?: ComponentType<IconProps>;
 };
 
 function normalizeHealingStage(value: string | null | undefined) {
@@ -108,7 +130,7 @@ export default function DashboardPage() {
   const [coverImages, setCoverImages] = useState<CoverImage[]>([]);
   const [currentCoverIndex, setCurrentCoverIndex] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [introExpanded, setIntroExpanded] = useState(true);
+  const [introExpanded, setIntroExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dailyQuote, setDailyQuote] = useState<DailyQuote | null>(null);
   const [quoteStage, setQuoteStage] = useState("Clarity");
@@ -564,14 +586,20 @@ export default function DashboardPage() {
               href="/welcome"
               className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
             >
-              <span className="relative z-10">Edit Profile</span>
+              <span className="relative z-10 inline-flex items-center gap-2">
+                <EditIcon size={14} />
+                Edit Profile
+              </span>
               <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
             </a>
             <a
               href="/messages"
               className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
             >
-              <span className="relative z-10">Messages</span>
+              <span className="relative z-10 inline-flex items-center gap-2">
+                <Message size={14} />
+                Messages
+              </span>
               <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
               {unreadMessageCount > 0 && (
                 <span className="absolute -right-2 -top-2 z-20 flex h-6 min-w-6 items-center justify-center border border-[#c4934e] bg-[#a9793d] px-2 text-[10px] font-black text-white">
@@ -583,7 +611,10 @@ export default function DashboardPage() {
               onClick={handleLogout}
               className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
             >
-              <span className="relative z-10">Logout</span>
+              <span className="relative z-10 inline-flex items-center gap-2">
+                <Logout size={14} />
+                Logout
+              </span>
               <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
             </button>
           </div>
@@ -614,9 +645,12 @@ export default function DashboardPage() {
             </p>
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
-              Streak
-            </p>
+            <div className="flex items-center gap-2">
+              <Flame size={14} className="text-[#a9793d]" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+                Streak
+              </p>
+            </div>
             {/* TODO: wire to real streak query */}
             <p
               className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
@@ -716,7 +750,11 @@ export default function DashboardPage() {
                     className="h-full w-full rounded-full object-cover"
                   />
                 ) : (
-                  <span className="text-5xl text-[#a9793d]">⚓</span>
+                  <AnchorIcon
+                    size={52}
+                    strokeWidth={1.25}
+                    className="text-[#a9793d]"
+                  />
                 )}
               </div>
             </div>
@@ -971,7 +1009,11 @@ export default function DashboardPage() {
                                 className="h-full w-full object-cover"
                               />
                             ) : (
-                              <span className="text-lg text-[#a9793d]">⚓</span>
+                              <AnchorIcon
+                                size={20}
+                                strokeWidth={1.4}
+                                className="text-[#a9793d]"
+                              />
                             )}
                           </div>
                           <div>
@@ -1033,13 +1075,20 @@ export default function DashboardPage() {
               }
               title={introExpanded ? "Contract intro" : "Expand intro"}
             >
-              {introExpanded ? "⌃" : "⌄"}
+              {introExpanded ? (
+                <ChevronUp size={20} strokeWidth={1.75} />
+              ) : (
+                <ChevronDown size={20} strokeWidth={1.75} />
+              )}
             </button>
             <div className="mb-6 flex items-center justify-between pr-8">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
-                  Anchor
-                </p>
+                <div className="flex items-center gap-2">
+                  <AnchorIcon size={14} className="text-[#a9793d]" />
+                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
+                    Anchor
+                  </p>
+                </div>
                 <h2
                   className={`${serif.className} mt-2 text-4xl font-medium text-stone-900`}
                 >
@@ -1049,33 +1098,45 @@ export default function DashboardPage() {
             </div>
             {introExpanded ? (
               <div className="flex flex-1 flex-col divide-y divide-stone-200">
-                <AboutRow icon="⚑" label="Lives in" value={profile?.location} />
-                <AboutRow icon="◬" label="From" value={profile?.hometown} />
                 <AboutRow
-                  icon="⚒"
+                  Icon={Pin}
+                  label="Lives in"
+                  value={profile?.location}
+                />
+                <AboutRow
+                  Icon={Compass}
+                  label="From"
+                  value={profile?.hometown}
+                />
+                <AboutRow
+                  Icon={Briefcase}
                   label="Work"
                   value={profile?.work_company_name || profile?.work}
                   logoUrl={profile?.work_company_logo_url}
                   domain={profile?.work_company_domain}
                 />
                 <AboutRow
-                  icon="⌬"
+                  Icon={Cap}
                   label="Education"
                   value={profile?.education}
                 />
                 <AboutRow
-                  icon="⊹"
+                  Icon={LinkIcon}
                   label="Relationship"
                   value={formatLabel(profile?.relationship_status)}
                 />
-                <AboutRow icon="◎" label="Website" value={profile?.website} />
                 <AboutRow
-                  icon="⋄"
+                  Icon={Globe}
+                  label="Website"
+                  value={profile?.website}
+                />
+                <AboutRow
+                  Icon={Speech}
                   label="Languages"
                   value={profile?.languages}
                 />
                 <AboutRow
-                  icon="✢"
+                  Icon={Spark}
                   label="Interests"
                   value={profile?.interests}
                 />
@@ -1102,6 +1163,7 @@ export default function DashboardPage() {
                 label="Private"
                 title="Reflect"
                 text="Write, search, and revisit private reflections only you can access."
+                Icon={EditIcon}
               />
               <DashboardCard
                 href="/messages"
@@ -1117,18 +1179,21 @@ export default function DashboardPage() {
                     : "Start private conversations with other Stone Harbor members."
                 }
                 badge={unreadMessageCount}
+                Icon={Message}
               />
               <DashboardCard
                 href="/members-blog"
                 label="Members"
                 title="Read"
                 text="Protected articles and thoughtful member discussions."
+                Icon={Book}
               />
               <DashboardCard
                 href="/welcome"
                 label="Identity"
                 title="Refine"
                 text="Update your avatar, cover image, privacy defaults, and healing stage."
+                Icon={Settings}
               />
             </div>
           </motion.section>
@@ -1144,12 +1209,15 @@ export default function DashboardPage() {
         >
           <div className="grid gap-6 md:grid-cols-[1.4fr_1fr] md:items-center">
             <div>
-              <p
-                className="text-xs font-bold uppercase tracking-[0.3em]"
+              <div
+                className="flex items-center gap-2"
                 style={{ color: accent }}
               >
-                Your Roadmap
-              </p>
+                <Roadmap size={16} />
+                <p className="text-xs font-bold uppercase tracking-[0.3em]">
+                  Your Roadmap
+                </p>
+              </div>
               <h2
                 className={`${serif.className} mt-3 text-4xl font-medium text-stone-900 md:text-5xl`}
               >
@@ -1288,13 +1356,13 @@ export default function DashboardPage() {
 }
 
 function AboutRow({
-  icon,
+  Icon,
   label,
   value,
   logoUrl,
   domain,
 }: {
-  icon: string;
+  Icon: ComponentType<IconProps>;
   label: string;
   value?: string | null;
   logoUrl?: string | null;
@@ -1304,7 +1372,7 @@ function AboutRow({
     domain && `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
   return (
     <div className="flex gap-5 py-5">
-      <div className="min-w-[42px] pt-[2px] text-3xl font-light leading-none text-stone-500">
+      <div className="flex min-w-[42px] items-start pt-[2px] text-stone-500">
         {logoUrl || fallbackLogo ? (
           <img
             src={logoUrl || fallbackLogo || ""}
@@ -1317,7 +1385,7 @@ function AboutRow({
             }}
           />
         ) : (
-          icon
+          <Icon size={26} strokeWidth={1.5} />
         )}
       </div>
       <div>
@@ -1341,6 +1409,7 @@ function DashboardCard({
   title,
   text,
   badge = 0,
+  Icon,
 }: DashboardCardProps) {
   return (
     <a
@@ -1352,9 +1421,14 @@ function DashboardCard({
           {badge}
         </span>
       )}
-      <p className="mb-4 pr-10 text-xs font-bold uppercase tracking-[0.24em] text-[#a9793d]">
-        {label}
-      </p>
+      <div className="mb-4 flex items-center gap-3 pr-10">
+        {Icon && (
+          <Icon size={22} strokeWidth={1.5} className="text-[#a9793d]" />
+        )}
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#a9793d]">
+          {label}
+        </p>
+      </div>
       <h3 className={`${serif.className} text-4xl font-medium text-stone-900`}>
         {title}
       </h3>
