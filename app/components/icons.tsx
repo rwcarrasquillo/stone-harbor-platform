@@ -26,12 +26,14 @@ export type IconProps = {
   size?: number;
   className?: string;
   strokeWidth?: number;
+  style?: React.CSSProperties;
 };
 
 function Svg({
   size = 20,
   className,
   strokeWidth = 1.5,
+  style,
   children,
 }: IconProps & { children: React.ReactNode }) {
   return (
@@ -45,6 +47,7 @@ function Svg({
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
+      style={style}
       aria-hidden="true"
     >
       {children}
