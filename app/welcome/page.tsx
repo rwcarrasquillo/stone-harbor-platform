@@ -42,6 +42,13 @@ type ProfileForm = {
   languages: string;
   interests: string;
   favorite_quote: string;
+  // Birthday + opt-outs. Form fields are strings (empty = unset);
+  // conversion to int/bool happens in saveProfile().
+  birth_month: string;
+  birth_day: string;
+  birth_year: string;
+  acknowledge_birthday: boolean;
+  seasonal_acknowledgments_enabled: boolean;
 };
 
 const relationshipOptions = [
@@ -87,6 +94,21 @@ const educationOptions = [
   "Other",
 ];
 
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
 export default function WelcomePage() {
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -112,6 +134,11 @@ export default function WelcomePage() {
     languages: "",
     interests: "",
     favorite_quote: "",
+    birth_month: "",
+    birth_day: "",
+    birth_year: "",
+    acknowledge_birthday: true,
+    seasonal_acknowledgments_enabled: true,
   });
 
   const [loading, setLoading] = useState(true);
@@ -152,7 +179,7 @@ export default function WelcomePage() {
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, favorite_quote",
+        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, favorite_quote, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled",
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -183,6 +210,12 @@ export default function WelcomePage() {
       languages: data?.languages ?? "",
       interests: data?.interests ?? "",
       favorite_quote: data?.favorite_quote ?? "",
+      birth_month: data?.birth_month != null ? String(data.birth_month) : "",
+      birth_day: data?.birth_day != null ? String(data.birth_day) : "",
+      birth_year: data?.birth_year != null ? String(data.birth_year) : "",
+      acknowledge_birthday: data?.acknowledge_birthday ?? true,
+      seasonal_acknowledgments_enabled:
+        data?.seasonal_acknowledgments_enabled ?? true,
     });
 
     setLoading(false);
@@ -391,6 +424,28 @@ export default function WelcomePage() {
     }
   }
 
+  // Parse the form's string birthday fields into ints (or null) for the DB.
+  // Month/day must both be set together or both empty — enforced by a CHECK
+  // constraint on profiles, so we mirror that rule here for cleaner errors.
+  function parseBirthdayForSave(): {
+    birth_month: number | null;
+    birth_day: number | null;
+    birth_year: number | null;
+  } {
+    const m = formData.birth_month.trim();
+    const d = formData.birth_day.trim();
+    const y = formData.birth_year.trim();
+    const monthNum = m === "" ? null : Number(m);
+    const dayNum = d === "" ? null : Number(d);
+    const yearNum = y === "" ? null : Number(y);
+    // If one of month/day is set but not the other, drop both so we never
+    // hit the DB constraint with a partial date.
+    if (monthNum == null || dayNum == null) {
+      return { birth_month: null, birth_day: null, birth_year: yearNum };
+    }
+    return { birth_month: monthNum, birth_day: dayNum, birth_year: yearNum };
+  }
+
   async function saveProfile() {
     if (!userId) return;
 
@@ -398,6 +453,7 @@ export default function WelcomePage() {
 
     const avatarUrl = await uploadAvatar();
     const coverUrl = await uploadCover();
+    const birthday = parseBirthdayForSave();
 
     const updatedProfile = {
       id: userId,
@@ -422,6 +478,12 @@ export default function WelcomePage() {
       languages: formData.languages,
       interests: formData.interests,
       favorite_quote: formData.favorite_quote,
+      birth_month: birthday.birth_month,
+      birth_day: birthday.birth_day,
+      birth_year: birthday.birth_year,
+      acknowledge_birthday: formData.acknowledge_birthday,
+      seasonal_acknowledgments_enabled:
+        formData.seasonal_acknowledgments_enabled,
       updated_at: new Date().toISOString(),
     };
 
@@ -727,6 +789,132 @@ export default function WelcomePage() {
                 }
                 placeholder="Rebuilding isn’t about returning to who I was—it’s about becoming who I was meant to be."
               />
+
+              {/* ────────── THE DATES WE NOTICE ──────────
+                  Optional birthday capture + two opt-outs that control
+                  the quiet dashboard acknowledgment tile. The harbor
+                  notices the day; it never celebrates. */}
+              <section className="border-t border-stone-200 pt-8">
+                <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d]">
+                  The Dates We Notice
+                </p>
+                <h3
+                  className={`${serif.className} mt-3 text-3xl font-medium leading-tight text-stone-900`}
+                >
+                  If you want us to mark a day with you.
+                </h3>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-stone-600">
+                  Stone Harbor quietly notices your birthday and a few of the
+                  hardest days of the year — Thanksgiving, Christmas, New
+                  Year&apos;s Eve, Father&apos;s Day. We will not celebrate. We
+                  will simply notice. Both can be turned off.
+                </p>
+
+                <div className="mt-8">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-stone-500">
+                    Your Birthday (Optional)
+                  </label>
+                  <div className="grid max-w-xl grid-cols-3 gap-3">
+                    <select
+                      value={formData.birth_month}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          birth_month: e.target.value,
+                        })
+                      }
+                      className="h-[46px] w-full appearance-none rounded-none border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-700 transition focus:border-[#a9793d] focus:outline-none"
+                    >
+                      <option value="">Month</option>
+                      {MONTH_NAMES.map((name, i) => (
+                        <option key={name} value={i + 1}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={formData.birth_day}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          birth_day: e.target.value,
+                        })
+                      }
+                      className="h-[46px] w-full appearance-none rounded-none border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-700 transition focus:border-[#a9793d] focus:outline-none"
+                    >
+                      <option value="">Day</option>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="number"
+                      min={1900}
+                      max={new Date().getFullYear()}
+                      value={formData.birth_year}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          birth_year: e.target.value,
+                        })
+                      }
+                      placeholder="Year (optional)"
+                      className="h-[46px] w-full border border-stone-300 bg-white px-4 text-sm text-stone-700 transition focus:border-[#a9793d] focus:outline-none"
+                    />
+                  </div>
+                  <p className="mt-2 text-[11px] text-stone-500">
+                    The year is optional. We don&apos;t need your age — we just
+                    remember the day.
+                  </p>
+                </div>
+
+                <div className="mt-8 space-y-3">
+                  <label className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={formData.acknowledge_birthday}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          acknowledge_birthday: e.target.checked,
+                        })
+                      }
+                      className="mt-1 h-4 w-4 accent-[#a9793d]"
+                    />
+                    <span className="text-sm leading-relaxed text-stone-700">
+                      Acknowledge my birthday quietly when it arrives.
+                      <span className="block text-[11px] text-stone-500">
+                        A single tile on the dashboard. No popup. No email.
+                      </span>
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={formData.seasonal_acknowledgments_enabled}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          seasonal_acknowledgments_enabled: e.target.checked,
+                        })
+                      }
+                      className="mt-1 h-4 w-4 accent-[#a9793d]"
+                    />
+                    <span className="text-sm leading-relaxed text-stone-700">
+                      Acknowledge the hard holidays with me.
+                      <span className="block text-[11px] text-stone-500">
+                        Thanksgiving, Christmas, New Year&apos;s Eve,
+                        Father&apos;s Day. One quiet tile only on those days.
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              </section>
 
               <div className="flex flex-wrap gap-4 border-t border-stone-200 pt-8">
                 <button

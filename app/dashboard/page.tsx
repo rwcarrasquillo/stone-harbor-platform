@@ -24,6 +24,12 @@ import {
   Spark,
   type IconProps,
 } from "@/app/components/icons";
+import { tomorrowsTopic } from "@/lib/dailyPrompts";
+import {
+  dismissalKey,
+  resolveActiveAcknowledgment,
+  type Acknowledgment,
+} from "@/lib/seasonalAcknowledgments";
 
 const serif = Cormorant_Garamond({
   subsets: ["latin"],
@@ -60,6 +66,12 @@ type Profile = {
   website?: string | null;
   languages?: string | null;
   interests?: string | null;
+  birth_month?: number | null;
+  birth_day?: number | null;
+  birth_year?: number | null;
+  acknowledge_birthday?: boolean;
+  seasonal_acknowledgments_enabled?: boolean;
+  acknowledgments_dismissed?: Record<string, string> | null;
 };
 
 type CoverImage = {
@@ -76,6 +88,20 @@ type DailyQuote = {
   category: string | null;
 };
 
+type Notification = {
+  id: string;
+  kind:
+    | "solidarity_threshold"
+    | "daily_solidarity_summary"
+    | "warning_issued"
+    | "suspension_lifted"
+    | "system";
+  payload: Record<string, unknown>;
+  read_at: string | null;
+  dismissed_at: string | null;
+  created_at: string;
+};
+
 type MemberPost = {
   id: string;
   user_id: string;
@@ -87,6 +113,10 @@ type MemberPost = {
     username: string | null;
     avatar_url: string | null;
   } | null;
+  // Solidarity ("With You" / dropped anchor) — populated by
+  // get_solidarity_for_posts() after the posts load.
+  with_count?: number;
+  i_am_with?: boolean;
 };
 
 type DashboardCardProps = {
@@ -127,6 +157,13 @@ function identityLine(stage: string) {
 export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [acknowledgment, setAcknowledgment] = useState<Acknowledgment | null>(
+    null,
+  );
+  const [ackDismissing, setAckDismissing] = useState(false);
+
+  // In-app notifications (threshold crossings, daily summaries, etc.)
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [coverImages, setCoverImages] = useState<CoverImage[]>([]);
   const [currentCoverIndex, setCurrentCoverIndex] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -236,9 +273,82 @@ export default function DashboardPage() {
       privacy_level: post.privacy_level,
       created_at: post.created_at,
       profiles: profileMap.get(post.user_id) ?? null,
+      with_count: 0,
+      i_am_with: false,
     }));
 
+    // 4) Batch-fetch solidarity counts + "am I with this post?" flag for
+    //    every post in one RPC call. Anonymity is preserved — the RPC
+    //    never returns who is with each post, only the aggregate count.
+    const postIds = posts.map((p) => p.id);
+    const { data: solidarityRows } = await supabase.rpc(
+      "get_solidarity_for_posts",
+      { post_ids: postIds },
+    );
+    const solidarityMap = new Map<
+      string,
+      { with_count: number; i_am_with: boolean }
+    >();
+    if (Array.isArray(solidarityRows)) {
+      for (const row of solidarityRows) {
+        solidarityMap.set(row.post_id as string, {
+          with_count: Number(row.with_count ?? 0),
+          i_am_with: !!row.i_am_with,
+        });
+      }
+    }
+    for (const post of merged) {
+      const s = solidarityMap.get(post.id);
+      if (s) {
+        post.with_count = s.with_count;
+        post.i_am_with = s.i_am_with;
+      }
+    }
+
     setMemberPosts(merged);
+  }
+
+  /**
+   * Toggle solidarity ("I'm with you") for a post. Optimistic update —
+   * count flips immediately, the DB write follows; if it fails we revert.
+   */
+  async function toggleSolidarity(postId: string) {
+    if (!userId) return;
+    const post = memberPosts.find((p) => p.id === postId);
+    if (!post) return;
+    const wasWith = post.i_am_with ?? false;
+    const prevCount = post.with_count ?? 0;
+    // Optimistic update
+    setMemberPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? {
+              ...p,
+              i_am_with: !wasWith,
+              with_count: Math.max(0, prevCount + (wasWith ? -1 : 1)),
+            }
+          : p,
+      ),
+    );
+    const { error } = wasWith
+      ? await supabase
+          .from("post_solidarity")
+          .delete()
+          .eq("post_id", postId)
+          .eq("user_id", userId)
+      : await supabase
+          .from("post_solidarity")
+          .insert({ post_id: postId, user_id: userId });
+    if (error) {
+      // Revert on failure
+      setMemberPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? { ...p, i_am_with: wasWith, with_count: prevCount }
+            : p,
+        ),
+      );
+    }
   }
 
   async function createMemberPost(e: React.FormEvent<HTMLFormElement>) {
@@ -368,6 +478,37 @@ export default function DashboardPage() {
     setDailyQuote(anyRecent?.[0] ?? null);
   }
 
+  /**
+   * Dismiss the acknowledgment tile. When silenceForFuture=true, also
+   * flips the relevant opt-out toggle so the member never sees this
+   * kind of acknowledgment again. Per-year dismissal is the default —
+   * a man who just doesn't want today's tile can still see next year's.
+   */
+  async function dismissAcknowledgment(silenceForFuture: boolean) {
+    if (!acknowledgment || !userId || !profile) return;
+    setAckDismissing(true);
+
+    const dismissed = { ...(profile.acknowledgments_dismissed ?? {}) };
+    dismissed[dismissalKey(acknowledgment.key)] = new Date().toISOString();
+
+    const updates: Record<string, unknown> = {
+      acknowledgments_dismissed: dismissed,
+    };
+
+    if (silenceForFuture) {
+      if (acknowledgment.key === "birthday") {
+        updates.acknowledge_birthday = false;
+      } else {
+        updates.seasonal_acknowledgments_enabled = false;
+      }
+    }
+
+    await supabase.from("profiles").update(updates).eq("id", userId);
+    setProfile({ ...profile, ...updates } as Profile);
+    setAcknowledgment(null);
+    setAckDismissing(false);
+  }
+
   async function checkUser() {
     const {
       data: { user },
@@ -380,10 +521,19 @@ export default function DashboardPage() {
     const { data } = await supabase
       .from("profiles")
       .select(
-        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, onboarding_completed_at",
+        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, onboarding_completed_at, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, acknowledgments_dismissed, suspended_at",
       )
       .eq("id", user.id)
       .single();
+
+    // Suspension gate: if the account is suspended, route to the suspension
+    // screen where they can see warnings and submit an appeal. This must
+    // come before the onboarding gate so a suspended new user lands at
+    // /suspended rather than being forced through onboarding.
+    if (data && data.suspended_at) {
+      window.location.href = "/suspended";
+      return;
+    }
 
     // Onboarding gate: send brand-new users through the wizard once.
     // The wizard writes onboarding_completed_at when finished or skipped,
@@ -414,15 +564,78 @@ export default function DashboardPage() {
       website: data?.website ?? null,
       languages: data?.languages ?? null,
       interests: data?.interests ?? null,
+      birth_month: data?.birth_month ?? null,
+      birth_day: data?.birth_day ?? null,
+      birth_year: data?.birth_year ?? null,
+      acknowledge_birthday: data?.acknowledge_birthday ?? true,
+      seasonal_acknowledgments_enabled:
+        data?.seasonal_acknowledgments_enabled ?? true,
+      acknowledgments_dismissed:
+        (data?.acknowledgments_dismissed as Record<string, string> | null) ??
+        {},
     };
 
     setProfile(loadedProfile);
+
+    // Compute today's acknowledgment (birthday or seasonal) respecting
+    // the member's opt-outs and per-year dismissals.
+    setAcknowledgment(
+      resolveActiveAcknowledgment({
+        birthMonth: loadedProfile.birth_month,
+        birthDay: loadedProfile.birth_day,
+        acknowledgeBirthday: loadedProfile.acknowledge_birthday ?? true,
+        seasonalEnabled: loadedProfile.seasonal_acknowledgments_enabled ?? true,
+        dismissed: loadedProfile.acknowledgments_dismissed,
+      }),
+    );
+
     await loadCoverImages(user.id, loadedProfile.cover_url);
     await loadDailyQuote(loadedProfile.healing_stage);
     await loadUnreadMessageCount();
     await loadMemberPosts();
     await loadStatistics();
+    await loadNotifications();
     setLoading(false);
+  }
+
+  async function loadNotifications() {
+    if (!userId) {
+      // Fallback path: get current user inline if userId state isn't set
+      // yet (this loader runs from both checkUser and the realtime hook).
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("notifications")
+        .select("id, kind, payload, read_at, dismissed_at, created_at")
+        .eq("user_id", user.id)
+        .is("dismissed_at", null)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      setNotifications((data ?? []) as Notification[]);
+      return;
+    }
+    const { data } = await supabase
+      .from("notifications")
+      .select("id, kind, payload, read_at, dismissed_at, created_at")
+      .eq("user_id", userId)
+      .is("dismissed_at", null)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    setNotifications((data ?? []) as Notification[]);
+  }
+
+  /** Dismiss a single notification permanently. */
+  async function dismissNotification(notifId: string) {
+    if (!userId) return;
+    // Optimistic remove
+    setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+    await supabase
+      .from("notifications")
+      .update({ dismissed_at: new Date().toISOString() })
+      .eq("id", notifId)
+      .eq("user_id", userId);
   }
 
   async function loadStatistics() {
@@ -555,6 +768,31 @@ export default function DashboardPage() {
         { event: "*", schema: "public", table: "member_posts" },
         async () => {
           await loadMemberPosts();
+        },
+      )
+      .on(
+        // Cross-session live counts. When anyone drops or lifts an
+        // anchor, refresh the solidarity numbers for the current feed.
+        // loadMemberPosts also re-runs the solidarity RPC, so the
+        // counter + i_am_with state both update without a page reload.
+        "postgres_changes",
+        { event: "*", schema: "public", table: "post_solidarity" },
+        async () => {
+          await loadMemberPosts();
+        },
+      )
+      .on(
+        // New notifications (threshold crossings, daily summaries, etc.)
+        // arrive in real time too. Triggers a re-fetch of the panel.
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        async () => {
+          await loadNotifications();
         },
       )
       .subscribe();
@@ -712,6 +950,82 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* ACKNOWLEDGMENT TILE — quiet recognition on hard days.
+            Surfaces on Thanksgiving, Christmas Eve/Day, New Year's Eve,
+            Father's Day, and the member's birthday. Never assumes joy,
+            never assumes grief — makes space for whatever is here.
+            Members can dismiss for today, or silence forever. */}
+        <AnimatePresence>
+          {acknowledgment && (
+            <motion.section
+              key={acknowledgment.key}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="mb-6 overflow-hidden border-l-[3px] bg-[#f8f4ed] px-6 py-7 shadow-[0_10px_30px_rgba(0,0,0,0.06)] md:px-10"
+              style={{ borderLeftColor: GOLD_DEEP }}
+            >
+              <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+                <div className="min-w-0 max-w-3xl">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[#a9793d]">
+                    {acknowledgment.eyebrow}
+                  </p>
+                  <p
+                    className={`${serif.className} mt-3 text-2xl italic leading-[1.25] text-stone-900 md:text-3xl`}
+                  >
+                    {acknowledgment.headline}
+                  </p>
+                  <p className="mt-4 text-sm leading-relaxed text-stone-600 md:text-base">
+                    {acknowledgment.body}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-col items-stretch gap-2 md:items-end">
+                  <button
+                    type="button"
+                    disabled={ackDismissing}
+                    onClick={() => dismissAcknowledgment(false)}
+                    className="border border-stone-300 bg-white/70 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white disabled:opacity-50"
+                  >
+                    Dismiss
+                  </button>
+                  <button
+                    type="button"
+                    disabled={ackDismissing}
+                    onClick={() => dismissAcknowledgment(true)}
+                    className="text-[11px] text-stone-500 underline-offset-4 transition hover:text-[#a9793d] hover:underline disabled:opacity-50"
+                  >
+                    Don&apos;t show these again
+                  </button>
+                </div>
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* NOTIFICATIONS — solidarity moments, daily summaries.
+            One small card per active notification, dismissible.
+            These are warm-tone moments, never red badges. */}
+        {notifications.length > 0 && (
+          <AnimatePresence>
+            <motion.section
+              key="notifications-panel"
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-6 space-y-2"
+            >
+              {notifications.map((n) => (
+                <NotificationCard
+                  key={n.id}
+                  notification={n}
+                  onDismiss={() => dismissNotification(n.id)}
+                />
+              ))}
+            </motion.section>
+          </AnimatePresence>
+        )}
+
         {/* GREETING STRIP — daily ritual + retention hooks */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -765,7 +1079,7 @@ export default function DashboardPage() {
             <p
               className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
             >
-              A question on boundaries.
+              A question on {tomorrowsTopic()}.
             </p>
             <p className="mt-1 text-xs leading-relaxed text-stone-500">
               Three sentences. That&apos;s all.
@@ -1143,6 +1457,20 @@ export default function DashboardPage() {
                       <p className="whitespace-pre-wrap text-lg leading-relaxed text-stone-700">
                         {post.body}
                       </p>
+                      {/* WITH YOU — anonymous solidarity. The poster sees a
+                          warm count message; other members see a quieter
+                          factual one. Tapping toggles the anchor. */}
+                      <div className="mt-5 flex items-center justify-between gap-4 border-t border-stone-200 pt-4">
+                        <WithYouButton
+                          isWith={!!post.i_am_with}
+                          isOwnPost={post.user_id === userId}
+                          onClick={() => toggleSolidarity(post.id)}
+                        />
+                        <WithYouCount
+                          count={post.with_count ?? 0}
+                          isPoster={post.user_id === userId}
+                        />
+                      </div>
                     </article>
                   ))}
                 </div>
@@ -1480,10 +1808,227 @@ export default function DashboardPage() {
               Call or text <span className="font-bold text-[#a9793d]">988</span>{" "}
               — 24/7. Free. Confidential.
             </p>
+            {acknowledgment?.amplify988 && (
+              <motion.p
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className={`${serif.className} mt-3 text-base italic leading-snug text-[#a9793d]`}
+              >
+                Tonight more than most nights, you are not alone.
+              </motion.p>
+            )}
           </div>
         </div>
       </footer>
     </main>
+  );
+}
+
+/* ──────────────────────────────────────────────
+   NOTIFICATION CARD
+
+   Renders a single in-app notification with copy chosen by `kind`.
+   Threshold + summary cards are warm, gold-accented, and dismissible.
+   Other kinds (warning, suspension lift) can be added later without
+   changing the surrounding panel.
+   ────────────────────────────────────────────── */
+
+function NotificationCard({
+  notification,
+  onDismiss,
+}: {
+  notification: Notification;
+  onDismiss: () => void;
+}) {
+  const { kind, payload } = notification;
+
+  let eyebrow = "Notice";
+  let headline = "Something arrived.";
+  let body = "";
+  let borderColor = "#a9793d";
+
+  if (kind === "solidarity_threshold") {
+    const count = Number(payload.count ?? 0);
+    eyebrow = "Brothers Are With You";
+    borderColor = "#a9793d";
+    if (count === 1) {
+      headline = "1 brother is with you on that post.";
+      body =
+        "Someone read what you wrote and dropped anchor next to you. You are not the only one in this.";
+    } else if (count === 5) {
+      headline = "5 brothers are with you.";
+      body = "Five men saw it. Five men answered with their silent presence.";
+    } else if (count === 25) {
+      headline = "25 brothers are with you.";
+      body =
+        "You wrote something brave today. Twenty-five men felt it enough to say so without words.";
+    } else if (count === 50) {
+      headline = "50 brothers are with you.";
+      body =
+        "Half a hundred men dropped anchor next to your post. The harbor is not a metaphor right now.";
+    } else if (count === 100) {
+      headline = "100 brothers are with you.";
+      body =
+        "One hundred men. That number is not nothing. Whatever you wrote, it reached.";
+    } else {
+      headline = `${count} brothers are with you.`;
+      body = "Your post is being held.";
+    }
+  } else if (kind === "daily_solidarity_summary") {
+    const distinct = Number(payload.distinct_brothers ?? 0);
+    const date = String(payload.date ?? "");
+    const dateStr = date
+      ? new Date(date + "T00:00:00").toLocaleDateString(undefined, {
+          weekday: "long",
+          month: "short",
+          day: "numeric",
+        })
+      : "yesterday";
+    eyebrow = "Yesterday";
+    borderColor = "#586558"; // moss for daily roll-ups
+    headline =
+      distinct === 1
+        ? `1 brother was with you on ${dateStr}.`
+        : `${distinct} brothers were with you on ${dateStr}.`;
+    body =
+      "We thought you should know — quietly. The harbor was holding what you wrote.";
+  } else if (kind === "warning_issued") {
+    eyebrow = "Important";
+    borderColor = "#b14a3a";
+    headline = "A moderation note is on your account.";
+    body =
+      "Please review the warning in your profile settings. If you believe it is in error, you can appeal.";
+  } else if (kind === "suspension_lifted") {
+    eyebrow = "Welcome Back";
+    borderColor = "#586558";
+    headline = "Your account is active again.";
+    body = "We're glad you're here. The harbor is open.";
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 8 }}
+      transition={{ duration: 0.4 }}
+      className="border-l-[3px] bg-white px-6 py-5 shadow-[0_6px_20px_rgba(0,0,0,0.05)]"
+      style={{ borderLeftColor: borderColor }}
+    >
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0 max-w-2xl">
+          <p
+            className="text-[10px] font-bold uppercase tracking-[0.32em]"
+            style={{ color: borderColor }}
+          >
+            {eyebrow}
+          </p>
+          <p
+            className={`${serif.className} mt-2 text-xl italic leading-snug text-stone-900 md:text-2xl`}
+          >
+            {headline}
+          </p>
+          {body && (
+            <p className="mt-2 text-sm leading-relaxed text-stone-600">
+              {body}
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="shrink-0 self-start border border-stone-300 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500 transition hover:border-[#a9793d] hover:text-[#a9793d]"
+        >
+          Dismiss
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ──────────────────────────────────────────────
+   WITH YOU — anonymous solidarity controls
+
+   The whole gesture is: drop anchor next to a brother. No words. No
+   names exposed. The button itself is the speech act.
+
+   Two pieces:
+     • WithYouButton — the anchor toggle. Outline = not with; filled =
+       with. Hidden when looking at your own post (you can't be with
+       yourself).
+     • WithYouCount  — the counter. Reads warmly to the poster, factually
+       to others. Hidden entirely at zero.
+   ────────────────────────────────────────────── */
+
+function WithYouButton({
+  isWith,
+  isOwnPost,
+  onClick,
+}: {
+  isWith: boolean;
+  isOwnPost: boolean;
+  onClick: () => void;
+}) {
+  // A man cannot be with himself. Show a soft "you posted this" label
+  // in place of the button, so the layout doesn't shift.
+  if (isOwnPost) {
+    return (
+      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+        Your Post
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={
+        isWith
+          ? "You are with him. Tap to lift the anchor."
+          : "I am with you, brother. Drop anchor next to him."
+      }
+      className={`inline-flex items-center gap-2 rounded-none border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] transition ${
+        isWith
+          ? "border-[#a9793d] bg-[#a9793d] text-white shadow-[0_4px_14px_rgba(169,121,61,0.35)]"
+          : "border-stone-300 bg-white text-stone-700 hover:border-[#a9793d] hover:text-[#a9793d]"
+      }`}
+    >
+      <AnchorIcon
+        size={14}
+        strokeWidth={isWith ? 1.7 : 1.5}
+        className={isWith ? "text-white" : "text-[#a9793d]"}
+      />
+      {isWith ? "With Him" : "I'm With You"}
+    </button>
+  );
+}
+
+function WithYouCount({
+  count,
+  isPoster,
+}: {
+  count: number;
+  isPoster: boolean;
+}) {
+  if (count === 0) {
+    // Don't show a "0 brothers" line — that's worse than silence.
+    return <span className="text-[11px] text-stone-300">·</span>;
+  }
+  if (isPoster) {
+    // Warm, weighted message addressed TO the poster about HIS post.
+    return (
+      <span className={`${serif.className} text-base italic text-[#a9793d]`}>
+        {count === 1
+          ? "1 brother is with you."
+          : `${count} brothers are with you.`}
+      </span>
+    );
+  }
+  // Quieter, factual message for everyone else viewing the post.
+  return (
+    <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+      {count === 1 ? "1 with him" : `${count} with him`}
+    </span>
   );
 }
 

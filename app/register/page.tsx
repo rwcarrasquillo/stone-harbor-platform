@@ -44,6 +44,14 @@ export default function RegisterPage() {
   );
   const [waitlistEnabled, setWaitlistEnabled] = useState(true);
 
+  // Current terms/privacy versions for the acceptance record.
+  const [termsVersion, setTermsVersion] = useState<number>(1);
+  const [privacyVersion, setPrivacyVersion] = useState<number>(1);
+
+  // Required attestations on the signup form.
+  const [genderAttested, setGenderAttested] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
   // Waitlist form state (only used when closed).
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistFirstName, setWaitlistFirstName] = useState("");
@@ -57,7 +65,7 @@ export default function RegisterPage() {
       const { data } = await supabase
         .from("app_settings")
         .select(
-          "registration_open, closed_headline, closed_message, waitlist_enabled",
+          "registration_open, closed_headline, closed_message, waitlist_enabled, current_terms_version, current_privacy_version",
         )
         .eq("id", 1)
         .single();
@@ -70,6 +78,10 @@ export default function RegisterPage() {
       if (typeof data?.waitlist_enabled === "boolean") {
         setWaitlistEnabled(data.waitlist_enabled);
       }
+      if (data?.current_terms_version)
+        setTermsVersion(data.current_terms_version);
+      if (data?.current_privacy_version)
+        setPrivacyVersion(data.current_privacy_version);
     }
     loadSettings();
     return () => {
@@ -131,6 +143,18 @@ export default function RegisterPage() {
       setIsError(true);
       return;
     }
+    if (!genderAttested) {
+      setMessage(
+        "Please confirm you identify as a man — Stone Harbor is a community for men.",
+      );
+      setIsError(true);
+      return;
+    }
+    if (!termsAccepted) {
+      setMessage("Please accept the Terms of Service and Privacy Policy.");
+      setIsError(true);
+      return;
+    }
 
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
@@ -157,6 +181,18 @@ export default function RegisterPage() {
         healing_stage: "clarity",
         privacy_level: "private",
         updated_at: new Date().toISOString(),
+      });
+
+      // Record the terms acceptance as an immutable audit row.
+      // IP is left null here (server-side capture would require an edge
+      // function); user_agent and timestamp are sufficient for v1 audit.
+      await supabase.from("terms_acceptances").insert({
+        user_id: data.user.id,
+        terms_version: termsVersion,
+        privacy_version: privacyVersion,
+        gender_attestation: genderAttested,
+        user_agent:
+          typeof navigator !== "undefined" ? navigator.userAgent : null,
       });
     }
 
@@ -478,10 +514,57 @@ export default function RegisterPage() {
                       )}
                     </div>
 
+                    {/* ATTESTATIONS — required before signup */}
+                    <div className="mt-6 space-y-4 border border-[#c4934e]/30 bg-black/20 px-5 py-5">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={genderAttested}
+                          onChange={(e) => setGenderAttested(e.target.checked)}
+                          className="mt-1 h-4 w-4 accent-[#c4934e]"
+                        />
+                        <span className="text-xs leading-relaxed text-white/85">
+                          <span className="font-semibold text-white">
+                            I identify as a man.
+                          </span>{" "}
+                          Stone Harbor is intentionally a community space for
+                          men.
+                        </span>
+                      </label>
+
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={termsAccepted}
+                          onChange={(e) => setTermsAccepted(e.target.checked)}
+                          className="mt-1 h-4 w-4 accent-[#c4934e]"
+                        />
+                        <span className="text-xs leading-relaxed text-white/85">
+                          I have read and agree to the{" "}
+                          <Link
+                            href="/terms"
+                            target="_blank"
+                            className="font-semibold text-[#c4934e] underline-offset-4 hover:underline"
+                          >
+                            Terms of Service
+                          </Link>{" "}
+                          and{" "}
+                          <Link
+                            href="/privacy"
+                            target="_blank"
+                            className="font-semibold text-[#c4934e] underline-offset-4 hover:underline"
+                          >
+                            Privacy Policy
+                          </Link>
+                          .
+                        </span>
+                      </label>
+                    </div>
+
                     <button
                       type="submit"
-                      disabled={loading}
-                      className="group relative mt-8 flex w-full items-center justify-center gap-3 overflow-hidden rounded-none border border-[#c4934e] bg-[#a9793d] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_10px_35px_rgba(0,0,0,0.4)] transition duration-300 hover:bg-[#8d6432] disabled:opacity-60"
+                      disabled={loading || !genderAttested || !termsAccepted}
+                      className="group relative mt-6 flex w-full items-center justify-center gap-3 overflow-hidden rounded-none border border-[#c4934e] bg-[#a9793d] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_10px_35px_rgba(0,0,0,0.4)] transition duration-300 hover:bg-[#8d6432] disabled:opacity-60"
                     >
                       {loading && (
                         <motion.span
@@ -503,24 +586,6 @@ export default function RegisterPage() {
                       <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-white/60 transition-all duration-500 group-hover:w-full" />
                     </button>
                   </form>
-
-                  <p className="mx-auto mt-8 max-w-lg text-center text-xs leading-relaxed text-white/70">
-                    By creating an account, you agree to our{" "}
-                    <Link
-                      href="/terms"
-                      className="font-semibold text-[#c4934e] underline-offset-4 transition hover:text-white hover:underline"
-                    >
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link
-                      href="/privacy"
-                      className="font-semibold text-[#c4934e] underline-offset-4 transition hover:text-white hover:underline"
-                    >
-                      Privacy Policy
-                    </Link>
-                    .
-                  </p>
 
                   {message && (
                     <div

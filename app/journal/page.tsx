@@ -22,6 +22,7 @@ import {
   Speech,
   type IconProps,
 } from "@/app/components/icons";
+import { todaysPrompt as sharedTodaysPrompt } from "@/lib/dailyPrompts";
 
 const serif = Cormorant_Garamond({
   subsets: ["latin"],
@@ -77,30 +78,11 @@ function moodLabel(value: string | null | undefined) {
   return found ? found.label : value;
 }
 
-// Daily writing prompts — variable reward, rotated by day-of-year so it's
-// deterministic but feels fresh each return.
-const prompts = [
-  "What did you notice you tried to avoid this week?",
-  "What would the calmer version of you say to today's version?",
-  "Where did you feel most yourself this week?",
-  "What is one truth you have been postponing?",
-  "Who do you owe an honest conversation with — including yourself?",
-  "What still hurts that you haven't named?",
-  "What pattern keeps repeating? Where did it start?",
-  "What did your body feel today that your mind ignored?",
-  "What would you do this week if no one was watching?",
-  "Name one thing you survived that you have not given yourself credit for.",
-  "Where is your nervous system spending energy it does not need to?",
-  "What boundary have you been afraid to say out loud?",
-  "Who in your life makes you smaller? Who makes you fuller?",
-  "What did your father teach you — that you are still deciding what to do with?",
-];
-
+// Daily writing prompts live in @/lib/dailyPrompts so the dashboard's
+// "Tomorrow" preview tile can read from the same source. Add or edit
+// prompts there — both surfaces pick them up automatically.
 function todaysPrompt() {
-  const start = new Date(new Date().getFullYear(), 0, 0);
-  const diff = Number(new Date()) - Number(start);
-  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
-  return prompts[dayOfYear % prompts.length];
+  return sharedTodaysPrompt();
 }
 
 function timeGreeting() {
