@@ -1,11 +1,11 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { Cormorant_Garamond, Inter } from "next/font/google";
-import { Lock, Spark } from "@/app/components/icons";
+import { Anchor, Lock, Spark } from "@/app/components/icons";
 
 const serif = Cormorant_Garamond({
   subsets: ["latin"],
@@ -30,6 +30,76 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
+
+  // Registration gate — read from public.app_settings.
+  // null = still loading, true = open, false = closed.
+  const [registrationOpen, setRegistrationOpen] = useState<boolean | null>(
+    null,
+  );
+  const [closedHeadline, setClosedHeadline] = useState(
+    "The harbor is preparing.",
+  );
+  const [closedMessage, setClosedMessage] = useState(
+    "Stone Harbor is not yet open to new members. Leave your email and we'll let you know when the gates open.",
+  );
+  const [waitlistEnabled, setWaitlistEnabled] = useState(true);
+
+  // Waitlist form state (only used when closed).
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistFirstName, setWaitlistFirstName] = useState("");
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
+  const [waitlistDone, setWaitlistDone] = useState(false);
+  const [waitlistError, setWaitlistError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSettings() {
+      const { data } = await supabase
+        .from("app_settings")
+        .select(
+          "registration_open, closed_headline, closed_message, waitlist_enabled",
+        )
+        .eq("id", 1)
+        .single();
+      if (cancelled) return;
+      // Fail-open: if the read fails for any reason, allow registration.
+      // The server-side trigger remains the source of truth.
+      setRegistrationOpen(data?.registration_open ?? true);
+      if (data?.closed_headline) setClosedHeadline(data.closed_headline);
+      if (data?.closed_message) setClosedMessage(data.closed_message);
+      if (typeof data?.waitlist_enabled === "boolean") {
+        setWaitlistEnabled(data.waitlist_enabled);
+      }
+    }
+    loadSettings();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleWaitlist(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setWaitlistError(null);
+    if (!waitlistEmail) return;
+    setWaitlistSubmitting(true);
+    const { error } = await supabase.from("waitlist_signups").insert({
+      email: waitlistEmail.trim().toLowerCase(),
+      first_name: waitlistFirstName.trim() || null,
+      source: "register_page_closed",
+    });
+    setWaitlistSubmitting(false);
+    if (error) {
+      // Duplicate email is the most common — present it as a soft success
+      // so we don't shame a returning visitor.
+      if (error.code === "23505" || /duplicate/i.test(error.message)) {
+        setWaitlistDone(true);
+        return;
+      }
+      setWaitlistError("Something went wrong. Try again in a moment.");
+      return;
+    }
+    setWaitlistDone(true);
+  }
 
   // Real-time password hints so users aren't punished on submit.
   const passwordHint = useMemo(() => {
@@ -286,145 +356,184 @@ export default function RegisterPage() {
             />
 
             <div className="relative z-10 mx-auto max-w-[600px]">
-              <div className="mb-8 flex items-baseline justify-between">
-                <h2
-                  className={`${serif.className} text-5xl font-medium text-white`}
-                >
-                  Create account.
-                </h2>
-                <Link
-                  href="/login"
-                  className="group relative text-xs font-bold uppercase tracking-[0.22em] text-white/90 transition hover:text-[#c4934e]"
-                >
-                  <span className="relative z-10">Login</span>
-                  <span className="absolute bottom-[-4px] left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
-                </Link>
-              </div>
-
-              {/* PRIVACY REASSURANCE — placed FIRST, load-bearing trust */}
-              <div className="mb-8 border border-[#c4934e]/30 bg-black/20 px-5 py-4">
-                <div className="flex items-center gap-2">
-                  <Lock size={12} className="text-[#c4934e]" />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#c4934e]">
-                    Private By Default
+              {/* While settings are loading, show a quiet placeholder so we
+                  don't flash the wrong panel. */}
+              {registrationOpen === null && (
+                <div className="flex h-[480px] flex-col items-center justify-center text-white/40">
+                  <motion.div
+                    animate={{ opacity: [0.3, 0.7, 0.3] }}
+                    transition={{ duration: 2.4, repeat: Infinity }}
+                  >
+                    <Anchor size={32} className="text-[#c4934e]/70" />
+                  </motion.div>
+                  <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.28em]">
+                    Opening the door…
                   </p>
                 </div>
-                <p className="mt-2 text-sm leading-relaxed text-white/80">
-                  Your profile starts private. Only you see your journal. You
-                  decide what — if anything — to share with other members.
-                </p>
-              </div>
+              )}
 
-              <form onSubmit={handleRegister} className="space-y-5">
-                <Field
-                  label="Full Name"
-                  type="text"
-                  value={fullName}
-                  setValue={setFullName}
-                  placeholder="Your name (real or chosen)"
+              {/* CLOSED STATE — registration gate is shut. Show waitlist. */}
+              {registrationOpen === false && (
+                <ClosedPanel
+                  headline={closedHeadline}
+                  message={closedMessage}
+                  waitlistEnabled={waitlistEnabled}
+                  waitlistEmail={waitlistEmail}
+                  waitlistFirstName={waitlistFirstName}
+                  setWaitlistEmail={setWaitlistEmail}
+                  setWaitlistFirstName={setWaitlistFirstName}
+                  submitting={waitlistSubmitting}
+                  done={waitlistDone}
+                  error={waitlistError}
+                  onSubmit={handleWaitlist}
                 />
-                <Field
-                  label="Email"
-                  type="email"
-                  value={email}
-                  setValue={setEmail}
-                  placeholder="you@example.com"
-                />
-                <div>
-                  <Field
-                    label="Password"
-                    type="password"
-                    value={password}
-                    setValue={setPassword}
-                    placeholder="Create password"
-                  />
-                  {passwordHint && (
-                    <p
-                      className={`mt-2 text-xs font-semibold ${
-                        passwordHint.tone === "ok"
-                          ? "text-[#9bb29c]"
-                          : "text-[#e8c896]"
-                      }`}
-                    >
-                      {passwordHint.text}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Field
-                    label="Confirm Password"
-                    type="password"
-                    value={confirmPassword}
-                    setValue={setConfirmPassword}
-                    placeholder="Confirm password"
-                  />
-                  {matchHint && (
-                    <p
-                      className={`mt-2 text-xs font-semibold ${
-                        matchHint.tone === "ok"
-                          ? "text-[#9bb29c]"
-                          : "text-[#e8c896]"
-                      }`}
-                    >
-                      {matchHint.text}
-                    </p>
-                  )}
-                </div>
+              )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="group relative mt-8 flex w-full items-center justify-center gap-3 overflow-hidden rounded-none border border-[#c4934e] bg-[#a9793d] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_10px_35px_rgba(0,0,0,0.4)] transition duration-300 hover:bg-[#8d6432] disabled:opacity-60"
-                >
-                  {loading && (
-                    <motion.span
-                      animate={{
-                        scale: [1, 1.3, 1],
-                        opacity: [0.5, 1, 0.5],
-                      }}
-                      transition={{
-                        duration: 1.6,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      }}
-                      className="h-2 w-2 rounded-full bg-white"
+              {/* OPEN STATE — normal signup form. */}
+              {registrationOpen === true && (
+                <>
+                  <div className="mb-8 flex items-baseline justify-between">
+                    <h2
+                      className={`${serif.className} text-5xl font-medium text-white`}
+                    >
+                      Create account.
+                    </h2>
+                    <Link
+                      href="/login"
+                      className="group relative text-xs font-bold uppercase tracking-[0.22em] text-white/90 transition hover:text-[#c4934e]"
+                    >
+                      <span className="relative z-10">Login</span>
+                      <span className="absolute bottom-[-4px] left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
+                    </Link>
+                  </div>
+
+                  {/* PRIVACY REASSURANCE — placed FIRST, load-bearing trust */}
+                  <div className="mb-8 border border-[#c4934e]/30 bg-black/20 px-5 py-4">
+                    <div className="flex items-center gap-2">
+                      <Lock size={12} className="text-[#c4934e]" />
+                      <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#c4934e]">
+                        Private By Default
+                      </p>
+                    </div>
+                    <p className="mt-2 text-sm leading-relaxed text-white/80">
+                      Your profile starts private. Only you see your journal.
+                      You decide what — if anything — to share with other
+                      members.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleRegister} className="space-y-5">
+                    <Field
+                      label="Full Name"
+                      type="text"
+                      value={fullName}
+                      setValue={setFullName}
+                      placeholder="Your name (real or chosen)"
                     />
+                    <Field
+                      label="Email"
+                      type="email"
+                      value={email}
+                      setValue={setEmail}
+                      placeholder="you@example.com"
+                    />
+                    <div>
+                      <Field
+                        label="Password"
+                        type="password"
+                        value={password}
+                        setValue={setPassword}
+                        placeholder="Create password"
+                      />
+                      {passwordHint && (
+                        <p
+                          className={`mt-2 text-xs font-semibold ${
+                            passwordHint.tone === "ok"
+                              ? "text-[#9bb29c]"
+                              : "text-[#e8c896]"
+                          }`}
+                        >
+                          {passwordHint.text}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Field
+                        label="Confirm Password"
+                        type="password"
+                        value={confirmPassword}
+                        setValue={setConfirmPassword}
+                        placeholder="Confirm password"
+                      />
+                      {matchHint && (
+                        <p
+                          className={`mt-2 text-xs font-semibold ${
+                            matchHint.tone === "ok"
+                              ? "text-[#9bb29c]"
+                              : "text-[#e8c896]"
+                          }`}
+                        >
+                          {matchHint.text}
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="group relative mt-8 flex w-full items-center justify-center gap-3 overflow-hidden rounded-none border border-[#c4934e] bg-[#a9793d] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_10px_35px_rgba(0,0,0,0.4)] transition duration-300 hover:bg-[#8d6432] disabled:opacity-60"
+                    >
+                      {loading && (
+                        <motion.span
+                          animate={{
+                            scale: [1, 1.3, 1],
+                            opacity: [0.5, 1, 0.5],
+                          }}
+                          transition={{
+                            duration: 1.6,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                          className="h-2 w-2 rounded-full bg-white"
+                        />
+                      )}
+                      <span className="relative z-10">
+                        {loading ? "Creating Account…" : "Begin Today"}
+                      </span>
+                      <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-white/60 transition-all duration-500 group-hover:w-full" />
+                    </button>
+                  </form>
+
+                  <p className="mx-auto mt-8 max-w-lg text-center text-xs leading-relaxed text-white/70">
+                    By creating an account, you agree to our{" "}
+                    <Link
+                      href="/terms"
+                      className="font-semibold text-[#c4934e] underline-offset-4 transition hover:text-white hover:underline"
+                    >
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                      href="/privacy"
+                      className="font-semibold text-[#c4934e] underline-offset-4 transition hover:text-white hover:underline"
+                    >
+                      Privacy Policy
+                    </Link>
+                    .
+                  </p>
+
+                  {message && (
+                    <div
+                      className={`mt-6 border px-5 py-4 text-center text-sm font-semibold backdrop-blur-sm ${
+                        isError
+                          ? "border-red-300/60 bg-red-900/20 text-red-100"
+                          : "border-[#c4934e]/70 bg-[#a9793d]/15 text-white"
+                      }`}
+                    >
+                      {message}
+                    </div>
                   )}
-                  <span className="relative z-10">
-                    {loading ? "Creating Account…" : "Begin Today"}
-                  </span>
-                  <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-white/60 transition-all duration-500 group-hover:w-full" />
-                </button>
-              </form>
-
-              <p className="mx-auto mt-8 max-w-lg text-center text-xs leading-relaxed text-white/70">
-                By creating an account, you agree to our{" "}
-                <Link
-                  href="/terms"
-                  className="font-semibold text-[#c4934e] underline-offset-4 transition hover:text-white hover:underline"
-                >
-                  Terms of Service
-                </Link>{" "}
-                and{" "}
-                <Link
-                  href="/privacy"
-                  className="font-semibold text-[#c4934e] underline-offset-4 transition hover:text-white hover:underline"
-                >
-                  Privacy Policy
-                </Link>
-                .
-              </p>
-
-              {message && (
-                <div
-                  className={`mt-6 border px-5 py-4 text-center text-sm font-semibold backdrop-blur-sm ${
-                    isError
-                      ? "border-red-300/60 bg-red-900/20 text-red-100"
-                      : "border-[#c4934e]/70 bg-[#a9793d]/15 text-white"
-                  }`}
-                >
-                  {message}
-                </div>
+                </>
               )}
             </div>
           </motion.section>
@@ -483,6 +592,145 @@ function Field({
         placeholder={placeholder}
         className="h-[52px] w-full border border-white/20 bg-black/30 px-4 text-base text-white outline-none transition placeholder:text-white/40 focus:border-[#c4934e] focus:bg-black/45 focus:ring-2 focus:ring-[#c4934e]/30"
       />
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────
+   CLOSED PANEL — Shown when registration_open = false.
+   Lets visitors leave their email so we can notify
+   them when the gates open.
+   ────────────────────────────────────────────── */
+
+function ClosedPanel({
+  headline,
+  message,
+  waitlistEnabled,
+  waitlistEmail,
+  waitlistFirstName,
+  setWaitlistEmail,
+  setWaitlistFirstName,
+  submitting,
+  done,
+  error,
+  onSubmit,
+}: {
+  headline: string;
+  message: string;
+  waitlistEnabled: boolean;
+  waitlistEmail: string;
+  waitlistFirstName: string;
+  setWaitlistEmail: (v: string) => void;
+  setWaitlistFirstName: (v: string) => void;
+  submitting: boolean;
+  done: boolean;
+  error: string | null;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+}) {
+  return (
+    <div>
+      <div className="mb-8 flex items-baseline justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#c4934e]">
+          Not Yet Open
+        </p>
+        <Link
+          href="/login"
+          className="group relative text-xs font-bold uppercase tracking-[0.22em] text-white/90 transition hover:text-[#c4934e]"
+        >
+          <span className="relative z-10">Login</span>
+          <span className="absolute bottom-[-4px] left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
+        </Link>
+      </div>
+
+      <h2
+        className={`${serif.className} text-5xl font-medium leading-[1.05] text-white md:text-6xl`}
+      >
+        {headline}
+      </h2>
+
+      <p className="mt-6 text-base leading-relaxed text-white/80">{message}</p>
+
+      <div className="mt-8 h-px w-16 bg-[#c4934e]" />
+
+      {!waitlistEnabled ? (
+        <p className="mt-8 text-sm leading-relaxed text-white/65">
+          Existing members can{" "}
+          <Link
+            href="/login"
+            className="font-semibold text-[#c4934e] underline-offset-4 transition hover:text-white hover:underline"
+          >
+            sign in here
+          </Link>
+          .
+        </p>
+      ) : done ? (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mt-10 border border-[#c4934e]/40 bg-[#a9793d]/10 px-6 py-6 backdrop-blur-sm"
+        >
+          <p className={`${serif.className} text-2xl italic text-[#c4934e]`}>
+            We have you.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-white/80">
+            We&apos;ll send a single email when Stone Harbor opens. No
+            newsletters, no marketing — just one note when the door opens.
+          </p>
+        </motion.div>
+      ) : (
+        <form onSubmit={onSubmit} className="mt-10 space-y-5">
+          <Field
+            label="First Name (optional)"
+            type="text"
+            value={waitlistFirstName}
+            setValue={setWaitlistFirstName}
+            placeholder="What should we call you?"
+          />
+          <Field
+            label="Email"
+            type="email"
+            value={waitlistEmail}
+            setValue={setWaitlistEmail}
+            placeholder="you@example.com"
+          />
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="group relative mt-2 flex w-full items-center justify-center gap-3 overflow-hidden rounded-none border border-[#c4934e] bg-[#a9793d] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_10px_35px_rgba(0,0,0,0.4)] transition duration-300 hover:bg-[#8d6432] disabled:opacity-60"
+          >
+            {submitting && (
+              <motion.span
+                animate={{
+                  scale: [1, 1.3, 1],
+                  opacity: [0.5, 1, 0.5],
+                }}
+                transition={{
+                  duration: 1.6,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="h-2 w-2 rounded-full bg-white"
+              />
+            )}
+            <span className="relative z-10">
+              {submitting ? "Saving…" : "Tell Me When You Open"}
+            </span>
+            <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-white/60 transition-all duration-500 group-hover:w-full" />
+          </button>
+
+          {error && (
+            <p className="text-center text-sm font-semibold text-red-200">
+              {error}
+            </p>
+          )}
+
+          <p className="text-center text-xs leading-relaxed text-white/55">
+            One email when we open. Nothing else. Ever.
+          </p>
+        </form>
+      )}
     </div>
   );
 }

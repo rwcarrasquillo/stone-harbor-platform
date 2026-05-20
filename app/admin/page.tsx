@@ -70,6 +70,23 @@ type ExternalCounts = {
   active_sources: number;
 };
 
+type AppSettings = {
+  registration_open: boolean;
+  closed_headline: string | null;
+  closed_message: string | null;
+  waitlist_enabled: boolean;
+  updated_at: string | null;
+};
+
+type WaitlistEntry = {
+  id: string;
+  email: string;
+  first_name: string | null;
+  source: string | null;
+  notified_at: string | null;
+  created_at: string;
+};
+
 function pillarAccent(p: "clarity" | "calm" | "strength") {
   return p === "calm" ? MOSS : GOLD_DEEP;
 }
@@ -99,6 +116,40 @@ export default function AdminDashboard() {
   );
   const [loading, setLoading] = useState(true);
   const [authzError, setAuthzError] = useState<string | null>(null);
+
+  // Registration gate
+  const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
+  const [waitlistTotal, setWaitlistTotal] = useState(0);
+  const [togglingGate, setTogglingGate] = useState(false);
+  const [gateMessage, setGateMessage] = useState<string | null>(null);
+
+  async function toggleRegistration() {
+    if (!appSettings) return;
+    setTogglingGate(true);
+    setGateMessage(null);
+    const next = !appSettings.registration_open;
+    const { error } = await supabase
+      .from("app_settings")
+      .update({
+        registration_open: next,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", 1);
+    setTogglingGate(false);
+    if (error) {
+      setGateMessage(`Could not update: ${error.message}`);
+      return;
+    }
+    setAppSettings({ ...appSettings, registration_open: next });
+    setGateMessage(
+      next
+        ? "Registration is now OPEN. New members can sign up."
+        : "Registration is now CLOSED. New signups will be redirected to the waitlist.",
+    );
+    // Auto-clear the message after a few seconds.
+    setTimeout(() => setGateMessage(null), 5000);
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -130,7 +181,15 @@ export default function AdminDashboard() {
 
     setAdminName(profile?.display_name || "Admin");
 
-    const [statsRes, draftsRes, logsRes, externalRes] = await Promise.all([
+    const [
+      statsRes,
+      draftsRes,
+      logsRes,
+      externalRes,
+      settingsRes,
+      waitlistRes,
+      waitlistCountRes,
+    ] = await Promise.all([
       supabase.rpc("get_admin_stats"),
       supabase
         .from("blog_posts")
@@ -146,6 +205,21 @@ export default function AdminDashboard() {
         .order("created_at", { ascending: false })
         .limit(8),
       supabase.rpc("get_external_content_counts"),
+      supabase
+        .from("app_settings")
+        .select(
+          "registration_open, closed_headline, closed_message, waitlist_enabled, updated_at",
+        )
+        .eq("id", 1)
+        .single(),
+      supabase
+        .from("waitlist_signups")
+        .select("id, email, first_name, source, notified_at, created_at")
+        .order("created_at", { ascending: false })
+        .limit(10),
+      supabase
+        .from("waitlist_signups")
+        .select("id", { count: "exact", head: true }),
     ]);
 
     const row = Array.isArray(statsRes.data) ? statsRes.data[0] : statsRes.data;
@@ -157,6 +231,10 @@ export default function AdminDashboard() {
       ? externalRes.data[0]
       : externalRes.data;
     if (extRow) setExternalCounts(extRow as ExternalCounts);
+
+    if (settingsRes.data) setAppSettings(settingsRes.data as AppSettings);
+    setWaitlist((waitlistRes.data ?? []) as WaitlistEntry[]);
+    setWaitlistTotal(waitlistCountRes.count ?? 0);
 
     setLoading(false);
   }
@@ -395,6 +473,16 @@ export default function AdminDashboard() {
             The harbor at a glance.
           </h1>
         </motion.div>
+
+        {/* REGISTRATION GATE — kill switch + waitlist viewer */}
+        <RegistrationGatePanel
+          settings={appSettings}
+          waitlist={waitlist}
+          waitlistTotal={waitlistTotal}
+          onToggle={toggleRegistration}
+          toggling={togglingGate}
+          message={gateMessage}
+        />
 
         {/* KEY METRICS GRID */}
         <motion.div
@@ -750,5 +838,165 @@ function StatCard({
       </p>
       <p className="mt-2 text-xs text-stone-500">{sub}</p>
     </div>
+  );
+}
+
+/* ──────────────────────────────────────────────
+   REGISTRATION GATE PANEL
+   - Big visible toggle for opening / closing signups.
+   - Shows recent waitlist captures.
+   - Color shifts based on state so the admin can never
+     miss whether the door is open or closed at a glance.
+   ────────────────────────────────────────────── */
+
+function RegistrationGatePanel({
+  settings,
+  waitlist,
+  waitlistTotal,
+  onToggle,
+  toggling,
+  message,
+}: {
+  settings: AppSettings | null;
+  waitlist: WaitlistEntry[];
+  waitlistTotal: number;
+  onToggle: () => void;
+  toggling: boolean;
+  message: string | null;
+}) {
+  const open = settings?.registration_open !== false;
+  const stateColor = open ? MOSS : "#b14a3a";
+  const stateLabel = open ? "OPEN" : "CLOSED";
+  const stateBlurb = open
+    ? "New members can sign up. The harbor is admitting."
+    : "Signups are paused. Visitors see the waitlist instead.";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.05 }}
+      className="mb-8 grid gap-3 lg:grid-cols-[1.4fr_1fr]"
+    >
+      {/* MAIN GATE CARD */}
+      <div
+        className="border-l-[3px] bg-white p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)]"
+        style={{ borderLeftColor: stateColor }}
+      >
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">
+              Registration Gate
+            </p>
+            <div className="mt-3 flex items-center gap-3">
+              <span
+                className="inline-block h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: stateColor }}
+              />
+              <h3
+                className={`${serif.className} text-3xl font-medium italic`}
+                style={{ color: stateColor }}
+              >
+                {stateLabel}
+              </h3>
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-stone-700">
+              {stateBlurb}
+            </p>
+            {settings?.updated_at && (
+              <p className="mt-2 text-[11px] text-stone-400">
+                Last changed{" "}
+                {new Date(settings.updated_at).toLocaleString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </p>
+            )}
+          </div>
+
+          <div className="flex shrink-0 flex-col items-stretch gap-2 md:items-end">
+            <button
+              type="button"
+              disabled={toggling || !settings}
+              onClick={onToggle}
+              className="inline-flex items-center justify-center gap-2 border px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] transition disabled:opacity-50"
+              style={{
+                backgroundColor: open ? "#fff" : "#a9793d",
+                color: open ? "#7a3327" : "#fff",
+                borderColor: open ? "#b14a3a" : "#a9793d",
+              }}
+            >
+              {toggling
+                ? "Saving…"
+                : open
+                  ? "Close The Harbor"
+                  : "Open The Harbor"}
+            </button>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-stone-400 md:text-right">
+              Effective immediately
+            </p>
+          </div>
+        </div>
+
+        {message && (
+          <div
+            className="mt-5 border-l-2 bg-stone-50 px-4 py-3 text-xs font-semibold text-stone-700"
+            style={{ borderLeftColor: stateColor }}
+          >
+            {message}
+          </div>
+        )}
+      </div>
+
+      {/* WAITLIST PANEL */}
+      <div className="border border-stone-200 bg-white p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
+        <div className="flex items-baseline justify-between">
+          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">
+            Waitlist
+          </p>
+          <p
+            className={`${serif.className} text-3xl font-medium italic text-stone-900`}
+          >
+            {waitlistTotal.toLocaleString()}
+          </p>
+        </div>
+        <p className="mt-1 text-xs text-stone-500">
+          {waitlist.length > 0
+            ? `Latest ${waitlist.length} of ${waitlistTotal} captured`
+            : "No captures yet"}
+        </p>
+
+        <div className="mt-4 max-h-[260px] overflow-y-auto">
+          {waitlist.length === 0 ? (
+            <p className="py-6 text-center text-xs text-stone-400">
+              Visitors who hit /register while closed will appear here.
+            </p>
+          ) : (
+            <ul className="divide-y divide-stone-100">
+              {waitlist.map((w) => (
+                <li
+                  key={w.id}
+                  className="flex items-baseline justify-between py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-stone-800">
+                      {w.first_name ? `${w.first_name} · ` : ""}
+                      <span className="font-normal text-stone-600">
+                        {w.email}
+                      </span>
+                    </p>
+                  </div>
+                  <p className="ml-3 shrink-0 text-[10px] uppercase tracking-[0.18em] text-stone-400">
+                    {timeAgo(w.created_at)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 }
