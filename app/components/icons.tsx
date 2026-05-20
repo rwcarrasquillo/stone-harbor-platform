@@ -548,3 +548,26 @@ export function MoodStrong(p: IconProps) {
   // mountain — re-export for mood naming
   return <Mountain {...p} />;
 }
+
+/* ──────────────────────────────────────────────
+   MEDIA / CAPTURE
+   ────────────────────────────────────────────── */
+
+export function Camera(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M3 8a2 2 0 0 1 2-2h2.5l1.5-2h6l1.5 2H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </Svg>
+  );
+}
+
+export function Image(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="1.5" />
+      <path d="M21 17l-5-5-9 9" />
+    </Svg>
+  );
+}

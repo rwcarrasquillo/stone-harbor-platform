@@ -380,10 +380,18 @@ export default function DashboardPage() {
     const { data } = await supabase
       .from("profiles")
       .select(
-        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests",
+        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, onboarding_completed_at",
       )
       .eq("id", user.id)
       .single();
+
+    // Onboarding gate: send brand-new users through the wizard once.
+    // The wizard writes onboarding_completed_at when finished or skipped,
+    // so this redirect won't loop after the first pass.
+    if (data && !data.onboarding_completed_at) {
+      window.location.href = "/onboarding";
+      return;
+    }
 
     const loadedProfile: Profile = {
       email: data?.email ?? user.email ?? null,
