@@ -9,6 +9,7 @@ import {
 } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
 import {
   Flame,
@@ -332,6 +333,7 @@ export default function JournalPage() {
     <main
       className={`${sans.className} relative min-h-screen overflow-hidden bg-[#f3efe7] text-stone-900`}
     >
+      <InactivityGate />
       <audio ref={audioRef} src="/shimmering-breeze.mp3" preload="auto" />
 
       {/* AMBIENT — contour pattern */}

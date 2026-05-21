@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
 const GOLD_DEEP = "#a9793d";
 const MOSS = "#586558";
@@ -261,6 +262,7 @@ export default function AdminModerationPage() {
 
   return (
     <main className={`${sans.className} min-h-screen bg-[#f3efe7] text-stone-900`}>
+      <InactivityGate />
       <section className="mx-auto max-w-7xl px-4 py-8 md:px-8">
         <div className="mb-6 flex items-center justify-between">
           <Link

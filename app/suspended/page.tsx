@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
 const GOLD_DEEP = "#a9793d";
 
@@ -125,6 +126,7 @@ export default function SuspendedPage() {
     <main
       className={`${sans.className} min-h-screen bg-[#f3efe7] text-stone-900`}
     >
+      <InactivityGate />
       <header className="border-b border-stone-200 bg-white/40 px-6 py-5 backdrop-blur-sm md:px-10">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <Link href="/" className="flex flex-col leading-none no-underline">

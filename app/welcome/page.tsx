@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
 import { Toast, type ToastState } from "@/app/components/toast";
 
@@ -557,6 +558,7 @@ export default function WelcomePage() {
     <main
       className={`${sans.className} min-h-screen bg-[#f3efe7] px-4 py-8 text-stone-900 md:px-8`}
     >
+      <InactivityGate />
       <section className="mx-auto max-w-5xl">
         <div className="mb-8 flex items-center justify-between">
           <Link

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
 import {
   Anchor as AnchorIcon,
@@ -338,6 +339,7 @@ export default function AdminDashboard() {
     <main
       className={`${sans.className} relative min-h-screen overflow-hidden bg-[#f3efe7] text-stone-900`}
     >
+      <InactivityGate />
       {/* AMBIENT */}
       <svg
         className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.035]"

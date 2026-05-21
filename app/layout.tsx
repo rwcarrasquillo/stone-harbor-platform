@@ -34,7 +34,8 @@ export const metadata: Metadata = {
     "patient harbor",
   ],
   openGraph: {
-    title: "Stone Harbor — A patient harbor for men finding their way back",
+    title:
+      "Stone Harbor — A patient harbor for men finding their way back",
     description:
       "A private men's mental wellness platform for clarity, calm, and strength after the storm. Quiet daily journaling, brotherhood without performance, and the patient harbor men in divorce, burnout, betrayal, and loss can return to.",
     siteName: "Stone Harbor",
@@ -53,7 +54,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Stone Harbor — A patient harbor for men finding their way back",
+    title:
+      "Stone Harbor — A patient harbor for men finding their way back",
     description:
       "A private men's mental wellness platform for clarity, calm, and strength after the storm. Quiet daily journaling and brotherhood without performance.",
     images: [

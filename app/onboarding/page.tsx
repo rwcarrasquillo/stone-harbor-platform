@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
 import {
   Anchor as AnchorIcon,
@@ -268,6 +269,7 @@ export default function OnboardingWizard() {
     <main
       className={`${sans.className} relative min-h-screen overflow-hidden bg-[#0A0A0B] text-white`}
     >
+      <InactivityGate />
       {/* AMBIENT — base dark + drifting forest + dawn glow + contour + grain */}
       <div className="fixed inset-0 z-0 bg-[#0A0A0B]" />
       <motion.div
