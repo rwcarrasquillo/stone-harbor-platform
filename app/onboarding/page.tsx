@@ -478,6 +478,16 @@ export default function OnboardingWizard() {
           )}
         </AnimatePresence>
       </section>
+
+      {/* QUIET 988 LINE — required on every authenticated screen.
+          Kept small and bottom-fixed so it doesn't intrude on the wizard's
+          immersive feel; visible enough to be a real lifeline. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-3 z-30 flex justify-center px-6">
+        <p className="pointer-events-auto rounded-full border border-white/10 bg-black/45 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-white/70 backdrop-blur-md">
+          In Crisis · Call or text <span className="text-[#c4934e]">988</span> ·
+          24/7
+        </p>
+      </div>
     </main>
   );
 }

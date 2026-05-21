@@ -114,6 +114,7 @@ export default function AdminDashboard() {
   const [externalCounts, setExternalCounts] = useState<ExternalCounts | null>(
     null,
   );
+  const [pendingFlagCount, setPendingFlagCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [authzError, setAuthzError] = useState<string | null>(null);
 
@@ -189,6 +190,7 @@ export default function AdminDashboard() {
       settingsRes,
       waitlistRes,
       waitlistCountRes,
+      pendingFlagsRes,
     ] = await Promise.all([
       supabase.rpc("get_admin_stats"),
       supabase
@@ -220,6 +222,10 @@ export default function AdminDashboard() {
       supabase
         .from("waitlist_signups")
         .select("id", { count: "exact", head: true }),
+      supabase
+        .from("content_flags")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending"),
     ]);
 
     const row = Array.isArray(statsRes.data) ? statsRes.data[0] : statsRes.data;
@@ -235,6 +241,7 @@ export default function AdminDashboard() {
     if (settingsRes.data) setAppSettings(settingsRes.data as AppSettings);
     setWaitlist((waitlistRes.data ?? []) as WaitlistEntry[]);
     setWaitlistTotal(waitlistCountRes.count ?? 0);
+    setPendingFlagCount(pendingFlagsRes.count ?? 0);
 
     setLoading(false);
   }
@@ -436,6 +443,34 @@ export default function AdminDashboard() {
                     }}
                   >
                     {externalCounts.drafts}
+                  </span>
+                )}
+              </a>
+              <a
+                href="/admin/moderation"
+                className="group relative inline-flex items-center gap-2 overflow-hidden border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
+              >
+                {/* Inline flag glyph — same line-art family as icons.tsx */}
+                <svg
+                  width={12}
+                  height={12}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.6}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M4 22V4" />
+                  <path d="M4 4h13l-2 4 2 4H4" />
+                </svg>
+                Moderation
+                {pendingFlagCount > 0 && (
+                  <span
+                    className="ml-1 border bg-[#fcefe9] px-1.5 py-0.5 text-[10px] font-black"
+                    style={{ borderColor: "#b14a3a", color: "#b14a3a" }}
+                  >
+                    {pendingFlagCount}
                   </span>
                 )}
               </a>

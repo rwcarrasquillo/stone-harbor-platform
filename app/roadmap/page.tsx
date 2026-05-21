@@ -10,6 +10,7 @@ import {
   Wave,
   type IconProps,
 } from "@/app/components/icons";
+import { Toast, type ToastState } from "@/app/components/toast";
 
 const serif = Cormorant_Garamond({
   subsets: ["latin"],
@@ -87,6 +88,8 @@ export default function RoadmapPage() {
   // step_id -> completed_at ISO string
   const [progress, setProgress] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<ToastState>(null);
+  const fail = (msg: string) => setToast({ tone: "error", text: msg });
   const [busyStepId, setBusyStepId] = useState<string | null>(null);
 
   async function loadAll() {
@@ -95,6 +98,16 @@ export default function RoadmapPage() {
     } = await supabase.auth.getUser();
     if (!user) {
       window.location.href = "/login";
+      return;
+    }
+    // Suspension gate
+    const { data: gateRow } = await supabase
+      .from("profiles")
+      .select("suspended_at")
+      .eq("id", user.id)
+      .single();
+    if (gateRow?.suspended_at) {
+      window.location.href = "/suspended";
       return;
     }
     setUserId(user.id);
@@ -148,7 +161,7 @@ export default function RoadmapPage() {
       step_uuid: stepId,
     });
     if (error) {
-      alert(error.message);
+      fail(error.message);
     } else {
       const next = new Map(progress);
       next.set(stepId, new Date().toISOString());
@@ -168,7 +181,7 @@ export default function RoadmapPage() {
       .eq("user_id", userId)
       .eq("step_id", stepId);
     if (error) {
-      alert(error.message);
+      fail(error.message);
     } else {
       const next = new Map(progress);
       next.delete(stepId);
@@ -566,6 +579,8 @@ export default function RoadmapPage() {
             </motion.div>
           )}
       </section>
+
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       {/* FOOTER */}
       <footer className="relative z-10 mt-12 border-t border-stone-200 bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">

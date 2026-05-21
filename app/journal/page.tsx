@@ -202,6 +202,16 @@ export default function JournalPage() {
       window.location.href = "/login";
       return;
     }
+    // Suspension gate — keep suspended members off member-facing surfaces.
+    const { data: gateRow } = await supabase
+      .from("profiles")
+      .select("suspended_at")
+      .eq("id", user.id)
+      .single();
+    if (gateRow?.suspended_at) {
+      window.location.href = "/suspended";
+      return;
+    }
     setUserId(user.id);
     const { data, error } = await supabase
       .from("journal_entries")

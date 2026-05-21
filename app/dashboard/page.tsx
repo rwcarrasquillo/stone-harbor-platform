@@ -25,6 +25,7 @@ import {
   type IconProps,
 } from "@/app/components/icons";
 import { tomorrowsTopic } from "@/lib/dailyPrompts";
+import { Toast, type ToastState } from "@/app/components/toast";
 import {
   dismissalKey,
   resolveActiveAcknowledgment,
@@ -161,6 +162,10 @@ export default function DashboardPage() {
     null,
   );
   const [ackDismissing, setAckDismissing] = useState(false);
+
+  // Toast replaces alert() so failure feedback doesn't break the brand.
+  const [toast, setToast] = useState<ToastState>(null);
+  const fail = (msg: string) => setToast({ tone: "error", text: msg });
 
   // In-app notifications (threshold crossings, daily summaries, etc.)
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -361,7 +366,7 @@ export default function DashboardPage() {
       privacy_level: postPrivacy,
     });
     if (error) {
-      alert(error.message);
+      fail(error.message);
       setPosting(false);
       return;
     }
@@ -379,7 +384,7 @@ export default function DashboardPage() {
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", postId);
     if (error) {
-      alert(error.message);
+      fail(error.message);
       return;
     }
     await loadMemberPosts();
@@ -710,7 +715,7 @@ export default function DashboardPage() {
       })
       .eq("id", userId);
     if (error) {
-      alert(`Could not update cover: ${error.message}`);
+      fail(`Could not update cover: ${error.message}`);
       return;
     }
     setProfile((prev) =>
@@ -1783,6 +1788,8 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       {/* FOOTER — 988 crisis line required on every authenticated screen */}
       <footer className="relative z-10 mt-12 border-t border-stone-200 bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">

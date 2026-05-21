@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Toast, type ToastState } from "@/app/components/toast";
 
 const serif = Cormorant_Garamond({
   subsets: ["latin"],
@@ -156,6 +157,33 @@ export default function WelcomePage() {
   >([]);
   const [searchingCompanies, setSearchingCompanies] = useState(false);
 
+  // Toast replaces every alert() on this page — alert() breaks the
+  // patient-harbor immersion. Tone is "error" by default for failures.
+  const [toast, setToast] = useState<ToastState>(null);
+  const fail = (msg: string) => setToast({ tone: "error", text: msg });
+
+  // Close-account flow (Privacy Policy §8 commitment).
+  const [closeOpen, setCloseOpen] = useState(false);
+  const [closeReason, setCloseReason] = useState("");
+  const [closing, setClosing] = useState(false);
+  const [closeError, setCloseError] = useState<string | null>(null);
+
+  async function requestAccountDeletion() {
+    setClosing(true);
+    setCloseError(null);
+    const { error } = await supabase.rpc("request_account_deletion", {
+      reason: closeReason.trim() || null,
+    });
+    if (error) {
+      setClosing(false);
+      setCloseError(`Could not submit: ${error.message}`);
+      return;
+    }
+    // Sign the member out and route to home with a quiet confirmation.
+    await supabase.auth.signOut();
+    window.location.href = "/?account=closed";
+  }
+
   const avatarPreview = avatarFile
     ? URL.createObjectURL(avatarFile)
     : formData.avatar_url;
@@ -174,6 +202,17 @@ export default function WelcomePage() {
       return;
     }
 
+    // Suspension gate — suspended members cannot edit profile.
+    const { data: gateRow } = await supabase
+      .from("profiles")
+      .select("suspended_at")
+      .eq("id", user.id)
+      .single();
+    if (gateRow?.suspended_at) {
+      window.location.href = "/suspended";
+      return;
+    }
+
     setUserId(user.id);
 
     const { data, error } = await supabase
@@ -185,7 +224,7 @@ export default function WelcomePage() {
       .maybeSingle();
 
     if (error) {
-      alert(`Could not load profile: ${error.message}`);
+      fail(`Could not load profile: ${error.message}`);
     }
 
     setFormData({
@@ -272,7 +311,7 @@ export default function WelcomePage() {
 
   async function useCurrentLocation() {
     if (!navigator.geolocation) {
-      alert("Location services are not supported by this browser.");
+      fail("Location services are not supported by this browser.");
       return;
     }
 
@@ -306,7 +345,7 @@ export default function WelcomePage() {
             city && state ? `${city}, ${state}` : city || state || "";
 
           if (!locationLabel) {
-            alert("Could not determine your city from your coordinates.");
+            fail("Could not determine your city from your coordinates.");
             return;
           }
 
@@ -315,7 +354,7 @@ export default function WelcomePage() {
             location: locationLabel,
           }));
         } catch {
-          alert("Could not convert your coordinates into a city/state.");
+          fail("Could not convert your coordinates into a city/state.");
         } finally {
           setDetectingLocation(false);
         }
@@ -326,15 +365,15 @@ export default function WelcomePage() {
         const code = error?.code;
 
         if (code === 1) {
-          alert(
+          fail(
             "Location permission was denied. Please allow location access in your browser.",
           );
         } else if (code === 2) {
-          alert("Your location is currently unavailable.");
+          fail("Your location is currently unavailable.");
         } else if (code === 3) {
-          alert("Location request timed out. Please try again.");
+          fail("Location request timed out. Please try again.");
         } else {
-          alert("Could not detect your location.");
+          fail("Could not detect your location.");
         }
       },
       {
@@ -362,7 +401,7 @@ export default function WelcomePage() {
 
     if (error) {
       setUploadingAvatar(false);
-      alert(`Avatar upload failed: ${error.message}`);
+      fail(`Avatar upload failed: ${error.message}`);
       return formData.avatar_url;
     }
 
@@ -391,7 +430,7 @@ export default function WelcomePage() {
 
     if (error) {
       setUploadingCover(false);
-      alert(`Cover upload failed: ${error.message}`);
+      fail(`Cover upload failed: ${error.message}`);
       return formData.cover_url;
     }
 
@@ -491,7 +530,7 @@ export default function WelcomePage() {
 
     if (error) {
       setSaving(false);
-      alert(`Could not save profile: ${error.message}`);
+      fail(`Could not save profile: ${error.message}`);
       return;
     }
 
@@ -935,10 +974,125 @@ export default function WelcomePage() {
                   Cancel
                 </a>
               </div>
+
+              {/* ────────── CLOSE ACCOUNT ──────────
+                  Required by Privacy Policy §8. A member can request
+                  deletion at any time. We acknowledge in 30 days. */}
+              <section className="mt-16 border-t border-stone-200 pt-10">
+                <p
+                  className="text-xs font-bold uppercase tracking-[0.3em]"
+                  style={{ color: "#b14a3a" }}
+                >
+                  Leaving the Harbor
+                </p>
+                <h3
+                  className={`${serif.className} mt-3 text-3xl font-medium leading-tight text-stone-900`}
+                >
+                  Close your account.
+                </h3>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-stone-600">
+                  You can close your account at any time. We will delete your
+                  private journal entries within 30 days and your other personal
+                  data within 90 days, as described in our{" "}
+                  <a
+                    href="/privacy"
+                    className="font-semibold text-[#a9793d] underline-offset-4 hover:underline"
+                  >
+                    Privacy Policy
+                  </a>
+                  . If you ever want to come back, you are welcome — but a new
+                  account will start fresh.
+                </p>
+
+                {!closeOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setCloseOpen(true)}
+                    className="mt-6 rounded-none border border-[#b14a3a] bg-white px-6 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#b14a3a] transition hover:bg-[#b14a3a] hover:text-white"
+                  >
+                    Close My Account
+                  </button>
+                ) : (
+                  <div
+                    className="mt-6 border-l-[3px] bg-[#fcefe9] px-6 py-6"
+                    style={{ borderLeftColor: "#b14a3a" }}
+                  >
+                    <p className="text-sm font-semibold text-stone-900">
+                      Are you sure?
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-stone-700">
+                      Once submitted, your account is queued for deletion. You
+                      will be signed out immediately. You can leave a brief note
+                      below if you want to tell us why — it helps us improve,
+                      and we read every one.
+                    </p>
+                    <textarea
+                      value={closeReason}
+                      onChange={(e) => setCloseReason(e.target.value)}
+                      rows={3}
+                      maxLength={1000}
+                      placeholder="Anything you'd like us to know? (optional)"
+                      className="mt-4 w-full border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 focus:border-[#b14a3a] focus:outline-none"
+                    />
+                    {closeError && (
+                      <p className="mt-2 text-xs font-semibold text-red-700">
+                        {closeError}
+                      </p>
+                    )}
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={requestAccountDeletion}
+                        disabled={closing}
+                        className="rounded-none bg-[#b14a3a] px-6 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d2f21] disabled:opacity-50"
+                      >
+                        {closing ? "Submitting…" : "Yes, Close My Account"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCloseOpen(false);
+                          setCloseReason("");
+                          setCloseError(null);
+                        }}
+                        disabled={closing}
+                        className="rounded-none border border-stone-300 bg-white px-6 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] disabled:opacity-50"
+                      >
+                        Stay
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </section>
             </div>
           </div>
         </div>
       </section>
+
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
+
+      {/* FOOTER — 988 crisis line required on every authenticated screen */}
+      <footer className="mt-12 border-t border-stone-200 bg-[#efe8dc]/70 px-6 py-8 backdrop-blur-sm">
+        <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-3 md:items-center">
+          <p className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d]">
+            Stone Harbor
+          </p>
+          <p
+            className={`${serif.className} text-center text-base italic text-stone-600`}
+          >
+            The harbor is patient.
+          </p>
+          <p className="text-right text-sm leading-relaxed text-stone-700">
+            <span className="block text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500">
+              If You Are In Crisis
+            </span>
+            <span className="mt-1 block">
+              Call or text <span className="font-bold text-[#a9793d]">988</span>{" "}
+              — 24/7. Free. Confidential.
+            </span>
+          </p>
+        </div>
+      </footer>
     </main>
   );
 }

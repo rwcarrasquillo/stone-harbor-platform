@@ -9,6 +9,7 @@ import {
   Message as MessageIcon,
   Send,
 } from "@/app/components/icons";
+import { Toast, type ToastState } from "@/app/components/toast";
 
 const serif = Cormorant_Garamond({
   subsets: ["latin"],
@@ -85,6 +86,8 @@ export default function MessagesPage() {
   const [memberSearch, setMemberSearch] = useState("");
   const [memberResults, setMemberResults] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<ToastState>(null);
+  const fail = (msg: string) => setToast({ tone: "error", text: msg });
   const [sending, setSending] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
@@ -114,6 +117,16 @@ export default function MessagesPage() {
     } = await supabase.auth.getUser();
     if (!user) {
       window.location.href = "/login";
+      return;
+    }
+    // Suspension gate — block messaging when suspended.
+    const { data: gateRow } = await supabase
+      .from("profiles")
+      .select("suspended_at")
+      .eq("id", user.id)
+      .single();
+    if (gateRow?.suspended_at) {
+      window.location.href = "/suspended";
       return;
     }
     setUserId(user.id);
@@ -282,7 +295,7 @@ export default function MessagesPage() {
       other_user_id: otherUserId,
     });
     if (error) {
-      alert(error.message);
+      fail(error.message);
       return;
     }
     const conversationId = data as string;
@@ -304,7 +317,7 @@ export default function MessagesPage() {
       message_body: messageBody,
     });
     if (error) {
-      alert(error.message);
+      fail(error.message);
       setSending(false);
       return;
     }
@@ -840,6 +853,8 @@ export default function MessagesPage() {
           </motion.section>
         </div>
       </section>
+
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       {/* FOOTER — 988 crisis line */}
       <footer className="relative z-10 mt-12 border-t border-stone-200 bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">

@@ -441,6 +441,16 @@ export default function NewMembersBlogPage() {
       window.location.href = "/login";
       return;
     }
+    // Suspension gate
+    const { data: gateRow } = await supabase
+      .from("profiles")
+      .select("suspended_at")
+      .eq("id", user.id)
+      .single();
+    if (gateRow?.suspended_at) {
+      window.location.href = "/suspended";
+      return;
+    }
 
     const { data: profile } = await supabase
       .from("profiles")
