@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#d8a651"/>
+      <stop offset="55%" stop-color="#a9793d"/>
+      <stop offset="100%" stop-color="#7a5a2a"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e8c896" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#5a4220" stop-opacity="0.4"/>
+    </linearGradient>
+  </defs>
+  <!-- Badge -->
+  <circle cx="32" cy="32" r="31" fill="url(#bg)"/>
+  <!-- Inner rim highlight -->
+  <circle cx="32" cy="32" r="29.5" fill="none" stroke="url(#rim)" stroke-width="0.8"/>
+  <!-- Subtle outer stroke -->
+  <circle cx="32" cy="32" r="31" fill="none" stroke="#5a4220" stroke-width="0.6" opacity="0.5"/>
+  <!-- Anchor (solid cream) -->
+  <g fill="#f5efe1">
+    <!-- Top ring (outer) -->
+    <circle cx="32" cy="14" r="4"/>
+    <!-- Ring hole -->
+    <circle cx="32" cy="14" r="1.7" fill="url(#bg)"/>
+    <!-- Vertical shaft -->
+    <rect x="30.6" y="17.8" width="2.8" height="29" rx="0.5"/>
+    <!-- Crossbar -->
+    <rect x="21" y="24.5" width="22" height="2.6" rx="0.5"/>
+    <!-- Curved hooks at bottom -->
+    <path d="M11.5 36 Q 11.5 51 22 51 L 22 47.5 Q 16 47.5 15.5 39.5 Z"/>
+    <path d="M52.5 36 Q 52.5 51 42 51 L 42 47.5 Q 48 47.5 48.5 39.5 Z"/>
+    <!-- Point at bottom of shaft -->
+    <path d="M28.5 46.5 L 32 51 L 35.5 46.5 Z"/>
+  </g>
+</svg>

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { sans } from "@/lib/fonts";
+import { ServiceWorkerRegistrar } from "@/app/components/serviceWorkerRegistrar";
 
 /**
  * Stone Harbor — root metadata.
@@ -15,6 +16,34 @@ import { sans } from "@/lib/fonts";
  */
 export const metadata: Metadata = {
   metadataBase: new URL("https://stoneharbor.app"),
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "Stone Harbor",
+    statusBarStyle: "black-translucent",
+    startupImage: [
+      {
+        url: "/icons/apple-splash-1290x2796.png",
+        media:
+          "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)",
+      },
+      {
+        url: "/icons/apple-splash-1179x2556.png",
+        media:
+          "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)",
+      },
+      {
+        url: "/icons/apple-splash-1170x2532.png",
+        media:
+          "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)",
+      },
+      {
+        url: "/icons/apple-splash-1125x2436.png",
+        media:
+          "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)",
+      },
+    ],
+  },
   title: {
     default: "Stone Harbor — A patient harbor for men finding their way back",
     template: "%s · Stone Harbor",
@@ -99,7 +128,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${sans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <ServiceWorkerRegistrar />
+      </body>
     </html>
   );
 }
