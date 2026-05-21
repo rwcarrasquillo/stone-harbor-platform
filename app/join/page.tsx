@@ -1,19 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { Cormorant_Garamond, Inter } from "next/font/google";
 import { supabase } from "@/lib/supabaseClient";
 
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
+import { serif, sans } from "@/lib/fonts";
 export default function JoinPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -70,12 +61,12 @@ export default function JoinPage() {
     >
       <section className="mx-auto grid max-w-6xl gap-12 md:grid-cols-2 md:items-center">
         <div>
-          <a
+          <Link
             href="/"
             className="mb-10 inline-block text-sm font-bold uppercase tracking-[0.3em] text-[#a9793d]"
           >
             ← Stone Harbor
-          </a>
+          </Link>
 
           <p className="mb-5 text-sm font-semibold uppercase tracking-[0.4em] text-[#a9793d]">
             Join the Harbor

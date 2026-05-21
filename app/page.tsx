@@ -1,18 +1,10 @@
 "use client";
+import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cormorant_Garamond, Inter } from "next/font/google";
 import { supabase } from "@/lib/supabaseClient";
 
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-});
-
+import { serif, sans } from "@/lib/fonts";
 type JourneyKey = "clarity" | "calm" | "strength";
 type PanelProps = {
   children: React.ReactNode;
@@ -221,27 +213,27 @@ export default function Home() {
       {/* HEADER */}
       <header className="fixed left-0 top-0 z-50 w-full border-b border-stone-300 bg-[#f3efe7] shadow-[0_18px_60px_rgba(0,0,0,0.15)]">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
-          <a href="/" className="flex flex-col leading-none no-underline">
+          <Link href="/" className="flex flex-col leading-none no-underline">
             <span className="text-xl font-semibold uppercase tracking-[0.28em] text-[#c4934e]">
               Stone Harbor
             </span>
             <span className="mt-2 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#c4934e]">
               Men&apos;s Mental Wellness
             </span>
-          </a>
+          </Link>
           <div className="hidden gap-10 text-sm font-bold uppercase tracking-[0.22em] text-stone-700 md:flex">
-            <a href="/start-here" className="transition hover:text-[#c4934e]">
+            <Link href="/start-here" className="transition hover:text-[#c4934e]">
               Start
-            </a>
-            <a href="/roadmap" className="transition hover:text-[#c4934e]">
+            </Link>
+            <Link href="/roadmap" className="transition hover:text-[#c4934e]">
               Roadmap
-            </a>
-            <a href="/resources" className="transition hover:text-[#c4934e]">
+            </Link>
+            <Link href="/resources" className="transition hover:text-[#c4934e]">
               Resources
-            </a>
-            <a href="/about" className="transition hover:text-[#c4934e]">
+            </Link>
+            <Link href="/about" className="transition hover:text-[#c4934e]">
               About
-            </a>
+            </Link>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex gap-3">
@@ -254,19 +246,19 @@ export default function Home() {
                   Logout
                 </button>
               ) : (
-                <a
+                <Link
                   href="/login"
                   className="rounded-none border border-[#c4934e] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black focus:outline-none focus:ring-2 focus:ring-[#586558]"
                 >
                   Login
-                </a>
+                </Link>
               )}
-              <a
+              <Link
                 href={memberName ? "/dashboard" : "/register"}
                 className="rounded-none border border-[#c4934e] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black focus:outline-none focus:ring-2 focus:ring-[#586558]"
               >
                 {memberName ? "Dashboard" : "Join"}
-              </a>
+              </Link>
             </div>
             {memberName && (
               <p className="max-w-[220px] truncate text-right text-xs font-bold uppercase tracking-[0.18em] text-stone-600">
@@ -324,20 +316,20 @@ export default function Home() {
             </motion.p>
 
             <div className="mt-12 flex flex-col gap-5 sm:flex-row">
-              <a
+              <Link
                 href="/start-here"
                 className="group relative overflow-hidden rounded-none border border-white/20 bg-white/[0.06] px-10 py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white transition hover:bg-white/[0.12]"
               >
                 <span className="relative z-10">Begin Today</span>
                 <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/roadmap"
                 className="group relative overflow-hidden rounded-none border border-white/20 bg-white/[0.06] px-10 py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white transition hover:bg-white/[0.12]"
               >
                 <span className="relative z-10">See What&apos;s Ahead</span>
                 <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
-              </a>
+              </Link>
             </div>
 
             {/* Brotherhood signal — wire to a real Supabase count when ready */}
@@ -532,13 +524,13 @@ export default function Home() {
                 <p className="mt-4 leading-relaxed text-stone-600">
                   {selectedJourney.text}
                 </p>
-                <a
+                <Link
                   href="/start-here"
                   className="mt-7 inline-flex rounded-none border border-[#f4d7a1]/50 px-8 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white transition hover:scale-105"
                   style={{ backgroundColor: selectedJourney.accent }}
                 >
                   {selectedJourney.action}
-                </a>
+                </Link>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -584,19 +576,19 @@ export default function Home() {
             </p>
             <ul className="space-y-2 text-sm text-white/80">
               <li>
-                <a href="/start-here" className="hover:text-[#c4934e]">
+                <Link href="/start-here" className="hover:text-[#c4934e]">
                   Start Here
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/roadmap" className="hover:text-[#c4934e]">
+                <Link href="/roadmap" className="hover:text-[#c4934e]">
                   Roadmap
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/register" className="hover:text-[#c4934e]">
+                <Link href="/register" className="hover:text-[#c4934e]">
                   Join
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -606,19 +598,19 @@ export default function Home() {
             </p>
             <ul className="space-y-2 text-sm text-white/80">
               <li>
-                <a href="/resources" className="hover:text-[#c4934e]">
+                <Link href="/resources" className="hover:text-[#c4934e]">
                   Resources
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/about" className="hover:text-[#c4934e]">
+                <Link href="/about" className="hover:text-[#c4934e]">
                   About
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/privacy" className="hover:text-[#c4934e]">
+                <Link href="/privacy" className="hover:text-[#c4934e]">
                   Privacy
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

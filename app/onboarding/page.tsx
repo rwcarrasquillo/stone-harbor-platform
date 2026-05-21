@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { serif, sans } from "@/lib/fonts";
 import {
   Anchor as AnchorIcon,
   Book,
@@ -21,15 +21,6 @@ import {
   Wave,
   type IconProps,
 } from "@/app/components/icons";
-
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-});
 
 // Brand tokens
 const GOLD = "#c4934e";

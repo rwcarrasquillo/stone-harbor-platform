@@ -3,17 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
-import { Cormorant_Garamond, Inter } from "next/font/google";
-
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
+import { serif, sans } from "@/lib/fonts";
 // Brand system — matches home, dashboard, journal, login, register, messages
 const GOLD = "#c4934e";
 const GOLD_DEEP = "#a9793d";

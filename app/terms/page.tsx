@@ -3,18 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Cormorant_Garamond, Inter } from "next/font/google";
 import { supabase } from "@/lib/supabaseClient";
 
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
+import { serif, sans } from "@/lib/fonts";
 // Stone Harbor brand
 const GOLD_DEEP = "#a9793d";
 

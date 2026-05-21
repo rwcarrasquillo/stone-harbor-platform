@@ -1,26 +1,37 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Stone Harbor — global styles.
+ *
+ * Per-page backgrounds are set in each page component (cream surfaces
+ * for member surfaces, dark forest for auth + onboarding). globals only
+ * provides the typography fallback so members never see Arial flash
+ * before next/font loads.
+ *
+ * --font-cormorant and --font-inter are injected by lib/fonts.ts via
+ * the className on <html> in app/layout.tsx.
+ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-cormorant);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Inter is the body face; Cormorant is applied per-component via
+     className={serif.className} on display headings + italic copy. */
+  font-family:
+    var(--font-inter),
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+/* Stable focus ring across the codebase. Many surfaces override
+   :focus-visible per element; this is the safe default. */
+:focus-visible {
+  outline: 2px solid #c4934e;
+  outline-offset: 2px;
 }

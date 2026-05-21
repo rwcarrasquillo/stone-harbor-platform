@@ -1,8 +1,9 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { serif, sans } from "@/lib/fonts";
 import {
   Anchor as AnchorIcon,
   Book,
@@ -14,15 +15,6 @@ import {
   User as UserIcon,
   Wave,
 } from "@/app/components/icons";
-
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 const GOLD = "#c4934e";
 const GOLD_DEEP = "#a9793d";
@@ -324,18 +316,18 @@ export default function AdminDashboard() {
             {authzError}
           </h1>
           <div className="mt-8 flex justify-center gap-3">
-            <a
+            <Link
               href="/admin/login"
               className="border border-[#c4934e] bg-[#a9793d] px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white hover:bg-[#8d6432]"
             >
               Admin Login
-            </a>
-            <a
+            </Link>
+            <Link
               href="/dashboard"
               className="border border-stone-300 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 hover:border-[#a9793d]"
             >
               Member Dashboard
-            </a>
+            </Link>
           </div>
         </div>
       </main>
@@ -398,7 +390,7 @@ export default function AdminDashboard() {
           style={{ borderLeftColor: GOLD_DEEP }}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <a
+            <Link
               href="/"
               className="group flex flex-col leading-none no-underline"
             >
@@ -408,9 +400,9 @@ export default function AdminDashboard() {
               <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.22em] text-[#a9793d]/70">
                 Admin Console · {adminName}
               </span>
-            </a>
+            </Link>
             <div className="flex flex-wrap gap-2">
-              <a
+              <Link
                 href="/admin/blog"
                 className="group relative inline-flex items-center gap-2 overflow-hidden border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
               >
@@ -427,8 +419,8 @@ export default function AdminDashboard() {
                     {stats.draft_posts}
                   </span>
                 )}
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/admin/external"
                 className="group relative inline-flex items-center gap-2 overflow-hidden border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
               >
@@ -445,8 +437,8 @@ export default function AdminDashboard() {
                     {externalCounts.drafts}
                   </span>
                 )}
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/admin/moderation"
                 className="group relative inline-flex items-center gap-2 overflow-hidden border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
               >
@@ -473,13 +465,13 @@ export default function AdminDashboard() {
                     {pendingFlagCount}
                   </span>
                 )}
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/dashboard"
                 className="border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
               >
                 Member View
-              </a>
+              </Link>
               <button
                 type="button"
                 onClick={handleLogout}
@@ -690,12 +682,12 @@ export default function AdminDashboard() {
                     : `${drafts.length} ${drafts.length === 1 ? "draft" : "drafts"} ready.`}
                 </h2>
               </div>
-              <a
+              <Link
                 href="/admin/blog"
                 className="text-xs font-bold uppercase tracking-[0.22em] text-[#a9793d] transition hover:text-[#8d6432]"
               >
                 Open Review →
-              </a>
+              </Link>
             </div>
             {drafts.length === 0 ? (
               <p className="text-sm text-stone-500">
@@ -706,7 +698,7 @@ export default function AdminDashboard() {
                 {drafts.map((d) => {
                   const accent = pillarAccent(d.pillar);
                   return (
-                    <a
+                    <Link
                       key={d.id}
                       href="/admin/blog"
                       className="block border border-stone-200 bg-[#f8f4ed] p-4 transition hover:border-[#a9793d]/40"
@@ -741,7 +733,7 @@ export default function AdminDashboard() {
                           {d.summary || d.excerpt}
                         </p>
                       )}
-                    </a>
+                    </Link>
                   );
                 })}
               </div>

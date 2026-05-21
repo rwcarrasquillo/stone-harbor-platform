@@ -253,7 +253,7 @@ export default function AdminModerationPage() {
             className="mt-6 inline-block border border-[#a9793d] bg-[#a9793d] px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white hover:bg-[#8d6432]"
           >
             Admin Login
-          </Link>
+          </a>
         </div>
       </main>
     );
@@ -268,7 +268,7 @@ export default function AdminModerationPage() {
             className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d]"
           >
             ← Admin
-          </Link>
+          </a>
           <div className="inline-flex border border-stone-300 bg-white">
             <button
               onClick={() => setFilter("pending")}

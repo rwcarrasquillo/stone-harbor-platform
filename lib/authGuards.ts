@@ -19,11 +19,50 @@
 
 import { supabase } from "@/lib/supabaseClient";
 
+/**
+ * A confirmed-active member session. Returned by
+ * {@link requireActiveSession} when all three gates pass: signed in,
+ * not suspended, and onboarding complete.
+ */
 export type ActiveSession = {
+  /** Supabase auth.users.id (UUID). */
   id: string;
+  /** The member's email, or null if Supabase auth didn't return one. */
   email: string | null;
 };
 
+/**
+ * Guards an authenticated client page. Performs three sequential checks
+ * and side-effects a redirect when any fails:
+ *
+ *   1. **Auth** — must have an active Supabase session, otherwise routes
+ *      to `/login` with a hard navigation (to nuke any stale state).
+ *   2. **Suspension** — `profiles.suspended_at` must be null, otherwise
+ *      routes to `/suspended` so the member can see warnings + appeal.
+ *   3. **Onboarding** — `profiles.onboarding_completed_at` must be set,
+ *      otherwise routes to `/onboarding` for the wizard.
+ *
+ * The check order matters: a suspended new member must land at
+ * `/suspended` rather than be forced through onboarding first.
+ *
+ * @returns the {@link ActiveSession} if all three gates pass; `null`
+ *   after triggering a redirect. Callers should immediately
+ *   `if (!session) return;` to short-circuit the rest of their load
+ *   function.
+ *
+ * @example
+ * ```ts
+ * async function loadPage() {
+ *   const session = await requireActiveSession();
+ *   if (!session) return;
+ *   const { data } = await supabase
+ *     .from("journal_entries")
+ *     .select("*")
+ *     .eq("user_id", session.id);
+ *   // ...
+ * }
+ * ```
+ */
 export async function requireActiveSession(): Promise<ActiveSession | null> {
   const {
     data: { user },

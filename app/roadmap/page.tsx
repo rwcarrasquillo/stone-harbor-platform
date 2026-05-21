@@ -1,8 +1,9 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { serif, sans } from "@/lib/fonts";
 import {
   Eye,
   Mountain,
@@ -11,15 +12,6 @@ import {
   type IconProps,
 } from "@/app/components/icons";
 import { Toast, type ToastState } from "@/app/components/toast";
-
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 const GOLD_DEEP = "#a9793d";
 const MOSS = "#586558";
@@ -330,7 +322,7 @@ export default function RoadmapPage() {
       <section className="relative z-10 mx-auto max-w-5xl px-4 py-8 md:px-8">
         {/* TOP NAV */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <a
+          <Link
             href="/dashboard"
             className="group flex flex-col leading-none no-underline"
           >
@@ -340,13 +332,13 @@ export default function RoadmapPage() {
             <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70">
               Return To Harbor
             </span>
-          </a>
-          <a
+          </Link>
+          <Link
             href="/"
             className="text-xs font-bold uppercase tracking-[0.28em] text-stone-500 transition hover:text-[#a9793d]"
           >
             Stone Harbor
-          </a>
+          </Link>
         </div>
 
         {/* HEADER */}

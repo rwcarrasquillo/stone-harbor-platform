@@ -4,17 +4,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { serif, sans } from "@/lib/fonts";
 import { Lock } from "@/app/components/icons";
-
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-});
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -142,11 +133,7 @@ export default function AdminLoginPage() {
         xmlns="http://www.w3.org/2000/svg"
       >
         <filter id="adminlogin-grain">
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.9"
-            numOctaves="2"
-          />
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" />
           <feColorMatrix type="saturate" values="0" />
         </filter>
         <rect width="100%" height="100%" filter="url(#adminlogin-grain)" />
@@ -283,7 +270,9 @@ export default function AdminLoginPage() {
       {/* FOOTER */}
       <footer className="relative z-10 mt-8 border-t border-white/10 bg-black/50 px-6 py-6 backdrop-blur md:px-10">
         <div className="mx-auto max-w-7xl text-center">
-          <p className={`${serif.className} text-sm italic text-white/60`}>
+          <p
+            className={`${serif.className} text-sm italic text-white/60`}
+          >
             The harbor is patient.
           </p>
         </div>

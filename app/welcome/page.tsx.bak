@@ -564,7 +564,7 @@ export default function WelcomePage() {
             className="rounded-none text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]"
           >
             ← Dashboard
-          </Link>
+          </a>
         </div>
 
         <div className="overflow-hidden border border-stone-200 bg-[#f8f4ed] shadow-[0_20px_70px_rgba(0,0,0,0.08)]">
@@ -967,7 +967,7 @@ export default function WelcomePage() {
                   className="rounded-none border border-stone-300 bg-white px-8 py-4 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d]"
                 >
                   Cancel
-                </Link>
+                </a>
               </div>
 
               {/* ────────── CLOSE ACCOUNT ──────────
@@ -994,7 +994,7 @@ export default function WelcomePage() {
                     className="font-semibold text-[#a9793d] underline-offset-4 hover:underline"
                   >
                     Privacy Policy
-                  </Link>
+                  </a>
                   . If you ever want to come back, you are welcome — but a new
                   account will start fresh.
                 </p>

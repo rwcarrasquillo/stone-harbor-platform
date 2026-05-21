@@ -1,0 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description: "Today's reflection and your brotherhood.",
+};
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}

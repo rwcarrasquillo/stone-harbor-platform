@@ -1,18 +1,16 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
-import { Cormorant_Garamond, Inter } from "next/font/google";
-import { Book, Edit as EditIcon, Plus, Trash } from "@/app/components/icons";
-
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
+import { serif, sans } from "@/lib/fonts";
+import {
+  Book,
+  Edit as EditIcon,
+  Plus,
+  Trash,
+} from "@/app/components/icons";
+import { Toast, type ToastState } from "@/app/components/toast";
 
 const GOLD_DEEP = "#a9793d";
 const MOSS = "#586558";
@@ -62,6 +60,8 @@ export default function AdminBlogReview() {
   const [tab, setTab] = useState<"drafts" | "published">("drafts");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState>(null);
+  const fail = (msg: string) => setToast({ tone: "error", text: msg });
   const [draftFields, setDraftFields] = useState<{
     title: string;
     summary: string;
@@ -112,7 +112,7 @@ export default function AdminBlogReview() {
       body: pillar ? { pillar } : {},
     });
     if (error) {
-      alert(`Generation failed: ${error.message}`);
+      fail(`Generation failed: ${error.message}`);
     }
     await loadPosts();
     setGenerating(false);
@@ -127,7 +127,7 @@ export default function AdminBlogReview() {
         published_at: new Date().toISOString(),
       })
       .eq("id", id);
-    if (error) alert(error.message);
+    if (error) fail(error.message);
     else await loadPosts();
     setBusyId(null);
   }
@@ -139,7 +139,7 @@ export default function AdminBlogReview() {
       .from("blog_posts")
       .update({ is_published: false, published_at: null })
       .eq("id", id);
-    if (error) alert(error.message);
+    if (error) fail(error.message);
     else await loadPosts();
     setBusyId(null);
   }
@@ -148,7 +148,7 @@ export default function AdminBlogReview() {
     if (!window.confirm("Permanently delete this post?")) return;
     setBusyId(id);
     const { error } = await supabase.from("blog_posts").delete().eq("id", id);
-    if (error) alert(error.message);
+    if (error) fail(error.message);
     else await loadPosts();
     setBusyId(null);
   }
@@ -176,7 +176,7 @@ export default function AdminBlogReview() {
         pillar: draftFields.pillar,
       })
       .eq("id", editingId);
-    if (error) alert(error.message);
+    if (error) fail(error.message);
     else {
       setEditingId(null);
       setDraftFields(null);
@@ -250,12 +250,12 @@ export default function AdminBlogReview() {
           >
             {authzError}
           </h1>
-          <a
+          <Link
             href="/dashboard"
             className="mt-8 inline-block border border-[#c4934e] px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-[#a9793d] hover:bg-[#c4934e] hover:text-white"
           >
             Back To Dashboard
-          </a>
+          </Link>
         </div>
       </main>
     );
@@ -313,7 +313,7 @@ export default function AdminBlogReview() {
       <section className="relative z-10 mx-auto max-w-6xl px-4 py-8 md:px-8">
         {/* TOP NAV */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <a
+          <Link
             href="/dashboard"
             className="group flex flex-col leading-none no-underline"
           >
@@ -323,13 +323,21 @@ export default function AdminBlogReview() {
             <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70">
               Admin · Blog Review
             </span>
-          </a>
-          <a
-            href="/"
-            className="text-xs font-bold uppercase tracking-[0.28em] text-stone-500 transition hover:text-[#a9793d]"
-          >
-            Stone Harbor
-          </a>
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin/external"
+              className="border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
+            >
+              External Content →
+            </Link>
+            <Link
+              href="/"
+              className="text-xs font-bold uppercase tracking-[0.28em] text-stone-500 transition hover:text-[#a9793d]"
+            >
+              Stone Harbor
+            </Link>
+          </div>
         </div>
 
         {/* HEADER */}
@@ -352,8 +360,8 @@ export default function AdminBlogReview() {
               Posts.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-stone-600">
-              Drafts come in from the daily generation run. Read each one, edit
-              if it needs help, then publish.
+              Drafts come in from the daily generation run. Read each one,
+              edit if it needs help, then publish.
             </p>
           </div>
 
@@ -377,7 +385,9 @@ export default function AdminBlogReview() {
               ) : (
                 <Plus size={14} />
               )}
-              <span>{generating ? "Generating…" : "Generate Drafts"}</span>
+              <span>
+                {generating ? "Generating…" : "Generate Drafts"}
+              </span>
             </button>
             {generateMenuOpen && !generating && (
               <div className="absolute right-0 top-full z-30 mt-2 w-56 border border-stone-300 bg-white shadow-lg">
@@ -460,7 +470,8 @@ export default function AdminBlogReview() {
                 style={{
                   borderColor: filter === p.value ? p.accent : "#e7e5e4",
                   color: filter === p.value ? p.accent : "#57534e",
-                  backgroundColor: filter === p.value ? "white" : "#f8f4ed",
+                  backgroundColor:
+                    filter === p.value ? "white" : "#f8f4ed",
                 }}
               >
                 {p.label}
@@ -472,7 +483,9 @@ export default function AdminBlogReview() {
         {/* LIST */}
         {visiblePosts.length === 0 ? (
           <div className="border border-stone-200 bg-white p-8">
-            <p className={`${serif.className} text-2xl italic text-stone-700`}>
+            <p
+              className={`${serif.className} text-2xl italic text-stone-700`}
+            >
               {tab === "drafts"
                 ? "No drafts to review."
                 : "No published posts yet."}
@@ -519,8 +532,7 @@ export default function AdminBlogReview() {
                         className="text-[10px] font-bold uppercase tracking-[0.22em]"
                         style={{ color: accent }}
                       >
-                        ✓ Published{" "}
-                        {post.published_at && formatDateTime(post.published_at)}
+                        ✓ Published {post.published_at && formatDateTime(post.published_at)}
                       </span>
                     ) : (
                       <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500">
@@ -534,10 +546,7 @@ export default function AdminBlogReview() {
                       <input
                         value={draftFields.title}
                         onChange={(e) =>
-                          setDraftFields({
-                            ...draftFields,
-                            title: e.target.value,
-                          })
+                          setDraftFields({ ...draftFields, title: e.target.value })
                         }
                         className="w-full border border-stone-300 bg-[#f8f4ed] px-4 py-3 text-xl outline-none focus:border-[#a9793d]"
                         placeholder="Title"
@@ -689,12 +698,13 @@ export default function AdminBlogReview() {
               If Anyone Is In Crisis
             </p>
             <p className="mt-2 text-sm leading-relaxed text-stone-700">
-              <span className="font-bold text-[#a9793d]">988</span> — 24/7.
-              Free. Confidential.
+              <span className="font-bold text-[#a9793d]">988</span> — 24/7. Free.
+              Confidential.
             </p>
           </div>
         </div>
       </footer>
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </main>
   );
 }

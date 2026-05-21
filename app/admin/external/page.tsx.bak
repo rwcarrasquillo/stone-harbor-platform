@@ -362,7 +362,7 @@ export default function AdminExternalReview() {
             className="mt-8 inline-block border border-[#c4934e] px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-[#a9793d] hover:bg-[#c4934e] hover:text-white"
           >
             Back To Admin
-          </Link>
+          </a>
         </div>
       </main>
     );
@@ -424,14 +424,14 @@ export default function AdminExternalReview() {
             <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70">
               Admin · External Content
             </span>
-          </Link>
+          </a>
           <div className="flex gap-2">
             <Link
               href="/admin/blog"
               className="border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d]"
             >
               Internal Blog →
-            </Link>
+            </a>
           </div>
         </div>
 

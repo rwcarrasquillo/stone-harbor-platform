@@ -1,8 +1,9 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { serif, sans } from "@/lib/fonts";
 import {
   Anchor as AnchorIcon,
   Book,
@@ -31,15 +32,6 @@ import {
   resolveActiveAcknowledgment,
   type Acknowledgment,
 } from "@/lib/seasonalAcknowledgments";
-
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 // Two-color discipline — matches home/page.tsx
 const GOLD = "#c4934e";
@@ -379,14 +371,27 @@ export default function DashboardPage() {
   async function deleteMemberPost(postId: string) {
     const confirmed = window.confirm("Delete this post?");
     if (!confirmed) return;
-    const { error } = await supabase
-      .from("member_posts")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", postId);
+
+    // Optimistic UI: hide the post locally immediately.
+    const snapshot = memberPosts;
+    setMemberPosts((prev) => prev.filter((p) => p.id !== postId));
+
+    // Route through soft_delete_member_post() SECURITY DEFINER RPC.
+    // The RPC checks ownership itself and bypasses the RLS WITH CHECK
+    // path that was intermittently rejecting direct UPDATEs on
+    // member_posts. Returns true on delete, false on "already gone".
+    const { error } = await supabase.rpc("soft_delete_member_post", {
+      post_id_arg: postId,
+    });
+
     if (error) {
-      fail(error.message);
+      // The RPC raises descriptive exceptions — surface them as-is.
+      setMemberPosts(snapshot);
+      fail(error.message || "Could not delete this post. Please try again.");
       return;
     }
+
+    // Refresh server state in the background.
     await loadMemberPosts();
   }
 
@@ -908,16 +913,16 @@ export default function DashboardPage() {
       <section className="relative z-10 mx-auto max-w-7xl px-4 py-8 md:px-8">
         {/* TOP NAV */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <a href="/" className="group flex flex-col leading-none no-underline">
+          <Link href="/" className="group flex flex-col leading-none no-underline">
             <span className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d] transition group-hover:text-[#8d6432]">
               ← Stone Harbor
             </span>
             <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70">
               Men&apos;s Mental Wellness
             </span>
-          </a>
+          </Link>
           <div className="flex flex-wrap gap-3">
-            <a
+            <Link
               href="/welcome"
               className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
             >
@@ -926,8 +931,8 @@ export default function DashboardPage() {
                 Edit Profile
               </span>
               <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
-            </a>
-            <a
+            </Link>
+            <Link
               href="/messages"
               className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
             >
@@ -941,7 +946,7 @@ export default function DashboardPage() {
                   {unreadMessageCount}
                 </span>
               )}
-            </a>
+            </Link>
             <button
               onClick={handleLogout}
               className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
@@ -1708,13 +1713,13 @@ export default function DashboardPage() {
                   }}
                 />
               </div>
-              <a
+              <Link
                 href="/roadmap"
                 className="group relative inline-block overflow-hidden rounded-none border px-8 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white transition hover:scale-105"
                 style={{ backgroundColor: accent, borderColor: accent }}
               >
                 <span className="relative z-10">Continue Your Path</span>
-              </a>
+              </Link>
             </div>
           </div>
         </motion.section>
@@ -2096,7 +2101,7 @@ function DashboardCard({
   Icon,
 }: DashboardCardProps) {
   return (
-    <a
+    <Link
       href={href}
       className="group relative flex h-full flex-col overflow-hidden rounded-none border border-white/70 bg-white p-7 shadow-[0_12px_40px_rgba(0,0,0,0.05)] transition duration-300 hover:-translate-y-1 hover:border-[#a9793d]/40 hover:shadow-[0_18px_55px_rgba(0,0,0,0.09)]"
     >
@@ -2122,6 +2127,6 @@ function DashboardCard({
       </p>
       {/* gold underline draw — matches home CTAs */}
       <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
-    </a>
+    </Link>
   );
 }

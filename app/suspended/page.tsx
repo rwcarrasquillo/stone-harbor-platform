@@ -1,20 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
-import { Cormorant_Garamond, Inter } from "next/font/google";
-
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
+import { serif, sans } from "@/lib/fonts";
 const GOLD_DEEP = "#a9793d";
 
 type Warning = {
@@ -46,6 +37,7 @@ type Profile = {
  * the dashboard on next visit.
  */
 export default function SuspendedPage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [appealText, setAppealText] = useState("");
@@ -70,8 +62,9 @@ export default function SuspendedPage() {
         .eq("id", user.id)
         .single();
       // If they are NOT suspended, this page shouldn't show — redirect home.
+      // Soft navigation is fine here; the user is still authenticated.
       if (!prof?.suspended_at) {
-        window.location.href = "/dashboard";
+        router.push("/dashboard");
         return;
       }
       setProfile(prof as Profile);

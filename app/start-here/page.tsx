@@ -1,20 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Volume2, VolumeX } from "lucide-react";
-import { Cormorant_Garamond, Inter } from "next/font/google";
-
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
+import { serif, sans } from "@/lib/fonts";
 const questions = [
   {
     question: "What feels most true right now?",
@@ -164,12 +154,12 @@ export default function StartHerePage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,176,123,0.18),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.7),transparent_30%)]" />
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 py-10">
-        <a
+        <Link
           href="/"
           className="mb-8 inline-block text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]"
         >
           ← Stone Harbor
-        </a>
+        </Link>
 
         <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
           <AnimatePresence mode="wait">
@@ -269,12 +259,12 @@ export default function StartHerePage() {
                 </p>
 
                 <div className="mt-12 flex flex-col gap-5 sm:flex-row">
-                  <a
+                  <Link
                     href="/join"
                     className="rounded-full bg-[#a9793d] px-10 py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white transition hover:bg-[#8d6432]"
                   >
                     Continue Forward
-                  </a>
+                  </Link>
 
                   <button
                     onClick={resetAssessment}

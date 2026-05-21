@@ -1,8 +1,9 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { serif, sans } from "@/lib/fonts";
 import {
   Anchor as AnchorIcon,
   Lock,
@@ -10,15 +11,6 @@ import {
   Send,
 } from "@/app/components/icons";
 import { Toast, type ToastState } from "@/app/components/toast";
-
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 // Brand system — matches home, dashboard, journal, login, register
 const GOLD = "#c4934e";
@@ -470,7 +462,7 @@ export default function MessagesPage() {
       <section className="relative z-10 mx-auto max-w-7xl px-4 py-8 md:px-8">
         {/* TOP NAV */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <a
+          <Link
             href="/dashboard"
             className="group flex flex-col leading-none no-underline"
           >
@@ -480,13 +472,13 @@ export default function MessagesPage() {
             <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70">
               Return To Harbor
             </span>
-          </a>
-          <a
+          </Link>
+          <Link
             href="/"
             className="text-xs font-bold uppercase tracking-[0.28em] text-stone-500 transition hover:text-[#a9793d]"
           >
             Stone Harbor
-          </a>
+          </Link>
         </div>
 
         {/* GREETING STRIP */}
@@ -891,9 +883,16 @@ function Avatar({ profile }: { profile: Profile | null }) {
   return (
     <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-[#efe8dc]">
       {profile?.avatar_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        // Note: kept as <img> rather than next/image because Supabase
+        // Storage URLs in avatar context don't benefit much from the
+        // next/image optimizer at 44×44 — payload is already tiny and
+        // every member avatar would otherwise need a separate
+        // optimization round-trip. The 10 <img> tags codebase-wide will
+        // be re-evaluated in a focused post-launch performance pass.
         <img
           src={profile.avatar_url}
-          alt="Member avatar"
+          alt={`${profile.display_name ?? "Member"} avatar`}
           className="h-full w-full object-cover"
         />
       ) : (
