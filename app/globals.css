@@ -35,3 +35,83 @@ body {
   outline: 2px solid #c4934e;
   outline-offset: 2px;
 }
+
+/* ------------------------------------------------------------------
+ * Mobile UX pass.
+ *
+ * Three goals on small screens:
+ *   1. Reserve room for the bottom tab bar (~64px + iOS safe area)
+ *      so the last card on a page isn't covered.
+ *   2. Tighten the most common vertical-rhythm utilities so members
+ *      don't scroll through cathedral-sized gaps between cards.
+ *   3. Give carousels a hidden-scrollbar utility while preserving
+ *      native scroll-snap and touch momentum.
+ * ------------------------------------------------------------------ */
+
+/* 1. Reserve space for the mobile tab bar. The bar is hidden via
+ *    pathname gating on public/auth pages, but we always reserve
+ *    the padding on mobile — extra whitespace below the fold on
+ *    the front-door pages is harmless and avoids a layout flicker
+ *    on first paint of authenticated pages. */
+@media (max-width: 767px) {
+  main {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
+  }
+}
+
+/* 2. Tighter mobile vertical rhythm. Targets cards directly inside
+ *    <main> so we don't fight every component's local spacing.
+ *    Tailwind's space-y-8 (2rem) becomes 1.25rem on phones — the
+ *    cards still breathe, the page just doesn't feel cathedral-tall. */
+@media (max-width: 767px) {
+  main .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 1.25rem;
+  }
+  main .space-y-10 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 1.5rem;
+  }
+  main .space-y-12 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 1.75rem;
+  }
+  main .py-12 {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+  main .py-16 {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+  main .py-20 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+  /* Card internal padding — keep enough room to read but stop
+   * spending 32px of horizontal padding on a 360px screen. */
+  main .p-8 {
+    padding: 1.5rem;
+  }
+  main .px-8 {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+  /* Display headings — long-form serif italic is gorgeous on
+   * desktop but eats a third of a phone screen at the desktop
+   * size. Tighten the line-height (NOT the font-size; that's
+   * already responsive). */
+  main h1.text-4xl,
+  main h1.text-5xl,
+  main h2.text-3xl,
+  main h2.text-4xl {
+    line-height: 1.15;
+  }
+}
+
+/* 3. Carousel scrollbar hiding. Used by <HorizontalCarousel>; works
+ *    cross-browser. Touch momentum and snap behavior are unaffected. */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

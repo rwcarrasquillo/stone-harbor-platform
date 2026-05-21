@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { sans } from "@/lib/fonts";
 import { ServiceWorkerRegistrar } from "@/app/components/serviceWorkerRegistrar";
+import { MobileTabBar } from "@/app/components/mobileTabBar";
 
 /**
  * Stone Harbor — root metadata.
@@ -130,6 +131,7 @@ export default function RootLayout({
     <html lang="en" className={`${sans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         {children}
+        <MobileTabBar />
         <ServiceWorkerRegistrar />
       </body>
     </html>
