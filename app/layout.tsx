@@ -5,16 +5,13 @@ import { sans } from "@/lib/fonts";
 /**
  * Stone Harbor — root metadata.
  *
- * Notes on Open Graph image handling:
- *   We deliberately do NOT set metadata.openGraph.images here. Next.js
- *   App Router auto-detects app/opengraph-image.png and emits the
- *   correct <meta property="og:image" content="https://.../opengraph-image?{hash}">
- *   tag automatically, with cache-busting and dimensions. Setting the
- *   `images` array manually with a relative path produces a URL that
- *   doesn't match what's actually served. Let the file-convention win.
- *
- *   Same logic for twitter.images — Next.js sees the same file and
- *   emits twitter:image automatically when openGraph.images is absent.
+ * On the OG image: app/opengraph-image.png is served by Next.js 16 at
+ * the literal path /opengraph-image.png (with the .png extension —
+ * verified in the build route table + by visiting the URL directly).
+ * We reference it explicitly here so the <meta property="og:image">
+ * tag emitted in <head> is deterministic and matches what the file
+ * convention serves, instead of trusting auto-emit timing across
+ * different crawlers.
  */
 export const metadata: Metadata = {
   metadataBase: new URL("https://stoneharbor.app"),
@@ -44,14 +41,29 @@ export const metadata: Metadata = {
     url: "https://stoneharbor.app",
     type: "website",
     locale: "en_US",
-    // images: intentionally omitted — Next.js auto-emits from app/opengraph-image.png
+    images: [
+      {
+        url: "/opengraph-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Stone Harbor — Men's Mental Wellness",
+        type: "image/png",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Stone Harbor — A patient harbor for men finding their way back",
     description:
       "A private men's mental wellness platform for clarity, calm, and strength after the storm. Quiet daily journaling and brotherhood without performance.",
-    // images: intentionally omitted — Next.js auto-emits from app/opengraph-image.png
+    images: [
+      {
+        url: "/opengraph-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Stone Harbor — Men's Mental Wellness",
+      },
+    ],
   },
   icons: {
     icon: [
