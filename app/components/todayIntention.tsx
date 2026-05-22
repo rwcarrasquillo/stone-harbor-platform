@@ -102,7 +102,7 @@ export function TodayIntention({ userId }: Props) {
       aria-label="Today's intention"
       className="mb-6 md:mb-10"
     >
-      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.28em] text-[#a9793d] md:tracking-[0.32em]">
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold)] md:tracking-[0.32em]">
         Today
       </p>
       <input
@@ -113,7 +113,7 @@ export function TodayIntention({ userId }: Props) {
         placeholder={PROMPTS[promptIndex]}
         aria-label="Set one intention for today (optional)"
         maxLength={140}
-        className="w-full border-b border-stone-300 bg-transparent pb-2 text-base italic leading-relaxed text-stone-800 outline-none transition placeholder:font-normal placeholder:not-italic placeholder:text-stone-400 focus:border-[#a9793d] md:text-lg"
+        className="w-full border-b border-[var(--sh-border-medium)] bg-transparent pb-2 text-base italic leading-relaxed text-[var(--sh-text-primary)] outline-none transition placeholder:font-normal placeholder:not-italic placeholder:text-[var(--sh-text-muted)] focus:border-[var(--sh-accent-gold)] md:text-lg"
       />
     </section>
   );

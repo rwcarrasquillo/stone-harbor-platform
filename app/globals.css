@@ -16,6 +16,75 @@
   --font-serif: var(--font-cormorant);
 }
 
+/* ------------------------------------------------------------------
+ * Stone Harbor — theme palette tokens.
+ *
+ * Two themes:
+ *   - sunlit (default) — cream surfaces, deep stone text, the original
+ *     warm-light look. The harbor at midday.
+ *   - dusk — dark surfaces, light text, amniotic warmth. The harbor
+ *     at after-hours.
+ *
+ * The values below are CSS custom properties referenced by pages
+ * via Tailwind's arbitrary-value syntax — e.g.,
+ *
+ *   <main className="bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]">
+ *
+ * ThemeProvider sets the `data-theme` attribute on <html>. The
+ * `[data-theme="dusk"]` block below then overrides the defaults.
+ *
+ * When adding new theme-aware colors, follow the naming convention:
+ *   --sh-{category}-{role}
+ *
+ * Categories: bg, text, border, accent
+ * Roles: page, card, primary, secondary, etc.
+ * ------------------------------------------------------------------ */
+:root {
+  /* SUNLIT (default) */
+  --sh-bg-page: #f3efe7;
+  --sh-bg-card: #ffffff;
+  --sh-bg-card-tinted: #f8f4ed;
+  --sh-bg-card-translucent: rgba(255, 255, 255, 0.7);
+
+  --sh-text-primary: #1c1917;   /* stone-900 */
+  --sh-text-secondary: #57534e; /* stone-600 */
+  --sh-text-tertiary: #78716c;  /* stone-500 */
+  --sh-text-muted: #a8a29e;     /* stone-400 */
+
+  --sh-border-subtle: #e7e5e4;  /* stone-200 */
+  --sh-border-medium: #d6d3d1;  /* stone-300 */
+
+  --sh-accent-gold: #a9793d;    /* gold-deep, reads on light */
+  --sh-accent-gold-bright: #c4934e;
+}
+
+[data-theme="dusk"] {
+  --sh-bg-page: #0A0A0B;
+  --sh-bg-card: rgba(0, 0, 0, 0.35);
+  --sh-bg-card-tinted: rgba(0, 0, 0, 0.30);
+  --sh-bg-card-translucent: rgba(0, 0, 0, 0.30);
+
+  --sh-text-primary: #f5f5f4;   /* stone-100 */
+  --sh-text-secondary: #d6d3d1; /* stone-300 */
+  --sh-text-tertiary: #a8a29e;  /* stone-400 */
+  --sh-text-muted: #78716c;     /* stone-500 */
+
+  --sh-border-subtle: rgba(255, 255, 255, 0.10);
+  --sh-border-medium: rgba(255, 255, 255, 0.15);
+
+  --sh-accent-gold: #c4934e;    /* brighter gold, reads on dark */
+  --sh-accent-gold-bright: #d8b07b;
+}
+
+/* Apply the page background + primary text color to the body so
+   every page picks up the theme without each page repeating the
+   bg/text classes. Pages with intentional non-theme styling
+   (e.g., /meditation, /vent) override via their own className. */
+body {
+  background-color: var(--sh-bg-page);
+  color: var(--sh-text-primary);
+}
+
 html,
 body {
   /* Inter is the body face; Cormorant is applied per-component via

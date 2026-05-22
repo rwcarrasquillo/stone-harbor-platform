@@ -338,9 +338,12 @@ export default function StartHerePage() {
               }}
             />
 
-            {/* Existing color overlays — keep image text-legible */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-white/10" />
+            {/* Color overlays — lightened so the photograph carries more
+                vibrance. The bottom gradient stays at moderate opacity
+                where the white overlay text sits; the left/right gradient
+                is gentle so the image breathes on the right side. */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/22 via-black/5 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-white/5" />
 
             {/* Bottom-left label + caption (now uses the section label,
                 so it stays consistent through the rotating images) */}

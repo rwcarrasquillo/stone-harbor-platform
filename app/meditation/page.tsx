@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { useRef, useState } from "react";
 import { ArrowLeft, Volume2, VolumeX } from "lucide-react";
 import { serif, sans } from "@/lib/fonts";
 import { RotatingNatureBackdrop } from "@/app/components/rotatingNatureBackdrop";
+import { BreathCircle, useBreathCycle } from "@/app/components/breathCircle";
 
 /**
  * Stone Harbor — Meditation page.
@@ -53,15 +53,11 @@ const BREATH_IMAGES = [
 export default function MeditationPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
-  const [breathPhase, setBreathPhase] = useState<"inhale" | "exhale">("inhale");
 
-  // 4s in / 4s out box-breath cycle. Same cadence as the home page.
-  useEffect(() => {
-    const id = setInterval(() => {
-      setBreathPhase((p) => (p === "inhale" ? "exhale" : "inhale"));
-    }, 4000);
-    return () => clearInterval(id);
-  }, []);
+  // Box-breath cycle now lives in the shared hook so all three
+  // breath-circle sites (home, dashboard meditation entry, this page)
+  // run the same 4s/4s rhythm from one source of truth.
+  const breathPhase = useBreathCycle();
 
   async function toggleSound() {
     const audio = audioRef.current;
@@ -150,25 +146,14 @@ export default function MeditationPage() {
           Stay as long as you want.
         </p>
 
-        {/* Breath circle — same animation cadence as home, larger here */}
-        <motion.div
-          animate={{
-            scale: breathPhase === "inhale" ? 1.45 : 1,
-            opacity: breathPhase === "inhale" ? 0.95 : 0.55,
-          }}
-          transition={{ duration: 4, ease: "easeInOut" }}
-          className="flex h-44 w-44 items-center justify-center rounded-full border-2 border-[#c4934e]/45 shadow-[0_0_80px_rgba(196,147,78,0.25)] md:h-60 md:w-60"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(196,147,78,0.28) 0%, rgba(196,147,78,0.06) 70%, transparent 100%)",
-          }}
-        >
-          <span
-            className={`${serif.className} text-2xl italic text-white/95 md:text-3xl`}
-          >
-            {breathPhase === "inhale" ? "Inhale" : "Exhale"}
-          </span>
-        </motion.div>
+        {/* Shared BreathCircle component — keeps the rhythm and styling
+            identical to the home page and the dashboard entry banner.
+            Size lg = 176px, scales to ~246px on inhale. Outer glow ring
+            on the container provides the cinematic spread; the circle
+            itself is the unified component. */}
+        <div className="flex items-center justify-center rounded-full shadow-[0_0_80px_rgba(196,147,78,0.25)]">
+          <BreathCircle phase={breathPhase} size="lg" />
+        </div>
 
         <p className="mt-10 max-w-md text-xs leading-relaxed text-white/70 md:mt-14 md:text-sm">
           {soundOn

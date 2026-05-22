@@ -29,8 +29,11 @@ import {
 import { tomorrowsTopic } from "@/lib/dailyPrompts";
 import { Toast, type ToastState } from "@/app/components/toast";
 import { RotatingNatureBackdrop } from "@/app/components/rotatingNatureBackdrop";
+import { AmnioticBackdrop } from "@/app/components/amnioticBackdrop";
+import { useTheme } from "@/app/components/themeProvider";
 import { PersonalizedGreeting } from "@/app/components/personalizedGreeting";
 import { TodayIntention } from "@/app/components/todayIntention";
+import { BreathCircle } from "@/app/components/breathCircle";
 import { X, Wind, Heart, Users, BookOpen } from "lucide-react";
 import {
   dismissalKey,
@@ -153,6 +156,9 @@ function identityLine(stage: string) {
 }
 
 export default function DashboardPage() {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [acknowledgment, setAcknowledgment] = useState<Acknowledgment | null>(
@@ -842,7 +848,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <main
-        className={`${sans.className} flex min-h-screen items-center justify-center bg-[#f3efe7]`}
+        className={`${sans.className} flex min-h-screen items-center justify-center bg-[var(--sh-bg-page)]`}
       >
         <div className="flex flex-col items-center">
           <motion.div
@@ -855,7 +861,7 @@ export default function DashboardPage() {
             }}
           />
           <p
-            className={`${serif.className} mt-8 text-2xl italic text-stone-700`}
+            className={`${serif.className} mt-8 text-2xl italic text-[var(--sh-text-secondary)]`}
           >
             Returning to your harbor…
           </p>
@@ -866,12 +872,18 @@ export default function DashboardPage() {
 
   return (
     <main
-      className={`${sans.className} relative min-h-screen overflow-hidden bg-[#f3efe7] text-stone-900`}
+      className={`${sans.className} relative min-h-screen overflow-hidden bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}
     >
       <InactivityGate />
-      {/* AMBIENT — contour pattern at very low opacity for visual continuity with home */}
+
+      {/* DUSK ONLY — amniotic backdrop. Sunlit mode renders without
+          the atmospheric layer; the cream surface IS the atmosphere. */}
+      {isDusk && <AmnioticBackdrop />}
+
+      {/* AMBIENT — contour pattern; slightly brighter on the dark
+          theme so it still adds subtle texture */}
       <svg
-        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.035]"
+        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.06]"
         xmlns="http://www.w3.org/2000/svg"
         preserveAspectRatio="xMidYMid slice"
       >
@@ -950,10 +962,17 @@ export default function DashboardPage() {
             </span>
           </Link>
           <div className="flex flex-wrap gap-2 md:gap-3">
+            {/* On Dusk: gold-on-amber treatment matching the Post Update
+                button (border-[#c4934e] bg-[#a9793d] text-white).
+                On Sunlit: original cream-white treatment. */}
             <Link
               href="/welcome"
               aria-label="Edit profile"
-              className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 p-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:px-6"
+              className={`group relative overflow-hidden rounded-none p-3 text-xs font-bold uppercase tracking-[0.22em] transition md:px-6 ${
+                isDusk
+                  ? "border border-[#c4934e] bg-[#a9793d] text-white hover:bg-[#8d6432]"
+                  : "border border-stone-300 bg-white/70 text-stone-700 hover:border-[#a9793d] hover:bg-white"
+              }`}
             >
               <span className="relative z-10 inline-flex items-center md:gap-2">
                 <EditIcon size={14} />
@@ -964,7 +983,11 @@ export default function DashboardPage() {
             <Link
               href="/messages"
               aria-label="Messages"
-              className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 p-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:px-6"
+              className={`group relative overflow-hidden rounded-none p-3 text-xs font-bold uppercase tracking-[0.22em] transition md:px-6 ${
+                isDusk
+                  ? "border border-[#c4934e] bg-[#a9793d] text-white hover:bg-[#8d6432]"
+                  : "border border-stone-300 bg-white/70 text-stone-700 hover:border-[#a9793d] hover:bg-white"
+              }`}
             >
               <span className="relative z-10 inline-flex items-center md:gap-2">
                 <Message size={14} />
@@ -972,7 +995,13 @@ export default function DashboardPage() {
               </span>
               <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
               {unreadMessageCount > 0 && (
-                <span className="absolute -right-2 -top-2 z-20 flex h-6 min-w-6 items-center justify-center border border-[#c4934e] bg-[#a9793d] px-2 text-[10px] font-black text-white">
+                <span
+                  className={`absolute -right-2 -top-2 z-20 flex h-6 min-w-6 items-center justify-center border px-2 text-[10px] font-black ${
+                    isDusk
+                      ? "border-white/60 bg-white text-[#8d6432]"
+                      : "border-[#c4934e] bg-[#a9793d] text-white"
+                  }`}
+                >
                   {unreadMessageCount}
                 </span>
               )}
@@ -980,7 +1009,11 @@ export default function DashboardPage() {
             <button
               onClick={handleLogout}
               aria-label="Log out"
-              className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 p-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:px-6"
+              className={`group relative overflow-hidden rounded-none p-3 text-xs font-bold uppercase tracking-[0.22em] transition md:px-6 ${
+                isDusk
+                  ? "border border-[#c4934e] bg-[#a9793d] text-white hover:bg-[#8d6432]"
+                  : "border border-stone-300 bg-white/70 text-stone-700 hover:border-[#a9793d] hover:bg-white"
+              }`}
             >
               <span className="relative z-10 inline-flex items-center md:gap-2">
                 <Logout size={14} />
@@ -1013,7 +1046,11 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.7, ease: "easeOut" }}
-              className="relative mb-4 overflow-hidden border-l-[3px] bg-[#f8f4ed] px-4 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)] md:mb-6 md:px-10 md:py-7"
+              className={`relative mb-4 overflow-hidden border border-l-[3px] px-4 py-4 md:mb-6 md:px-10 md:py-7 ${
+                isDusk
+                  ? "border-white/10 bg-black/35 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-md"
+                  : "border-stone-200 bg-[#f8f4ed] shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
+              }`}
               style={{ borderLeftColor: GOLD_DEEP }}
             >
               {/* Mobile: X icon top-right for dismiss. The "don't show again"
@@ -1024,29 +1061,29 @@ export default function DashboardPage() {
                 disabled={ackDismissing}
                 onClick={() => dismissAcknowledgment(false)}
                 aria-label="Dismiss"
-                className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center text-stone-400 transition hover:text-[#a9793d] disabled:opacity-50 md:right-3 md:top-3"
+                className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center text-[var(--sh-text-muted)] transition hover:text-[var(--sh-accent-gold)] disabled:opacity-50 md:right-3 md:top-3"
               >
                 <X size={18} aria-hidden="true" />
               </button>
 
               <div className="flex flex-col gap-3 pr-8 md:flex-row md:items-start md:justify-between md:gap-5 md:pr-10">
                 <div className="min-w-0 max-w-3xl">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#a9793d] md:tracking-[0.32em]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-accent-gold)] md:tracking-[0.32em]">
                     {acknowledgment.eyebrow}
                   </p>
                   <p
-                    className={`${serif.className} mt-2 text-xl italic leading-[1.2] text-stone-900 md:mt-3 md:text-3xl`}
+                    className={`${serif.className} mt-2 text-xl italic leading-[1.2] text-[var(--sh-text-primary)] md:mt-3 md:text-3xl`}
                   >
                     {acknowledgment.headline}
                   </p>
-                  <p className="mt-2 text-sm leading-relaxed text-stone-600 md:mt-4 md:text-base">
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)] md:mt-4 md:text-base">
                     {acknowledgment.body}
                   </p>
                   <button
                     type="button"
                     disabled={ackDismissing}
                     onClick={() => dismissAcknowledgment(true)}
-                    className="mt-3 text-[10px] text-stone-500 underline-offset-4 transition hover:text-[#a9793d] hover:underline disabled:opacity-50 md:mt-4 md:text-[11px]"
+                    className="mt-3 text-[10px] text-[var(--sh-text-tertiary)] underline-offset-4 transition hover:text-[var(--sh-accent-gold)] hover:underline disabled:opacity-50 md:mt-4 md:text-[11px]"
                   >
                     Don&apos;t show these again
                   </button>
@@ -1091,49 +1128,57 @@ export default function DashboardPage() {
           transition={{ duration: 0.7 }}
           className="mb-6 md:mb-8"
         >
-          <div className="relative overflow-hidden rounded-none border border-stone-200 bg-gradient-to-br from-[#f8f4ed] via-[#f3efe7] to-[#efe8dc] px-4 py-6 shadow-[0_14px_40px_rgba(0,0,0,0.06)] md:px-10 md:py-12">
-            <RotatingNatureBackdrop
-              images={[
-                "/nature/alpine-lake-trees-mountains.jpg",
-                "/nature/sunrise-mountain-lake-icy-rocks.jpg",
-                "/nature/trees-lake-mountain-daytime.jpg",
-                "/nature/lake-mountain-alps.jpg",
-              ]}
-              opacity={0.12}
-              rotationMs={18000}
-              imageFilter="sepia(0.15)"
-            />
+          <div
+            className={`relative overflow-hidden rounded-none border px-4 py-6 shadow-[0_14px_40px_rgba(0,0,0,0.06)] md:px-10 md:py-12 ${
+              isDusk
+                ? "border-white/10 bg-black/35 shadow-[0_18px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+                : "border-stone-200 bg-gradient-to-br from-[#f8f4ed] via-[#f3efe7] to-[#efe8dc]"
+            }`}
+          >
+            {/* Card-level backdrop — contained. Dusk = amniotic warmth.
+                Sunlit = the original nature image rotation that fits
+                the cream gradient. */}
+            {isDusk ? (
+              <AmnioticBackdrop contained intensity={0.7} moss={false} />
+            ) : (
+              <RotatingNatureBackdrop
+                images={[
+                  "/nature/alpine-lake-trees-mountains.jpg",
+                  "/nature/sunrise-mountain-lake-icy-rocks.jpg",
+                  "/nature/trees-lake-mountain-daytime.jpg",
+                  "/nature/lake-mountain-alps.jpg",
+                ]}
+                opacity={0.12}
+                rotationMs={18000}
+                imageFilter="sepia(0.15)"
+              />
+            )}
 
-            <svg
-              className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.04] mix-blend-multiply"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <filter id="quote-grain">
-                <feTurbulence
-                  type="fractalNoise"
-                  baseFrequency="0.85"
-                  numOctaves="2"
-                />
-                <feColorMatrix type="saturate" values="0" />
-              </filter>
-              <rect width="100%" height="100%" filter="url(#quote-grain)" />
-            </svg>
             <div className="relative mx-auto max-w-5xl text-center">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.32em] text-[#a9793d] md:mb-4 md:tracking-[0.38em]">
+              <p
+                className={`mb-2 text-[10px] font-bold uppercase tracking-[0.32em] md:mb-4 md:tracking-[0.38em] ${
+                  isDusk ? "text-[#c4934e]" : "text-[#a9793d]"
+                }`}
+              >
                 Today&apos;s Reflection
               </p>
               {dailyQuote ? (
                 <>
                   <p
-                    className={`${serif.className} mx-auto max-w-[1100px] text-lg font-medium italic leading-[1.2] tracking-[-0.015em] text-stone-900 md:text-4xl xl:text-[2.85rem]`}
+                    className={`${serif.className} mx-auto max-w-[1100px] text-lg font-medium italic leading-[1.2] tracking-[-0.015em] md:text-4xl xl:text-[2.85rem] ${
+                      isDusk ? "text-stone-100" : "text-stone-900"
+                    }`}
                   >
                     &ldquo;{dailyQuote.quote_text}&rdquo;
                   </p>
                   <div className="mt-3 flex justify-center md:mt-6">
                     <span
-                      className="border bg-white/60 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] shadow-sm md:px-4 md:py-1.5 md:tracking-[0.24em]"
+                      className={`border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] shadow-sm md:px-4 md:py-1.5 md:tracking-[0.24em] ${
+                        isDusk ? "bg-black/30" : "bg-white/60"
+                      }`}
                       style={{
-                        borderColor: stageAccent(dailyQuote.theme) + "59",
+                        borderColor:
+                          stageAccent(dailyQuote.theme) + (isDusk ? "80" : "59"),
                         color: stageAccent(dailyQuote.theme),
                       }}
                     >
@@ -1144,11 +1189,17 @@ export default function DashboardPage() {
               ) : (
                 <>
                   <p
-                    className={`${serif.className} mx-auto max-w-4xl text-2xl font-medium italic leading-[1.18] tracking-[-0.015em] text-stone-900 md:text-4xl`}
+                    className={`${serif.className} mx-auto max-w-4xl text-2xl font-medium italic leading-[1.18] tracking-[-0.015em] md:text-4xl ${
+                      isDusk ? "text-stone-100" : "text-stone-900"
+                    }`}
                   >
                     Your reflection is being prepared.
                   </p>
-                  <p className="mx-auto mt-3 max-w-xl text-xs leading-relaxed text-stone-500">
+                  <p
+                    className={`mx-auto mt-3 max-w-xl text-xs leading-relaxed ${
+                      isDusk ? "text-stone-400" : "text-stone-500"
+                    }`}
+                  >
                     No active quote was found for today&apos;s {quoteStage}{" "}
                     stage. Generate this week&apos;s reflections and refresh
                     your harbor.
@@ -1180,46 +1231,48 @@ export default function DashboardPage() {
             <div key="streak">
               <div className="flex items-center gap-2">
                 <Flame size={14} className="text-[#a9793d]" />
-                <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+                <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
                   Streak
                 </p>
               </div>
               <p
-                className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
+                className={`${serif.className} mt-2 text-2xl italic text-[var(--sh-text-primary)]`}
               >
                 {streak === null
                   ? "—"
                   : streak === 0
-                    ? "Begin today."
+                    ? "Day zero is still a day."
                     : streak === 1
                       ? "Day 1."
                       : `Day ${streak}.`}
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-stone-500">
-                Missing a day doesn&apos;t reset you.
+              <p className="mt-1 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
+                {streak === 0
+                  ? "Begin when you're ready. The harbor isn't keeping score."
+                  : "Missing a day doesn't reset you."}
               </p>
             </div>,
             // 1 — Tomorrow
             <div key="tomorrow">
-              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
                 Tomorrow
               </p>
               <p
-                className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
+                className={`${serif.className} mt-2 text-2xl italic text-[var(--sh-text-primary)]`}
               >
                 A question on {tomorrowsTopic()}.
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-stone-500">
+              <p className="mt-1 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
                 Three sentences. That&apos;s all.
               </p>
             </div>,
             // 2 — Brotherhood
             <div key="brotherhood">
-              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
                 Brotherhood
               </p>
               <p
-                className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
+                className={`${serif.className} mt-2 text-2xl italic text-[var(--sh-text-primary)]`}
               >
                 {dailyReflections === 0
                   ? "Be the first today."
@@ -1227,7 +1280,7 @@ export default function DashboardPage() {
                     ? "1 man reflected today."
                     : `${dailyReflections} men reflected today.`}
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-stone-500">
+              <p className="mt-1 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
                 You&apos;re not the only one here.
               </p>
             </div>,
@@ -1238,7 +1291,11 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="mb-6 border-y border-stone-200 bg-white/40 backdrop-blur-sm md:mb-8"
+              className={`mb-6 backdrop-blur-md md:mb-8 ${
+                isDusk
+                  ? "border-y border-white/10 bg-black/25"
+                  : "border-y border-stone-200 bg-white/40"
+              }`}
             >
               {/* DESKTOP: three-column grid (Streak / Tomorrow / Brotherhood) */}
               <div className="hidden gap-6 px-6 py-6 md:grid md:grid-cols-3">
@@ -1270,8 +1327,10 @@ export default function DashboardPage() {
                       aria-label={`Show card ${i + 1} of ${cells.length}`}
                       className={`h-1 rounded-full transition-all duration-500 ${
                         i === greetingIndex
-                          ? "w-5 bg-[#a9793d]"
-                          : "w-1 bg-stone-300 hover:bg-stone-400"
+                          ? "w-5 bg-[var(--sh-accent-gold)]"
+                          : isDusk
+                            ? "w-1 bg-white/25 hover:bg-white/50"
+                            : "w-1 bg-stone-300 hover:bg-stone-400"
                       }`}
                     />
                   ))}
@@ -1427,34 +1486,34 @@ export default function DashboardPage() {
         >
           <Link
             href="/meditation"
-            className="group flex flex-col items-center gap-4 border-y border-stone-200 px-6 py-6 transition hover:bg-[#f8f4ed]/40 md:flex-row md:justify-center md:gap-12 md:py-10"
+            className={`group flex flex-col items-center gap-4 px-6 py-6 transition md:flex-row md:justify-center md:gap-12 md:py-10 ${
+              isDusk
+                ? "border-y border-white/10 hover:bg-white/[0.04]"
+                : "border-y border-stone-200 hover:bg-[#f8f4ed]/40"
+            }`}
           >
-            <motion.div
-              animate={{
-                scale: breathPhase === "inhale" ? 1.25 : 1,
-                opacity: breathPhase === "inhale" ? 0.95 : 0.55,
-              }}
-              transition={{ duration: 4, ease: "easeInOut" }}
-              className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border md:h-28 md:w-28"
-              style={{
-                borderColor: accent + "66",
-                background: `radial-gradient(circle, ${accent}33 0%, ${accent}0A 70%, transparent 100%)`,
-              }}
-            >
-              <Wind
-                size={22}
-                strokeWidth={1.5}
-                style={{ color: accent }}
-                aria-hidden="true"
-                className="md:hidden"
-              />
-              <span
-                className={`${serif.className} hidden text-base italic md:inline`}
-                style={{ color: accent }}
-              >
-                {breathPhase === "inhale" ? "Inhale" : "Exhale"}
-              </span>
-            </motion.div>
+            <BreathCircle
+              phase={breathPhase}
+              size="sm"
+              accent={accent}
+              label={
+                <>
+                  <Wind
+                    size={22}
+                    strokeWidth={1.5}
+                    style={{ color: accent }}
+                    aria-hidden="true"
+                    className="md:hidden"
+                  />
+                  <span
+                    className={`${serif.className} hidden text-base italic md:inline`}
+                    style={{ color: accent }}
+                  >
+                    {breathPhase === "inhale" ? "Inhale" : "Exhale"}
+                  </span>
+                </>
+              }
+            />
             <div className="text-center md:text-left">
               <p
                 className="text-[10px] font-bold uppercase tracking-[0.32em]"
@@ -1463,14 +1522,14 @@ export default function DashboardPage() {
                 Daily Breath · Open Meditation
               </p>
               <p
-                className={`${serif.className} mt-1 text-xl italic text-stone-900 md:mt-2 md:text-3xl`}
+                className={`${serif.className} mt-1 text-xl italic text-[var(--sh-text-primary)] md:mt-2 md:text-3xl`}
               >
                 Sixty seconds, every morning.
               </p>
-              <p className="mt-1 max-w-md text-xs leading-relaxed text-stone-600 md:mt-2 md:text-sm">
+              <p className="mt-1 max-w-md text-xs leading-relaxed text-[var(--sh-text-secondary)] md:mt-2 md:text-sm">
                 One breath at the door of the harbor. Stay as long as you want.
               </p>
-              <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400 transition group-hover:text-[#a9793d] md:mt-3">
+              <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)] transition group-hover:text-[var(--sh-accent-gold)] md:mt-3">
                 Enter the Meditation →
               </p>
             </div>
@@ -1492,17 +1551,21 @@ export default function DashboardPage() {
           <div className="grid gap-4 md:gap-8 lg:grid-cols-[0.42fr_0.58fr]">
             <form
               onSubmit={createMemberPost}
-              className="rounded-none border border-white/70 bg-white p-4 shadow-[0_16px_60px_rgba(0,0,0,0.06)] md:p-7"
+              className={`rounded-none p-4 shadow-[0_16px_60px_rgba(0,0,0,0.06)] md:p-7 ${
+                isDusk
+                  ? "border border-white/10 bg-black/30 backdrop-blur-md"
+                  : "border border-white/70 bg-white"
+              }`}
             >
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.26em] text-[#a9793d] md:mb-4 md:text-xs md:tracking-[0.28em]">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.26em] text-[var(--sh-accent-gold)] md:mb-4 md:text-xs md:tracking-[0.28em]">
                 Timeline
               </p>
               <h2
-                className={`${serif.className} text-xl font-medium text-stone-900 md:text-4xl`}
+                className={`${serif.className} text-xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
               >
                 Share an update.
               </h2>
-              <p className="mt-2 hidden text-sm leading-relaxed text-stone-600 md:mt-3 md:block">
+              <p className="mt-2 hidden text-sm leading-relaxed text-[var(--sh-text-secondary)] md:mt-3 md:block">
                 Post a reflection, milestone, or thought for other Stone Harbor
                 members.
               </p>
@@ -1510,13 +1573,21 @@ export default function DashboardPage() {
                 value={postBody}
                 onChange={(e) => setPostBody(e.target.value)}
                 rows={3}
-                className="mt-3 w-full resize-none rounded-none border border-stone-300 bg-[#f8f4ed] px-4 py-3 text-sm outline-none transition focus:border-[#a9793d] focus:ring-2 focus:ring-[#586558]/30 md:mt-6 md:px-5 md:py-4 md:text-base"
+                className={`mt-3 w-full resize-none rounded-none px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#586558]/30 md:mt-6 md:px-5 md:py-4 md:text-base ${
+                  isDusk
+                    ? "border border-white/15 bg-black/40 text-stone-100 placeholder:text-white/30 focus:border-[#c4934e]"
+                    : "border border-stone-300 bg-[#f8f4ed] text-stone-800 placeholder:text-stone-400 focus:border-[#a9793d]"
+                }`}
                 placeholder="What would you like to share?"
               />
               <select
                 value={postPrivacy}
                 onChange={(e) => setPostPrivacy(e.target.value)}
-                className="mt-3 w-full rounded-none border border-stone-300 bg-[#f8f4ed] px-4 py-3 text-sm outline-none transition focus:border-[#a9793d] md:mt-4 md:px-5 md:py-4 md:text-base"
+                className={`mt-3 w-full rounded-none px-4 py-3 text-sm outline-none transition md:mt-4 md:px-5 md:py-4 md:text-base ${
+                  isDusk
+                    ? "border border-white/15 bg-black/40 text-stone-100 focus:border-[#c4934e]"
+                    : "border border-stone-300 bg-[#f8f4ed] text-stone-800 focus:border-[#a9793d]"
+                }`}
               >
                 <option value="members">Members only</option>
                 <option value="private">Private</option>
@@ -1531,14 +1602,20 @@ export default function DashboardPage() {
                 </span>
               </button>
             </form>
-            <div className="rounded-none border border-white/70 bg-white p-4 shadow-[0_16px_60px_rgba(0,0,0,0.06)] md:p-7">
+            <div
+              className={`rounded-none p-4 shadow-[0_16px_60px_rgba(0,0,0,0.06)] md:p-7 ${
+                isDusk
+                  ? "border border-white/10 bg-black/30 backdrop-blur-md"
+                  : "border border-white/70 bg-white"
+              }`}
+            >
               <div className="mb-4 flex items-end justify-between gap-3 md:mb-6 md:gap-4">
                 <div>
-                  <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.26em] text-[#a9793d] md:mb-3 md:text-xs md:tracking-[0.28em]">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.26em] text-[var(--sh-accent-gold)] md:mb-3 md:text-xs md:tracking-[0.28em]">
                     Member Feed
                   </p>
                   <h2
-                    className={`${serif.className} text-xl font-medium text-stone-900 md:text-4xl`}
+                    className={`${serif.className} text-xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
                   >
                     Recent posts.
                   </h2>
@@ -1546,13 +1623,23 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={loadMemberPosts}
-                  className="rounded-none border border-stone-300 bg-[#f8f4ed] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-600 transition hover:border-[#a9793d] md:px-5 md:py-3 md:text-xs md:tracking-[0.2em]"
+                  className={`rounded-none px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition md:px-5 md:py-3 md:text-xs md:tracking-[0.2em] ${
+                    isDusk
+                      ? "border border-[#c4934e] bg-[#a9793d] text-white hover:bg-[#8d6432]"
+                      : "border border-stone-300 bg-[#f8f4ed] text-stone-600 hover:border-[#a9793d]"
+                  }`}
                 >
                   Refresh
                 </button>
               </div>
               {memberPosts.length === 0 ? (
-                <div className="border border-stone-200 bg-[#f8f4ed] p-4 text-sm text-stone-600 md:p-6 md:text-base">
+                <div
+                  className={`p-4 text-sm md:p-6 md:text-base ${
+                    isDusk
+                      ? "border border-white/10 bg-black/30 text-stone-300"
+                      : "border border-stone-200 bg-[#f8f4ed] text-stone-600"
+                  }`}
+                >
                   No timeline posts yet.
                 </div>
               ) : (
@@ -1560,11 +1647,21 @@ export default function DashboardPage() {
                   {memberPosts.map((post) => (
                     <article
                       key={post.id}
-                      className="rounded-none border border-stone-200 bg-[#f8f4ed] p-3 transition hover:border-[#a9793d]/40 md:p-6"
+                      className={`rounded-none p-3 transition md:p-6 ${
+                        isDusk
+                          ? "border border-white/10 bg-black/25 hover:border-[#c4934e]/40"
+                          : "border border-stone-200 bg-[#f8f4ed] hover:border-[#a9793d]/40"
+                      }`}
                     >
                       <div className="mb-3 flex items-start justify-between gap-3 md:mb-4 md:gap-4">
                         <div className="flex items-center gap-3 md:gap-4">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-[#efe8dc] md:h-12 md:w-12">
+                          <div
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full md:h-12 md:w-12 ${
+                              isDusk
+                                ? "border border-white/15 bg-[#c4934e]/10"
+                                : "border border-stone-200 bg-[#efe8dc]"
+                            }`}
+                          >
                             {post.profiles?.avatar_url ? (
                               <img
                                 src={post.profiles.avatar_url}
@@ -1575,17 +1672,17 @@ export default function DashboardPage() {
                               <AnchorIcon
                                 size={16}
                                 strokeWidth={1.4}
-                                className="text-[#a9793d] md:size-5"
+                                className="text-[var(--sh-accent-gold)] md:size-5"
                               />
                             )}
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-stone-900 md:text-base">
+                            <p className="text-sm font-bold text-[var(--sh-text-primary)] md:text-base">
                               {post.profiles?.display_name ||
                                 post.profiles?.username ||
                                 "Stone Harbor Member"}
                             </p>
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400 md:text-xs md:tracking-[0.18em]">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--sh-text-muted)] md:text-xs md:tracking-[0.18em]">
                               {formatPostDate(post.created_at)} ·{" "}
                               {post.privacy_level === "private"
                                 ? "Private"
@@ -1598,7 +1695,11 @@ export default function DashboardPage() {
                             type="button"
                             onClick={() => deleteMemberPost(post.id)}
                             aria-label="Delete post"
-                            className="rounded-none border border-stone-300 p-2 text-stone-500 transition hover:border-red-300 hover:text-red-600 md:px-4 md:py-2"
+                            className={`rounded-none p-2 transition hover:border-red-300 hover:text-red-500 md:px-4 md:py-2 ${
+                              isDusk
+                                ? "border border-white/15 text-stone-400"
+                                : "border border-stone-300 text-stone-500"
+                            }`}
                           >
                             <X size={14} className="md:hidden" aria-hidden="true" />
                             <span className="hidden text-xs font-bold uppercase tracking-[0.18em] md:inline">
@@ -1607,13 +1708,17 @@ export default function DashboardPage() {
                           </button>
                         )}
                       </div>
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-stone-700 md:text-lg">
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--sh-text-secondary)] md:text-lg">
                         {post.body}
                       </p>
                       {/* WITH YOU — anonymous solidarity. The poster sees a
                           warm count message; other members see a quieter
                           factual one. Tapping toggles the anchor. */}
-                      <div className="mt-3 flex items-center justify-between gap-3 border-t border-stone-200 pt-3 md:mt-5 md:gap-4 md:pt-4">
+                      <div
+                        className={`mt-3 flex items-center justify-between gap-3 border-t pt-3 md:mt-5 md:gap-4 md:pt-4 ${
+                          isDusk ? "border-white/10" : "border-stone-200"
+                        }`}
+                      >
                         <WithYouButton
                           isWith={!!post.i_am_with}
                           isOwnPost={post.user_id === userId}
@@ -1811,12 +1916,12 @@ export default function DashboardPage() {
             aria-label="Recent brotherhood whispers"
           >
             <div className="mb-3 flex items-end justify-between">
-              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#a9793d]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-accent-gold)]">
                 From the Brotherhood
               </p>
               <Link
                 href="/messages"
-                className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500 transition hover:text-[#a9793d]"
+                className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition hover:text-[var(--sh-accent-gold)]"
               >
                 Step further in →
               </Link>
@@ -1825,10 +1930,20 @@ export default function DashboardPage() {
               {memberPosts.slice(0, 3).map((post) => (
                 <article
                   key={post.id}
-                  className="rounded-none border border-stone-200 bg-white/70 p-3"
+                  className={`rounded-none p-3 ${
+                    isDusk
+                      ? "border border-white/10 bg-black/30 backdrop-blur-sm"
+                      : "border border-stone-200 bg-white/70"
+                  }`}
                 >
                   <div className="mb-1.5 flex items-center gap-2">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-[#efe8dc]">
+                    <div
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full ${
+                        isDusk
+                          ? "border border-white/15 bg-[#c4934e]/10"
+                          : "border border-stone-200 bg-[#efe8dc]"
+                      }`}
+                    >
                       {post.profiles?.avatar_url ? (
                         <img
                           src={post.profiles.avatar_url}
@@ -1839,20 +1954,20 @@ export default function DashboardPage() {
                         <AnchorIcon
                           size={12}
                           strokeWidth={1.5}
-                          className="text-[#a9793d]"
+                          className="text-[var(--sh-accent-gold)]"
                         />
                       )}
                     </div>
-                    <p className="text-[11px] font-bold text-stone-700">
+                    <p className="text-[11px] font-bold text-[var(--sh-text-primary)]">
                       {post.profiles?.display_name ||
                         post.profiles?.username ||
                         "A brother"}
                     </p>
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-stone-400">
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--sh-text-muted)]">
                       · {formatPostDate(post.created_at)}
                     </p>
                   </div>
-                  <p className="line-clamp-3 whitespace-pre-wrap text-sm leading-relaxed text-stone-700">
+                  <p className="line-clamp-3 whitespace-pre-wrap text-sm leading-relaxed text-[var(--sh-text-secondary)]">
                     {post.body}
                   </p>
                 </article>
@@ -1875,7 +1990,11 @@ export default function DashboardPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7 }}
-          className="mt-6 rounded-none border border-stone-200 bg-white/70 p-4 backdrop-blur-sm md:mt-10 md:p-8"
+          className={`mt-6 rounded-none p-4 backdrop-blur-sm md:mt-10 md:p-8 ${
+            isDusk
+              ? "border border-white/10 bg-black/30 backdrop-blur-md"
+              : "border border-stone-200 bg-white/70"
+          }`}
         >
           <div className="grid gap-4 md:grid-cols-[1.4fr_1fr] md:items-center md:gap-6">
             <div>
@@ -1889,11 +2008,11 @@ export default function DashboardPage() {
                 </p>
               </div>
               <h2
-                className={`${serif.className} mt-2 text-2xl font-medium text-stone-900 md:mt-3 md:text-5xl`}
+                className={`${serif.className} mt-2 text-2xl font-medium text-[var(--sh-text-primary)] md:mt-3 md:text-5xl`}
               >
                 Pick up where you left off.
               </h2>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-stone-600 md:mt-4 md:text-base">
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-[var(--sh-text-secondary)] md:mt-4 md:text-base">
                 {roadmapProgress === null ? (
                   <>Loading your roadmap…</>
                 ) : roadmapProgress.total_steps === 0 ? (
@@ -1931,7 +2050,11 @@ export default function DashboardPage() {
               </p>
             </div>
             <div>
-              <div className="mb-3 h-1 w-full bg-stone-200 md:h-[6px]">
+              <div
+                className={`mb-3 h-1 w-full md:h-[6px] ${
+                  isDusk ? "bg-white/15" : "bg-stone-200"
+                }`}
+              >
                 <div
                   className="h-full transition-all duration-700"
                   style={{
@@ -1953,18 +2076,32 @@ export default function DashboardPage() {
         )}
 
         {/* CLOSING LINE — explicit permission to leave. The opposite
-            of every social product. Stone Harbor wants the member to
-            come back tomorrow, which means making "today's enough"
-            feel like its own small completion. */}
-        <motion.p
+            of every social product. On the dark theme, the page is
+            already dark; the line floats as a quiet italic with a
+            soft warm glow halo for emphasis. */}
+        <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.9 }}
-          className={`${serif.className} mt-10 text-center text-sm italic text-stone-500 md:mt-16 md:text-base`}
+          className="relative mt-12 overflow-hidden px-6 py-10 md:mt-20 md:py-14"
         >
-          The harbor will be here tomorrow.
-        </motion.p>
+          {/* Warm dawn glow centered behind the line */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 40% 70% at 50% 50%, rgba(196,147,78,0.14) 0%, rgba(196,147,78,0.04) 50%, transparent 80%)",
+            }}
+          />
+          <p
+            className={`${serif.className} relative text-center text-base italic md:text-lg ${
+              isDusk ? "text-white/80" : "text-stone-500"
+            }`}
+          >
+            The harbor will be here tomorrow.
+          </p>
+        </motion.div>
       </section>
 
       {/* COVER IMAGE VIEWER */}
@@ -2039,27 +2176,36 @@ export default function DashboardPage() {
       <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       {/* FOOTER — 988 crisis line required on every authenticated screen */}
-      <footer className="relative z-10 mt-6 border-t border-stone-200 bg-[#efe8dc]/70 px-4 py-5 backdrop-blur-sm md:mt-12 md:px-6 md:py-10">
+      <footer
+        className={`relative z-10 mt-6 border-t px-4 py-5 backdrop-blur-sm md:mt-12 md:px-6 md:py-10 ${
+          isDusk
+            ? "border-white/10 bg-black/60"
+            : "border-stone-200 bg-[#efe8dc]/70"
+        }`}
+      >
         <div className="mx-auto grid max-w-7xl gap-3 md:grid-cols-3 md:items-center md:gap-6">
           <div>
-            <p className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d]">
+            <p className="text-base font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold)]">
               Stone Harbor
             </p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70">
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--sh-accent-gold)]/70">
               Men&apos;s Mental Wellness
             </p>
           </div>
           <div className="text-center">
-            <p className={`${serif.className} text-base italic text-stone-600`}>
+            <p
+              className={`${serif.className} text-base italic text-[var(--sh-text-secondary)]`}
+            >
               The harbor is patient.
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
               If You Are In Crisis
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-stone-700">
-              Call or text <span className="font-bold text-[#a9793d]">988</span>{" "}
+            <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
+              Call or text{" "}
+              <span className="font-bold text-[var(--sh-accent-gold)]">988</span>{" "}
               — 24/7. Free. Confidential.
             </p>
             {acknowledgment?.amplify988 && (
@@ -2342,49 +2488,66 @@ function DashboardCard({
   badge = 0,
   Icon,
 }: DashboardCardProps) {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
+
   return (
     <Link
       href={href}
-      className="group relative flex h-full w-[78%] shrink-0 snap-start flex-col overflow-hidden rounded-none border border-white/70 bg-white p-5 shadow-[0_12px_40px_rgba(0,0,0,0.05)] transition duration-300 hover:-translate-y-1 hover:border-[#a9793d]/40 hover:shadow-[0_18px_55px_rgba(0,0,0,0.09)] md:w-auto md:p-7"
+      className={`group relative flex h-full w-[78%] shrink-0 snap-start flex-col overflow-hidden rounded-none p-5 transition duration-300 hover:-translate-y-1 md:w-auto md:p-7 ${
+        isDusk
+          ? "border border-white/10 bg-black/35 shadow-[0_18px_50px_rgba(0,0,0,0.4)] backdrop-blur-md hover:border-[#c4934e]/40 hover:bg-black/45"
+          : "border border-white/70 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.05)] hover:border-[#a9793d]/40 hover:shadow-[0_18px_55px_rgba(0,0,0,0.09)]"
+      }`}
     >
       {badge > 0 && (
         <span className="absolute right-3 top-3 z-20 flex h-7 min-w-7 items-center justify-center border border-[#c4934e] bg-[#a9793d] px-2 text-xs font-black text-white shadow-[0_8px_20px_rgba(169,121,61,0.35)] md:right-5 md:top-5 md:h-8 md:min-w-8">
           {badge}
         </span>
       )}
-      {/* Hero icon block — visually appealing on mobile, where the card is
-          the primary touch target. Larger icon in a tinted circle that
-          echoes Stone Harbor's gold motif. On md+ this collapses back to
-          the inline icon+label row of the original design. */}
+      {/* Hero icon block — gold ring on mobile. The tinted-dark version on Dusk
+          uses subtle gold-on-dark; on Sunlit a cream-gradient ring. */}
       {Icon && (
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-[#a9793d]/25 bg-gradient-to-br from-[#f8f4ed] to-[#efe8dc] md:hidden">
-          <Icon size={22} strokeWidth={1.5} className="text-[#a9793d]" />
+        <div
+          className={`mb-3 flex h-12 w-12 items-center justify-center rounded-full md:hidden ${
+            isDusk
+              ? "border border-[#c4934e]/30 bg-[#c4934e]/10"
+              : "border border-[#a9793d]/25 bg-gradient-to-br from-[#f8f4ed] to-[#efe8dc]"
+          }`}
+        >
+          <Icon
+            size={22}
+            strokeWidth={1.5}
+            className="text-[var(--sh-accent-gold)]"
+          />
         </div>
       )}
       <div className="mb-3 hidden items-center gap-3 pr-10 md:mb-4 md:flex">
         {Icon && (
-          <Icon size={22} strokeWidth={1.5} className="text-[#a9793d]" />
+          <Icon
+            size={22}
+            strokeWidth={1.5}
+            className="text-[var(--sh-accent-gold)]"
+          />
         )}
-        <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#a9793d]">
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-[var(--sh-accent-gold)]">
           {label}
         </p>
       </div>
-      {/* Label visible on mobile (the desktop one is hidden via .hidden above) */}
-      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#a9793d] md:hidden">
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-accent-gold)] md:hidden">
         {label}
       </p>
       <h3
-        className={`${serif.className} text-2xl font-medium text-stone-900 md:text-4xl`}
+        className={`${serif.className} text-2xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
       >
         {title}
       </h3>
-      <p className="mt-3 flex-1 text-sm leading-relaxed text-stone-600 md:mt-4 md:text-base">
+      <p className="mt-3 flex-1 text-sm leading-relaxed text-[var(--sh-text-secondary)] md:mt-4 md:text-base">
         {text}
       </p>
-      <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 transition group-hover:text-[#a9793d] md:mt-6 md:text-xs">
+      <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--sh-text-muted)] transition group-hover:text-[var(--sh-accent-gold)] md:mt-6 md:text-xs">
         Open →
       </p>
-      {/* gold underline draw — matches home CTAs */}
       <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
     </Link>
   );

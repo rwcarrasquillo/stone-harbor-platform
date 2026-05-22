@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogIn, LogOut, UserPlus, LayoutDashboard } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { BreathCircle } from "@/app/components/breathCircle";
 
 import { serif, sans } from "@/lib/fonts";
 type JourneyKey = "clarity" | "calm" | "strength";
@@ -480,61 +481,20 @@ export default function Home() {
             Take sixty seconds.
           </p>
 
-          {/* Breath circle + progress ring.
-              The ring is at a fixed size; the inner motion.div pulses
-              between 1x and 1.4x scale safely within. pathLength=60
-              maps the stroke directly to seconds so dashoffset is just
-              (60 - elapsed). 1s linear transition tracks the per-second
-              tick smoothly. */}
-          <div className="relative flex h-52 w-52 items-center justify-center md:h-72 md:w-72">
-            <svg
-              className="absolute inset-0 h-full w-full -rotate-90"
-              viewBox="0 0 100 100"
-              aria-hidden="true"
-            >
-              <circle
-                cx="50"
-                cy="50"
-                r="46"
-                fill="none"
-                stroke="#c4934e"
-                strokeOpacity="0.18"
-                strokeWidth="0.6"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r="46"
-                fill="none"
-                stroke="#c4934e"
-                strokeWidth="1.1"
-                strokeLinecap="round"
-                pathLength={60}
-                strokeDasharray={60}
-                strokeDashoffset={60 - breathSecondsElapsed}
-                style={{ transition: "stroke-dashoffset 1s linear" }}
-              />
-            </svg>
-            <motion.div
-              animate={{
-                scale: breathPhase === "inhale" ? 1.4 : 1,
-                opacity: breathPhase === "inhale" ? 0.95 : 0.6,
-              }}
-              transition={{ duration: 4, ease: "easeInOut" }}
-              className="flex h-32 w-32 items-center justify-center rounded-full border border-[#c4934e]/40 md:h-44 md:w-44"
-              style={{
-                background:
-                  "radial-gradient(circle, rgba(196,147,78,0.22) 0%, rgba(196,147,78,0.04) 70%, transparent 100%)",
-              }}
-            >
-              <span
-                className={`${serif.className} text-xl italic text-white/90 md:text-2xl`}
-              >
-                {breathPhase === "inhale" ? "Inhale" : "Exhale"}
-              </span>
-            </motion.div>
-          </div>
+          {/* Unified <BreathCircle /> — same component used on the
+              dashboard meditation banner and /meditation. progressFraction
+              drives the gold arc that fills over 60 seconds as
+              breathSecondsElapsed counts up. */}
+          <BreathCircle
+            phase={breathPhase}
+            size="lg"
+            progressFraction={breathSecondsElapsed / 60}
+          />
 
+          {/* Completion message uses a moss-tinted color (#7d8c7d, lighter
+              moss for legibility on dark) instead of the brand gold —
+              signals exhale, not announcement. Two-color discipline:
+              gold for prompts-in-motion, moss for done/calm states. */}
           <AnimatePresence>
             {breathSecondsElapsed >= 60 ? (
               <motion.p
@@ -542,7 +502,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className={`${serif.className} mt-6 max-w-md text-base italic leading-relaxed text-[#c4934e] md:mt-10 md:text-lg`}
+                className={`${serif.className} mt-6 max-w-md text-base italic leading-relaxed text-[#7d8c7d] md:mt-10 md:text-lg`}
               >
                 Sixty seconds. Well done. The harbor is patient.
               </motion.p>

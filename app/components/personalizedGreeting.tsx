@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { serif } from "@/lib/fonts";
+import { DURATION, EASE } from "@/lib/motion";
 
 /**
  * Stone Harbor — PersonalizedGreeting.
@@ -155,16 +156,16 @@ export function PersonalizedGreeting({ name, userId }: Props) {
     <motion.section
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.9, ease: "easeOut" }}
+      transition={{ duration: DURATION.patient, ease: EASE.settle }}
       className="mb-5 md:mb-8"
       aria-label="Welcome"
     >
       <h1
-        className={`${serif.className} text-3xl font-medium italic leading-[1.05] text-stone-900 md:text-5xl`}
+        className={`${serif.className} text-3xl font-medium italic leading-[1.05] text-[var(--sh-text-primary)] md:text-5xl`}
       >
         {copy.salutation}
       </h1>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600 md:mt-3 md:text-base">
+      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--sh-text-secondary)] md:mt-3 md:text-base">
         {copy.body}
       </p>
     </motion.section>

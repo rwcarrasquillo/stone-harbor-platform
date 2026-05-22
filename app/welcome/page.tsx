@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
 import { Toast, type ToastState } from "@/app/components/toast";
+import { ThemeToggle } from "@/app/components/themeToggle";
 
 type CompanySuggestion = {
   name: string;
@@ -971,6 +972,14 @@ export default function WelcomePage() {
                   Cancel
                 </Link>
               </div>
+
+              {/* ────────── APPEARANCE ──────────
+                  Member-level theme choice: Sunlit (cream) or Dusk
+                  (dark amniotic). Saves to localStorage + Supabase
+                  profiles.theme_preference on every toggle. */}
+              <section className="mt-12 border-t border-stone-200 pt-10">
+                <ThemeToggle />
+              </section>
 
               {/* ────────── CLOSE ACCOUNT ──────────
                   Required by Privacy Policy §8. A member can request

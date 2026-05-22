@@ -1,8 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import "./globals.css";
 import { sans } from "@/lib/fonts";
 import { ServiceWorkerRegistrar } from "@/app/components/serviceWorkerRegistrar";
 import { MobileTabBar } from "@/app/components/mobileTabBar";
+import { AnchorWatermark } from "@/app/components/anchorWatermark";
+import { ThemeProvider, type Theme } from "@/app/components/themeProvider";
 
 /**
  * Stone Harbor — root metadata.
@@ -122,17 +125,41 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+/**
+ * Read the member's saved theme from a same-origin cookie at request
+ * time. The cookie is written client-side by ThemeProvider.setTheme;
+ * having the server read it means the data-theme attribute on <html>
+ * is correct on the very first render, with no hydration mismatch,
+ * no flash of unstyled theme, no inline script.
+ *
+ * Defaults to 'sunlit' for new visitors who haven't toggled yet.
+ */
+async function readThemeFromCookie(): Promise<Theme> {
+  const store = await cookies();
+  const value = store.get("stone-harbor-theme")?.value;
+  return value === "dusk" ? "dusk" : "sunlit";
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const theme = await readThemeFromCookie();
+
   return (
-    <html lang="en" className={`${sans.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${sans.variable} h-full antialiased`}
+      data-theme={theme}
+    >
       <body className="min-h-full flex flex-col">
-        {children}
-        <MobileTabBar />
-        <ServiceWorkerRegistrar />
+        <ThemeProvider initialTheme={theme}>
+          {children}
+          <AnchorWatermark />
+          <MobileTabBar />
+          <ServiceWorkerRegistrar />
+        </ThemeProvider>
       </body>
     </html>
   );
