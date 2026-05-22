@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
+import { PageAmbience } from "@/app/components/pageAmbience";
+import { useTheme } from "@/app/components/themeProvider";
 import { serif, sans } from "@/lib/fonts";
 import {
   Book,
@@ -208,6 +210,8 @@ function FeedCard({
   onOpen: () => void;
   variant?: "card" | "strip";
 }) {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
   const meta = PILLAR_META[item.pillar];
   const isExternal = item.kind === "external";
   const sourceBadge = isExternal ? item.source_name : "Stone Harbor Original";
@@ -223,8 +227,14 @@ function FeedCard({
       <div className="flex flex-1 flex-col p-5">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <span
-            className="inline-flex items-center gap-1.5 border bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em]"
-            style={{ borderColor: meta.accent, color: meta.accent }}
+            className="inline-flex items-center gap-1.5 border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em]"
+            style={{
+              borderColor: meta.accent,
+              color: meta.accent,
+              backgroundColor: isDusk
+                ? "rgba(255,255,255,0.05)"
+                : "#ffffff",
+            }}
           >
             <meta.Icon
               size={10}
@@ -236,16 +246,30 @@ function FeedCard({
           <span
             className="border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em]"
             style={{
-              borderColor: isExternal ? "#d6d3d1" : `${GOLD_DEEP}55`,
-              color: isExternal ? "#57534e" : GOLD_DEEP,
-              backgroundColor: isExternal ? "#f8f4ed" : "#fbf6ec",
+              borderColor: isExternal
+                ? isDusk
+                  ? "rgba(255,255,255,0.15)"
+                  : "#d6d3d1"
+                : `${GOLD_DEEP}55`,
+              color: isExternal
+                ? isDusk
+                  ? "rgba(255,255,255,0.65)"
+                  : "#57534e"
+                : GOLD_DEEP,
+              backgroundColor: isExternal
+                ? isDusk
+                  ? "rgba(255,255,255,0.04)"
+                  : "#f8f4ed"
+                : isDusk
+                  ? "rgba(196,147,78,0.12)"
+                  : "#fbf6ec",
             }}
           >
             {sourceBadge}
           </span>
         </div>
         <h3
-          className={`${serif.className} text-2xl font-medium leading-tight text-stone-900 md:text-[1.65rem]`}
+          className={`${serif.className} text-2xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-[1.65rem]`}
         >
           {item.title}
           {isExternal && (
@@ -258,12 +282,12 @@ function FeedCard({
           )}
         </h3>
         {feedSummary(item) && (
-          <p className="mt-2 line-clamp-3 text-sm italic leading-relaxed text-stone-600">
+          <p className="mt-2 line-clamp-3 text-sm italic leading-relaxed text-[var(--sh-text-secondary)]">
             {feedSummary(item)}
           </p>
         )}
         <div className="mt-auto pt-4 flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
             {formatDate(date)}
           </span>
           <span
@@ -277,10 +301,11 @@ function FeedCard({
     </>
   );
 
-  const baseClass =
-    "group block flex h-full flex-col bg-white transition hover:bg-[#fdfaf3]";
+  const baseClass = isDusk
+    ? "group block flex h-full flex-col bg-black/30 backdrop-blur-sm transition hover:bg-white/[0.06]"
+    : "group block flex h-full flex-col bg-white transition hover:bg-[#fdfaf3]";
   const borderStyle = {
-    border: "1px solid #e7e5e4",
+    border: isDusk ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e7e5e4",
     borderLeft: `3px solid ${meta.accent}`,
   };
 
@@ -314,6 +339,8 @@ function FeedCard({
    ────────────────────────────────────────────── */
 
 function HeroCard({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
   const meta = PILLAR_META[item.pillar];
   const isExternal = item.kind === "external";
   const sourceBadge = isExternal ? item.source_name : "Stone Harbor Original";
@@ -321,9 +348,15 @@ function HeroCard({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
 
   const inner = (
     <div
-      className="grid overflow-hidden bg-white transition hover:bg-[#fdfaf3] md:grid-cols-[1.05fr_0.95fr]"
+      className={`grid overflow-hidden transition md:grid-cols-[1.05fr_0.95fr] ${
+        isDusk
+          ? "bg-black/30 backdrop-blur-sm hover:bg-white/[0.06]"
+          : "bg-white hover:bg-[#fdfaf3]"
+      }`}
       style={{
-        border: "1px solid #e7e5e4",
+        border: isDusk
+          ? "1px solid rgba(255,255,255,0.08)"
+          : "1px solid #e7e5e4",
         borderLeft: `3px solid ${meta.accent}`,
       }}
     >
@@ -335,8 +368,12 @@ function HeroCard({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
       <div className="flex flex-col p-7 md:p-10">
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span
-            className="inline-flex items-center gap-1.5 border bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
-            style={{ borderColor: meta.accent, color: meta.accent }}
+            className="inline-flex items-center gap-1.5 border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
+            style={{
+              borderColor: meta.accent,
+              color: meta.accent,
+              backgroundColor: isDusk ? "rgba(255,255,255,0.05)" : "#ffffff",
+            }}
           >
             <meta.Icon
               size={11}
@@ -348,19 +385,33 @@ function HeroCard({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
           <span
             className="border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
             style={{
-              borderColor: isExternal ? "#d6d3d1" : `${GOLD_DEEP}55`,
-              color: isExternal ? "#57534e" : GOLD_DEEP,
-              backgroundColor: isExternal ? "#f8f4ed" : "#fbf6ec",
+              borderColor: isExternal
+                ? isDusk
+                  ? "rgba(255,255,255,0.15)"
+                  : "#d6d3d1"
+                : `${GOLD_DEEP}55`,
+              color: isExternal
+                ? isDusk
+                  ? "rgba(255,255,255,0.65)"
+                  : "#57534e"
+                : GOLD_DEEP,
+              backgroundColor: isExternal
+                ? isDusk
+                  ? "rgba(255,255,255,0.04)"
+                  : "#f8f4ed"
+                : isDusk
+                  ? "rgba(196,147,78,0.12)"
+                  : "#fbf6ec",
             }}
           >
             {sourceBadge}
           </span>
-          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
             Featured
           </span>
         </div>
         <h2
-          className={`${serif.className} text-4xl font-medium leading-tight text-stone-900 md:text-5xl lg:text-6xl`}
+          className={`${serif.className} text-4xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-5xl lg:text-6xl`}
         >
           {item.title}
           {isExternal && (
@@ -373,12 +424,12 @@ function HeroCard({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
           )}
         </h2>
         {feedSummary(item) && (
-          <p className="mt-5 text-base italic leading-relaxed text-stone-600 md:text-lg">
+          <p className="mt-5 text-base italic leading-relaxed text-[var(--sh-text-secondary)] md:text-lg">
             {feedSummary(item)}
           </p>
         )}
         <div className="mt-auto pt-8 flex flex-wrap items-center justify-between gap-3">
-          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
             {formatDate(date)}
           </span>
           <span
@@ -416,6 +467,9 @@ function HeroCard({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
    ────────────────────────────────────────────── */
 
 export default function NewMembersBlogPage() {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
+
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [externals, setExternals] = useState<ExternalContent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -573,7 +627,7 @@ export default function NewMembersBlogPage() {
   if (loading) {
     return (
       <main
-        className={`${sans.className} flex min-h-screen items-center justify-center bg-[#f3efe7]`}
+        className={`${sans.className} flex min-h-screen items-center justify-center bg-[var(--sh-bg-page)]`}
       >
         <div className="flex flex-col items-center">
           <motion.div
@@ -586,7 +640,7 @@ export default function NewMembersBlogPage() {
             }}
           />
           <p
-            className={`${serif.className} mt-8 text-2xl italic text-stone-700`}
+            className={`${serif.className} mt-8 text-2xl italic text-[var(--sh-text-secondary)]`}
           >
             Opening the library…
           </p>
@@ -599,47 +653,11 @@ export default function NewMembersBlogPage() {
 
   return (
     <main
-      className={`${sans.className} relative min-h-screen overflow-hidden bg-[#f3efe7] text-stone-900`}
+      className={`${sans.className} relative min-h-screen overflow-hidden bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}
     >
       <InactivityGate />
-      {/* AMBIENT — subtle (less than reading-focused pages) */}
-      <svg
-        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.025]"
-        xmlns="http://www.w3.org/2000/svg"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        <defs>
-          <pattern
-            id="newblog-contour"
-            x="0"
-            y="0"
-            width="320"
-            height="320"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M0 60 Q 80 30 160 60 T 320 60"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 200 Q 80 170 160 200 T 320 200"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#newblog-contour)" />
-      </svg>
-      <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 50% 30% at 92% 4%, rgba(196,147,78,0.14) 0%, rgba(196,147,78,0.04) 40%, transparent 75%)",
-        }}
-      />
+      {/* Unified harbor ambience — same on every authenticated page */}
+      <PageAmbience />
 
       <section className="relative z-10 mx-auto max-w-6xl px-4 pb-12 pt-8 md:px-8">
         {/* TOP NAV */}
@@ -657,7 +675,7 @@ export default function NewMembersBlogPage() {
           </Link>
           <Link
             href="/"
-            className="text-xs font-bold uppercase tracking-[0.28em] text-stone-500 transition hover:text-[#a9793d]"
+            className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)] transition hover:text-[#a9793d]"
           >
             Stone Harbor
           </Link>
@@ -678,7 +696,7 @@ export default function NewMembersBlogPage() {
               </p>
             </div>
             <h1
-              className={`${serif.className} mt-2 text-4xl font-medium leading-tight text-stone-900 md:text-5xl`}
+              className={`${serif.className} mt-2 text-4xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-5xl`}
             >
               Read.
             </h1>
@@ -697,7 +715,7 @@ export default function NewMembersBlogPage() {
         </motion.div>
 
         {/* STICKY FILTER BAR */}
-        <div className="sticky top-0 z-20 -mx-4 mb-8 border-y border-stone-200 bg-[#f3efe7]/95 px-4 py-3 backdrop-blur-sm md:-mx-8 md:px-8">
+        <div className="sticky top-0 z-20 -mx-4 mb-8 border-y border-[var(--sh-border-subtle)] bg-[#f3efe7]/95 px-4 py-3 backdrop-blur-sm md:-mx-8 md:px-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap gap-1.5">
               {(["all", "yours", "clarity", "calm", "strength"] as const).map(
@@ -720,9 +738,23 @@ export default function NewMembersBlogPage() {
                       onClick={() => setFilter(f)}
                       className="border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] transition"
                       style={{
-                        borderColor: isActive ? accent : "#e7e5e4",
-                        color: isActive ? accent : "#57534e",
-                        backgroundColor: isActive ? "white" : "#f8f4ed",
+                        borderColor: isActive
+                          ? accent
+                          : isDusk
+                            ? "rgba(255,255,255,0.12)"
+                            : "#e7e5e4",
+                        color: isActive
+                          ? accent
+                          : isDusk
+                            ? "rgba(255,255,255,0.65)"
+                            : "#57534e",
+                        backgroundColor: isActive
+                          ? isDusk
+                            ? "rgba(255,255,255,0.08)"
+                            : "white"
+                          : isDusk
+                            ? "rgba(255,255,255,0.03)"
+                            : "#f8f4ed",
                       }}
                     >
                       {label}
@@ -747,9 +779,23 @@ export default function NewMembersBlogPage() {
                     onClick={() => setSourceMode(m)}
                     className="border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] transition"
                     style={{
-                      borderColor: isActive ? GOLD_DEEP : "#e7e5e4",
-                      color: isActive ? GOLD_DEEP : "#57534e",
-                      backgroundColor: isActive ? "white" : "#f8f4ed",
+                      borderColor: isActive
+                        ? GOLD_DEEP
+                        : isDusk
+                          ? "rgba(255,255,255,0.12)"
+                          : "#e7e5e4",
+                      color: isActive
+                        ? GOLD_DEEP
+                        : isDusk
+                          ? "rgba(255,255,255,0.65)"
+                          : "#57534e",
+                      backgroundColor: isActive
+                        ? isDusk
+                          ? "rgba(255,255,255,0.08)"
+                          : "white"
+                        : isDusk
+                          ? "rgba(255,255,255,0.03)"
+                          : "#f8f4ed",
                     }}
                   >
                     {label}
@@ -762,11 +808,17 @@ export default function NewMembersBlogPage() {
 
         {/* EMPTY STATE */}
         {visibleFeed.length === 0 && (
-          <div className="border border-stone-200 bg-white p-10 text-center">
-            <p className={`${serif.className} text-3xl italic text-stone-700`}>
+          <div
+            className={`border p-10 text-center ${
+              isDusk
+                ? "border-white/10 bg-black/30 backdrop-blur-sm"
+                : "border-[var(--sh-border-subtle)] bg-white"
+            }`}
+          >
+            <p className={`${serif.className} text-3xl italic text-[var(--sh-text-secondary)]`}>
               Nothing here yet.
             </p>
-            <p className="mt-2 text-sm text-stone-500">
+            <p className="mt-2 text-sm text-[var(--sh-text-tertiary)]">
               Try adjusting the filters above, or come back soon.
             </p>
           </div>
@@ -802,7 +854,7 @@ export default function NewMembersBlogPage() {
               className="mb-14"
             >
               {/* Pillar header */}
-              <div className="mb-5 flex items-end justify-between border-b border-stone-300 pb-3">
+              <div className="mb-5 flex items-end justify-between border-b border-[var(--sh-border-medium)] pb-3">
                 <div className="flex items-center gap-3">
                   <meta.Icon
                     size={20}
@@ -810,7 +862,7 @@ export default function NewMembersBlogPage() {
                     style={{ color: meta.accent }}
                   />
                   <h2
-                    className={`${serif.className} text-3xl font-medium text-stone-900 md:text-4xl`}
+                    className={`${serif.className} text-3xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
                   >
                     {meta.label}
                   </h2>
@@ -826,7 +878,7 @@ export default function NewMembersBlogPage() {
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
                   {section.total} {section.total === 1 ? "entry" : "entries"}
                 </span>
               </div>
@@ -841,7 +893,7 @@ export default function NewMembersBlogPage() {
                     >
                       From Trusted Sources
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
                       · {section.external.length}
                     </span>
                   </div>
@@ -868,7 +920,7 @@ export default function NewMembersBlogPage() {
                     >
                       Stone Harbor Original
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
                       · {section.internal.length}
                     </span>
                   </div>
@@ -899,13 +951,21 @@ export default function NewMembersBlogPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="relative w-full max-w-3xl bg-white shadow-[0_30px_120px_rgba(0,0,0,0.45)]"
+            className={`relative w-full max-w-3xl shadow-[0_30px_120px_rgba(0,0,0,0.45)] ${
+              isDusk
+                ? "border border-white/10 bg-[#0f0c0a] backdrop-blur-md"
+                : "bg-white"
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setOpenId(null)}
-              className="absolute right-4 top-4 z-10 border border-stone-300 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-700 hover:border-[#a9793d]"
+              className={`absolute right-4 top-4 z-10 border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] transition hover:border-[var(--sh-accent-gold)] ${
+                isDusk
+                  ? "border-white/15 bg-white/[0.06] text-[var(--sh-text-secondary)]"
+                  : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-secondary)]"
+              }`}
             >
               Close ×
             </button>
@@ -917,10 +977,13 @@ export default function NewMembersBlogPage() {
             <div className="p-8 md:p-12">
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 <span
-                  className="inline-flex items-center gap-1.5 border bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
+                  className="inline-flex items-center gap-1.5 border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
                   style={{
                     borderColor: PILLAR_META[openItem.pillar].accent,
                     color: PILLAR_META[openItem.pillar].accent,
+                    backgroundColor: isDusk
+                      ? "rgba(255,255,255,0.05)"
+                      : "#ffffff",
                   }}
                 >
                   {PILLAR_META[openItem.pillar].label}
@@ -930,26 +993,28 @@ export default function NewMembersBlogPage() {
                   style={{
                     borderColor: `${GOLD_DEEP}55`,
                     color: GOLD_DEEP,
-                    backgroundColor: "#fbf6ec",
+                    backgroundColor: isDusk
+                      ? "rgba(196,147,78,0.12)"
+                      : "#fbf6ec",
                   }}
                 >
                   Stone Harbor Original
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
                   {formatDate(feedDate(openItem))}
                 </span>
               </div>
               <h1
-                className={`${serif.className} text-4xl font-medium leading-tight text-stone-900 md:text-5xl`}
+                className={`${serif.className} text-4xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-5xl`}
               >
                 {openItem.title}
               </h1>
               {feedSummary(openItem) && (
-                <p className="mt-4 text-base italic leading-relaxed text-stone-600 md:text-lg">
+                <p className="mt-4 text-base italic leading-relaxed text-[var(--sh-text-secondary)] md:text-lg">
                   {feedSummary(openItem)}
                 </p>
               )}
-              <div className="mt-8 whitespace-pre-wrap text-base leading-relaxed text-stone-800 md:text-lg">
+              <div className="mt-8 whitespace-pre-wrap text-base leading-relaxed text-[var(--sh-text-primary)] md:text-lg">
                 {(openItem as { content: string }).content}
               </div>
             </div>
@@ -958,7 +1023,7 @@ export default function NewMembersBlogPage() {
       )}
 
       {/* FOOTER */}
-      <footer className="relative z-10 border-t border-stone-200 bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
+      <footer className="relative z-10 border-t border-[var(--sh-border-subtle)] bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
         <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-3 md:items-center">
           <div>
             <p className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d]">
@@ -969,15 +1034,15 @@ export default function NewMembersBlogPage() {
             </p>
           </div>
           <div className="text-center">
-            <p className={`${serif.className} text-base italic text-stone-600`}>
+            <p className={`${serif.className} text-base italic text-[var(--sh-text-secondary)]`}>
               The harbor is patient.
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
               If You Are In Crisis
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-stone-700">
+            <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
               Call or text <span className="font-bold text-[#a9793d]">988</span>{" "}
               — 24/7. Free. Confidential.
             </p>

@@ -4,6 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
+import { PageAmbience } from "@/app/components/pageAmbience";
+import { useTheme } from "@/app/components/themeProvider";
+import { VentInput, VentTextarea } from "@/app/components/ventField";
 import { serif, sans } from "@/lib/fonts";
 import {
   Anchor as AnchorIcon,
@@ -67,6 +70,9 @@ function relativeTime(value: string) {
 }
 
 export default function MessagesPage() {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
+
   const [userId, setUserId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationListItem[]>(
     [],
@@ -365,7 +371,7 @@ export default function MessagesPage() {
   if (loading) {
     return (
       <main
-        className={`${sans.className} flex min-h-screen items-center justify-center bg-[#f3efe7]`}
+        className={`${sans.className} flex min-h-screen items-center justify-center bg-[var(--sh-bg-page)]`}
       >
         <div className="flex flex-col items-center">
           <motion.div
@@ -378,7 +384,7 @@ export default function MessagesPage() {
             }}
           />
           <p
-            className={`${serif.className} mt-8 text-2xl italic text-stone-700`}
+            className={`${serif.className} mt-8 text-2xl italic text-[var(--sh-text-secondary)]`}
           >
             Opening your conversations…
           </p>
@@ -389,77 +395,11 @@ export default function MessagesPage() {
 
   return (
     <main
-      className={`${sans.className} relative min-h-screen overflow-hidden bg-[#f3efe7] text-stone-900`}
+      className={`${sans.className} relative min-h-screen overflow-hidden bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}
     >
       <InactivityGate />
-      {/* AMBIENT — contour */}
-      <svg
-        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.035]"
-        xmlns="http://www.w3.org/2000/svg"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        <defs>
-          <pattern
-            id="messages-contour"
-            x="0"
-            y="0"
-            width="320"
-            height="320"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M0 60 Q 80 30 160 60 T 320 60"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 130 Q 80 100 160 130 T 320 130"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 200 Q 80 170 160 200 T 320 200"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 270 Q 80 240 160 270 T 320 270"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#messages-contour)" />
-      </svg>
-
-      {/* AMBIENT — paper grain */}
-      <svg
-        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.05] mix-blend-multiply"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <filter id="messages-grain">
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.85"
-            numOctaves="2"
-          />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#messages-grain)" />
-      </svg>
-
-      {/* AMBIENT — dawn glow upper-right */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 50% 35% at 88% 8%, rgba(196,147,78,0.18) 0%, rgba(196,147,78,0.06) 40%, transparent 75%)",
-        }}
-      />
+      {/* Unified harbor ambience — same on every authenticated page */}
+      <PageAmbience />
 
       <section className="relative z-10 mx-auto max-w-7xl px-4 py-8 md:px-8">
         {/* TOP NAV */}
@@ -477,7 +417,7 @@ export default function MessagesPage() {
           </Link>
           <Link
             href="/"
-            className="text-xs font-bold uppercase tracking-[0.28em] text-stone-500 transition hover:text-[#a9793d]"
+            className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)] transition hover:text-[#a9793d]"
           >
             Stone Harbor
           </Link>
@@ -488,10 +428,14 @@ export default function MessagesPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-8 grid gap-6 border-y border-stone-200 bg-white/40 px-6 py-6 backdrop-blur-sm md:grid-cols-4"
+          className={`mb-8 grid gap-6 border-y px-6 py-6 backdrop-blur-sm md:grid-cols-4 ${
+            isDusk
+              ? "border-white/10 bg-black/25"
+              : "border-[var(--sh-border-subtle)] bg-white/40"
+          }`}
         >
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
               {timeGreeting()}
             </p>
             <p
@@ -504,11 +448,11 @@ export default function MessagesPage() {
             </p>
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
               Conversations
             </p>
             <p
-              className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
+              className={`${serif.className} mt-2 text-2xl italic text-[var(--sh-text-primary)]`}
             >
               {conversations.length === 0
                 ? "None yet."
@@ -516,7 +460,7 @@ export default function MessagesPage() {
                   ? "1 open."
                   : `${conversations.length} open.`}
             </p>
-            <p className="mt-1 text-xs leading-relaxed text-stone-500">
+            <p className="mt-1 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
               {conversations.length === 0
                 ? "Reach out when you're ready."
                 : "Each one is a small act of courage."}
@@ -525,16 +469,16 @@ export default function MessagesPage() {
           <div className="md:col-span-2">
             <div className="flex items-center gap-2">
               <Lock size={14} className="text-[#a9793d]" />
-              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
                 Privacy
               </p>
             </div>
             <p
-              className={`${serif.className} mt-2 text-xl italic leading-snug text-stone-900 md:text-2xl`}
+              className={`${serif.className} mt-2 text-xl italic leading-snug text-[var(--sh-text-primary)] md:text-2xl`}
             >
               Stone Harbor staff cannot read your messages.
             </p>
-            <p className="mt-2 text-xs leading-relaxed text-stone-500">
+            <p className="mt-2 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
               Encrypted. Yours alone. Member-to-member, by design.
             </p>
           </div>
@@ -546,7 +490,11 @@ export default function MessagesPage() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="rounded-none border border-white/70 bg-white p-7 shadow-[0_16px_60px_rgba(0,0,0,0.06)]"
+            className={`rounded-none border p-7 shadow-[0_16px_60px_rgba(0,0,0,0.06)] ${
+              isDusk
+                ? "border-white/10 bg-black/30 backdrop-blur-md"
+                : "border-white/70 bg-white"
+            }`}
           >
             <div className="mb-8">
               <div className="mb-3 flex items-center gap-2">
@@ -556,28 +504,33 @@ export default function MessagesPage() {
                 </p>
               </div>
               <h1
-                className={`${serif.className} text-5xl font-medium leading-tight text-stone-900`}
+                className={`${serif.className} text-5xl font-medium leading-tight text-[var(--sh-text-primary)]`}
               >
                 Reach out.
               </h1>
-              <p className="mt-4 leading-relaxed text-stone-600">
+              <p className="mt-4 leading-relaxed text-[var(--sh-text-secondary)]">
                 A conversation is a small act of courage. Find another member to
                 begin.
               </p>
             </div>
 
             <div className="mb-8">
-              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-stone-500">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
                 Find Member
               </label>
-              <input
+              <VentInput
                 value={memberSearch}
                 onChange={(e) => searchMembers(e.target.value)}
-                className="w-full rounded-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d] focus:ring-2 focus:ring-[#586558]/30"
                 placeholder="Search name, username, or email"
               />
               {searching && (
-                <div className="mt-3 border border-stone-200 bg-[#f8f4ed] px-4 py-4 text-sm text-stone-500">
+                <div
+                  className={`mt-3 border px-4 py-4 text-sm text-[var(--sh-text-tertiary)] ${
+                    isDusk
+                      ? "border-white/10 bg-white/[0.03]"
+                      : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+                  }`}
+                >
                   Searching members…
                 </div>
               )}
@@ -587,23 +540,33 @@ export default function MessagesPage() {
                 </div>
               )}
               {memberResults.length > 0 && (
-                <div className="mt-3 max-h-72 overflow-y-auto border border-stone-300 bg-white shadow-lg">
+                <div
+                  className={`mt-3 max-h-72 overflow-y-auto border shadow-lg ${
+                    isDusk
+                      ? "border-white/10 bg-[#1a1614]"
+                      : "border-[var(--sh-border-medium)] bg-white"
+                  }`}
+                >
                   {memberResults.map((member) => (
                     <button
                       key={member.id}
                       type="button"
                       onClick={() => startConversation(member.id)}
-                      className="flex w-full items-center gap-4 border-b border-stone-200 px-4 py-4 text-left transition last:border-b-0 hover:bg-[#f8f4ed]"
+                      className={`flex w-full items-center gap-4 border-b px-4 py-4 text-left transition last:border-b-0 ${
+                        isDusk
+                          ? "border-white/5 hover:bg-white/[0.05]"
+                          : "border-[var(--sh-border-subtle)] hover:bg-[#f8f4ed]"
+                      }`}
                     >
                       <Avatar profile={member} />
                       <div className="min-w-0">
-                        <p className="truncate font-bold text-stone-900">
+                        <p className="truncate font-bold text-[var(--sh-text-primary)]">
                           {member.display_name ||
                             member.username ||
                             member.email ||
                             "Stone Harbor Member"}
                         </p>
-                        <p className="truncate text-sm text-stone-500">
+                        <p className="truncate text-sm text-[var(--sh-text-tertiary)]">
                           {member.username
                             ? `@${member.username}`
                             : member.email}
@@ -620,24 +583,36 @@ export default function MessagesPage() {
                 !searching &&
                 !searchError &&
                 memberResults.length === 0 && (
-                  <div className="mt-3 border border-stone-200 bg-[#f8f4ed] px-4 py-4 text-sm text-stone-500">
+                  <div
+                    className={`mt-3 border px-4 py-4 text-sm text-[var(--sh-text-tertiary)] ${
+                      isDusk
+                        ? "border-white/10 bg-white/[0.03]"
+                        : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+                    }`}
+                  >
                     No members found.
                   </div>
                 )}
             </div>
 
-            <div className="border-t border-stone-200 pt-6">
-              <p className="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-stone-500">
+            <div className="border-t border-[var(--sh-border-subtle)] pt-6">
+              <p className="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
                 Conversations
               </p>
               {conversations.length === 0 ? (
-                <div className="border border-stone-200 bg-[#f8f4ed] p-6">
+                <div
+                  className={`border p-6 ${
+                    isDusk
+                      ? "border-white/10 bg-white/[0.03]"
+                      : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+                  }`}
+                >
                   <p
-                    className={`${serif.className} text-2xl italic text-stone-700`}
+                    className={`${serif.className} text-2xl italic text-[var(--sh-text-secondary)]`}
                   >
                     No conversations yet.
                   </p>
-                  <p className="mt-2 text-sm leading-relaxed text-stone-500">
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-tertiary)]">
                     Reach out to one man this week. That&apos;s enough.
                   </p>
                 </div>
@@ -655,8 +630,18 @@ export default function MessagesPage() {
                         }}
                         className="w-full border px-4 py-4 text-left transition"
                         style={{
-                          borderColor: active ? GOLD_DEEP : "#e7e5e4",
-                          backgroundColor: active ? "#f3efe7" : "#f8f4ed",
+                          borderColor: active
+                            ? GOLD_DEEP
+                            : isDusk
+                              ? "rgba(255,255,255,0.1)"
+                              : "#e7e5e4",
+                          backgroundColor: active
+                            ? isDusk
+                              ? "rgba(196,147,78,0.12)"
+                              : "#f3efe7"
+                            : isDusk
+                              ? "rgba(255,255,255,0.04)"
+                              : "#f8f4ed",
                           boxShadow: active
                             ? `inset 0 0 0 1px ${GOLD_DEEP}`
                             : undefined,
@@ -666,14 +651,14 @@ export default function MessagesPage() {
                           <Avatar profile={conversation.otherMember ?? null} />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-baseline justify-between gap-2">
-                              <p className="truncate font-bold text-stone-900">
+                              <p className="truncate font-bold text-[var(--sh-text-primary)]">
                                 {conversation.title}
                               </p>
-                              <p className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">
+                              <p className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--sh-text-muted)]">
                                 {relativeTime(conversation.updated_at)}
                               </p>
                             </div>
-                            <p className="mt-1 truncate text-sm text-stone-500">
+                            <p className="mt-1 truncate text-sm text-[var(--sh-text-tertiary)]">
                               {conversation.lastMessage}
                             </p>
                           </div>
@@ -691,11 +676,21 @@ export default function MessagesPage() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.15 }}
-            className="flex min-h-[760px] flex-col rounded-none border border-white/70 bg-white shadow-[0_16px_60px_rgba(0,0,0,0.06)]"
+            className={`flex min-h-[760px] flex-col rounded-none border shadow-[0_16px_60px_rgba(0,0,0,0.06)] ${
+              isDusk
+                ? "border-white/10 bg-black/30 backdrop-blur-md"
+                : "border-white/70 bg-white"
+            }`}
           >
             {activeConversation ? (
               <>
-                <div className="border-b border-stone-200 bg-[#f8f4ed] px-7 py-6">
+                <div
+                  className={`border-b px-7 py-6 ${
+                    isDusk
+                      ? "border-white/10 bg-black/20"
+                      : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+                  }`}
+                >
                   <div className="flex items-center gap-4">
                     <Avatar profile={activeConversation.otherMember ?? null} />
                     <div>
@@ -703,7 +698,7 @@ export default function MessagesPage() {
                         Conversation
                       </p>
                       <h2
-                        className={`${serif.className} mt-1 text-3xl font-medium text-stone-900 md:text-4xl`}
+                        className={`${serif.className} mt-1 text-3xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
                       >
                         {activeConversation.title}
                       </h2>
@@ -713,16 +708,26 @@ export default function MessagesPage() {
 
                 <div className="relative flex-1 overflow-y-auto px-7 py-6">
                   {/* top edge fade */}
-                  <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 h-8 bg-gradient-to-b from-white to-transparent" />
+                  <div
+                    className={`pointer-events-none absolute left-0 right-0 top-0 z-10 h-8 bg-gradient-to-b to-transparent ${
+                      isDusk ? "from-black/40" : "from-white"
+                    }`}
+                  />
                   {messages.length === 0 ? (
                     <div className="flex h-full items-center justify-center">
-                      <div className="max-w-md border border-stone-200 bg-[#f8f4ed] p-8 text-center">
+                      <div
+                        className={`max-w-md border p-8 text-center ${
+                          isDusk
+                            ? "border-white/10 bg-white/[0.03]"
+                            : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+                        }`}
+                      >
                         <p
-                          className={`${serif.className} text-2xl italic text-stone-700`}
+                          className={`${serif.className} text-2xl italic text-[var(--sh-text-secondary)]`}
                         >
                           No messages yet.
                         </p>
-                        <p className="mt-2 text-sm leading-relaxed text-stone-500">
+                        <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-tertiary)]">
                           One honest sentence is enough.
                         </p>
                       </div>
@@ -742,7 +747,9 @@ export default function MessagesPage() {
                               className={`max-w-[78%] border px-5 py-4 shadow-sm ${
                                 isMine
                                   ? "border-[#a9793d] bg-[#a9793d] text-white"
-                                  : "border-stone-200 bg-[#f8f4ed] text-stone-800"
+                                  : isDusk
+                                    ? "border-white/10 bg-white/[0.05] text-[var(--sh-text-primary)] backdrop-blur-sm"
+                                    : "border-[var(--sh-border-subtle)] bg-[#f8f4ed] text-[var(--sh-text-primary)]"
                               }`}
                             >
                               <p className="whitespace-pre-wrap leading-relaxed">
@@ -750,7 +757,7 @@ export default function MessagesPage() {
                               </p>
                               <p
                                 className={`mt-3 text-[10px] font-bold uppercase tracking-[0.18em] ${
-                                  isMine ? "text-white/70" : "text-stone-400"
+                                  isMine ? "text-white/70" : "text-[var(--sh-text-muted)]"
                                 }`}
                               >
                                 {formatMessageTime(message.created_at)}
@@ -763,22 +770,30 @@ export default function MessagesPage() {
                     </div>
                   )}
                   {/* bottom edge fade */}
-                  <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-8 bg-gradient-to-t from-white to-transparent" />
+                  <div
+                    className={`pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-8 bg-gradient-to-t to-transparent ${
+                      isDusk ? "from-black/40" : "from-white"
+                    }`}
+                  />
                 </div>
 
                 <form
                   onSubmit={sendMessage}
-                  className="border-t border-stone-200 bg-[#f8f4ed] p-6"
+                  className={`border-t p-6 ${
+                    isDusk
+                      ? "border-white/10 bg-black/30"
+                      : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+                  }`}
                 >
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-stone-500">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
                     Message
                   </label>
                   <div className="grid gap-4 md:grid-cols-[1fr_auto]">
-                    <textarea
+                    <VentTextarea
                       value={messageBody}
                       onChange={(e) => setMessageBody(e.target.value)}
                       rows={3}
-                      className="w-full resize-none rounded-none border border-stone-300 bg-white px-5 py-4 outline-none transition focus:border-[#a9793d] focus:ring-2 focus:ring-[#586558]/30"
+                      compact
                       placeholder="Write a private message…"
                     />
                     <button
@@ -834,11 +849,11 @@ export default function MessagesPage() {
                   No Conversation Selected
                 </p>
                 <h2
-                  className={`${serif.className} mt-4 max-w-md text-4xl font-medium leading-snug text-stone-900 md:text-5xl`}
+                  className={`${serif.className} mt-4 max-w-md text-4xl font-medium leading-snug text-[var(--sh-text-primary)] md:text-5xl`}
                 >
                   A conversation is a small act of courage.
                 </h2>
-                <p className="mt-4 max-w-md text-sm leading-relaxed text-stone-600">
+                <p className="mt-4 max-w-md text-sm leading-relaxed text-[var(--sh-text-secondary)]">
                   When you&apos;re ready, choose a member from the left or
                   search for one above.
                 </p>
@@ -851,7 +866,7 @@ export default function MessagesPage() {
       <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       {/* FOOTER — 988 crisis line */}
-      <footer className="relative z-10 mt-12 border-t border-stone-200 bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
+      <footer className="relative z-10 mt-12 border-t border-[var(--sh-border-subtle)] bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
         <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-3 md:items-center">
           <div>
             <p className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d]">
@@ -862,15 +877,15 @@ export default function MessagesPage() {
             </p>
           </div>
           <div className="text-center">
-            <p className={`${serif.className} text-base italic text-stone-600`}>
+            <p className={`${serif.className} text-base italic text-[var(--sh-text-secondary)]`}>
               The harbor is patient.
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
               If You Are In Crisis
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-stone-700">
+            <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
               Call or text <span className="font-bold text-[#a9793d]">988</span>{" "}
               — 24/7. Free. Confidential.
             </p>
@@ -883,7 +898,7 @@ export default function MessagesPage() {
 
 function Avatar({ profile }: { profile: Profile | null }) {
   return (
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-[#efe8dc]">
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--sh-border-subtle)] bg-[#efe8dc]">
       {profile?.avatar_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         // Note: kept as <img> rather than next/image because Supabase

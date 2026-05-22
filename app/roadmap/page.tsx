@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
+import { PageAmbience } from "@/app/components/pageAmbience";
 import { serif, sans } from "@/lib/fonts";
 import {
   Eye,
@@ -225,7 +226,7 @@ export default function RoadmapPage() {
   if (loading) {
     return (
       <main
-        className={`${sans.className} flex min-h-screen items-center justify-center bg-[#f3efe7]`}
+        className={`${sans.className} flex min-h-screen items-center justify-center bg-[var(--sh-bg-page)]`}
       >
         <div className="flex flex-col items-center">
           <motion.div
@@ -249,77 +250,11 @@ export default function RoadmapPage() {
 
   return (
     <main
-      className={`${sans.className} relative min-h-screen overflow-hidden bg-[#f3efe7] text-stone-900`}
+      className={`${sans.className} relative min-h-screen overflow-hidden bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}
     >
       <InactivityGate />
-      {/* AMBIENT — contour */}
-      <svg
-        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.035]"
-        xmlns="http://www.w3.org/2000/svg"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        <defs>
-          <pattern
-            id="roadmap-contour"
-            x="0"
-            y="0"
-            width="320"
-            height="320"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M0 60 Q 80 30 160 60 T 320 60"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 130 Q 80 100 160 130 T 320 130"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 200 Q 80 170 160 200 T 320 200"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 270 Q 80 240 160 270 T 320 270"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#roadmap-contour)" />
-      </svg>
-
-      {/* AMBIENT — grain */}
-      <svg
-        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.05] mix-blend-multiply"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <filter id="roadmap-grain">
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.85"
-            numOctaves="2"
-          />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#roadmap-grain)" />
-      </svg>
-
-      {/* AMBIENT — dawn glow */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 50% 35% at 88% 8%, rgba(196,147,78,0.18) 0%, rgba(196,147,78,0.06) 40%, transparent 75%)",
-        }}
-      />
+      {/* Unified harbor ambience — same on every authenticated page */}
+      <PageAmbience />
 
       <section className="relative z-10 mx-auto max-w-5xl px-4 py-8 md:px-8">
         {/* TOP NAV */}

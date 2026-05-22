@@ -30,6 +30,7 @@ import { tomorrowsTopic } from "@/lib/dailyPrompts";
 import { Toast, type ToastState } from "@/app/components/toast";
 import { RotatingNatureBackdrop } from "@/app/components/rotatingNatureBackdrop";
 import { AmnioticBackdrop } from "@/app/components/amnioticBackdrop";
+import { PageAmbience } from "@/app/components/pageAmbience";
 import { useTheme } from "@/app/components/themeProvider";
 import { PersonalizedGreeting } from "@/app/components/personalizedGreeting";
 import { TodayIntention } from "@/app/components/todayIntention";
@@ -876,79 +877,10 @@ export default function DashboardPage() {
     >
       <InactivityGate />
 
-      {/* DUSK ONLY — amniotic backdrop. Sunlit mode renders without
-          the atmospheric layer; the cream surface IS the atmosphere. */}
-      {isDusk && <AmnioticBackdrop />}
-
-      {/* AMBIENT — contour pattern; slightly brighter on the dark
-          theme so it still adds subtle texture */}
-      <svg
-        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.06]"
-        xmlns="http://www.w3.org/2000/svg"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        <defs>
-          <pattern
-            id="dash-contour"
-            x="0"
-            y="0"
-            width="320"
-            height="320"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M0 60 Q 80 30 160 60 T 320 60"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 130 Q 80 100 160 130 T 320 130"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 200 Q 80 170 160 200 T 320 200"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 270 Q 80 240 160 270 T 320 270"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#dash-contour)" />
-      </svg>
-
-      {/* AMBIENT — paper grain across the whole page */}
-      <svg
-        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.05] mix-blend-multiply"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <filter id="dash-grain">
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.85"
-            numOctaves="2"
-          />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#dash-grain)" />
-      </svg>
-
-      {/* AMBIENT — dawn glow in upper right, the "window of light" */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 50% 35% at 88% 8%, rgba(196,147,78,0.18) 0%, rgba(196,147,78,0.06) 40%, transparent 75%)",
-        }}
-      />
+      {/* Unified atmospheric layer (amniotic + contour ripples +
+          paper grain + dawn glow). The same backdrop runs across
+          every authenticated page so the harbor feels continuous. */}
+      <PageAmbience />
 
       <section className="relative z-10 mx-auto max-w-7xl px-3 py-4 md:px-8 md:py-8">
         {/* TOP NAV */}
@@ -1536,9 +1468,14 @@ export default function DashboardPage() {
           </Link>
         </motion.section>
 
-        {/* TIMELINE COMPOSER + FEED — hidden on mobile per the
-            psychoanalytic restructure. Composing a public post is a
-            deliberate act that belongs inside the Brotherhood door,
+        {/* RIPPLES — the public-share section on the dashboard.
+            "Ripples" replaces "Timeline" as the brand-aligned noun:
+            water imagery instead of social-media language, a smaller
+            psychological commitment to participate, and a metaphor
+            that says "your action reaches others." Action verbs stay
+            plain ("Share") for clarity at decision points.
+            Hidden on mobile per the psychoanalytic restructure;
+            ripple composition belongs inside the Brotherhood door,
             not the dashboard. Will migrate to /brotherhood in a
             follow-up. On desktop it remains where it is. */}
         <motion.section
@@ -1558,16 +1495,16 @@ export default function DashboardPage() {
               }`}
             >
               <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.26em] text-[var(--sh-accent-gold)] md:mb-4 md:text-xs md:tracking-[0.28em]">
-                Timeline
+                Ripples
               </p>
               <h2
                 className={`${serif.className} text-xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
               >
-                Share an update.
+                Share what mattered today.
               </h2>
               <p className="mt-2 hidden text-sm leading-relaxed text-[var(--sh-text-secondary)] md:mt-3 md:block">
-                Post a reflection, milestone, or thought for other Stone Harbor
-                members.
+                A small word, a hard-won shift, a thought worth setting down.
+                Your ripple reaches others.
               </p>
               <textarea
                 value={postBody}
@@ -1578,7 +1515,7 @@ export default function DashboardPage() {
                     ? "border border-white/15 bg-black/40 text-stone-100 placeholder:text-white/30 focus:border-[#c4934e]"
                     : "border border-stone-300 bg-[#f8f4ed] text-stone-800 placeholder:text-stone-400 focus:border-[#a9793d]"
                 }`}
-                placeholder="What would you like to share?"
+                placeholder="What's the ripple today?"
               />
               <select
                 value={postPrivacy}
@@ -1598,7 +1535,7 @@ export default function DashboardPage() {
                 className="group relative mt-3 w-full overflow-hidden rounded-none border border-[#c4934e] bg-[#a9793d] px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] disabled:opacity-60 md:mt-5 md:px-8 md:py-4 md:text-sm"
               >
                 <span className="relative z-10">
-                  {posting ? "Posting..." : "Post Update"}
+                  {posting ? "Sharing…" : "Share"}
                 </span>
               </button>
             </form>
@@ -1612,12 +1549,12 @@ export default function DashboardPage() {
               <div className="mb-4 flex items-end justify-between gap-3 md:mb-6 md:gap-4">
                 <div>
                   <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.26em] text-[var(--sh-accent-gold)] md:mb-3 md:text-xs md:tracking-[0.28em]">
-                    Member Feed
+                    Recent Ripples
                   </p>
                   <h2
                     className={`${serif.className} text-xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
                   >
-                    Recent posts.
+                    Today on the water.
                   </h2>
                 </div>
                 <button
@@ -1634,13 +1571,20 @@ export default function DashboardPage() {
               </div>
               {memberPosts.length === 0 ? (
                 <div
-                  className={`p-4 text-sm md:p-6 md:text-base ${
+                  className={`p-4 italic md:p-6 ${
                     isDusk
                       ? "border border-white/10 bg-black/30 text-stone-300"
                       : "border border-stone-200 bg-[#f8f4ed] text-stone-600"
                   }`}
                 >
-                  No timeline posts yet.
+                  <p
+                    className={`${serif.className} text-lg md:text-xl`}
+                  >
+                    The water is still.
+                  </p>
+                  <p className="mt-2 text-xs leading-relaxed md:text-sm">
+                    Be the first ripple today.
+                  </p>
                 </div>
               ) : (
                 <div className="max-h-[360px] space-y-3 overflow-y-auto pr-2 md:max-h-[620px] md:space-y-5">
@@ -1917,7 +1861,7 @@ export default function DashboardPage() {
           >
             <div className="mb-3 flex items-end justify-between">
               <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-accent-gold)]">
-                From the Brotherhood
+                Today&apos;s Ripples
               </p>
               <Link
                 href="/messages"

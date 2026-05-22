@@ -231,7 +231,7 @@ export default function AdminModerationPage() {
 
   if (loading) {
     return (
-      <main className={`${sans.className} flex min-h-screen items-center justify-center bg-[#f3efe7]`}>
+      <main className={`${sans.className} flex min-h-screen items-center justify-center bg-[var(--sh-bg-page)]`}>
         <p className="text-xs font-bold uppercase tracking-[0.3em] text-stone-500">
           Loading moderation queue…
         </p>
@@ -241,7 +241,7 @@ export default function AdminModerationPage() {
 
   if (authzError) {
     return (
-      <main className={`${sans.className} flex min-h-screen items-center justify-center bg-[#f3efe7] px-6`}>
+      <main className={`${sans.className} flex min-h-screen items-center justify-center bg-[var(--sh-bg-page)] px-6`}>
         <div className="max-w-md text-center">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d]">
             Restricted
@@ -261,7 +261,7 @@ export default function AdminModerationPage() {
   }
 
   return (
-    <main className={`${sans.className} min-h-screen bg-[#f3efe7] text-stone-900`}>
+    <main className={`${sans.className} min-h-screen bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}>
       <InactivityGate />
       <section className="mx-auto max-w-7xl px-4 py-8 md:px-8">
         <div className="mb-6 flex items-center justify-between">

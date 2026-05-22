@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
+import { PageAmbience } from "@/app/components/pageAmbience";
 import { serif, sans } from "@/lib/fonts";
 import {
   Book,
@@ -215,7 +216,7 @@ export default function AdminBlogReview() {
   if (loading) {
     return (
       <main
-        className={`${sans.className} flex min-h-screen items-center justify-center bg-[#f3efe7]`}
+        className={`${sans.className} flex min-h-screen items-center justify-center bg-[var(--sh-bg-page)]`}
       >
         <div className="flex flex-col items-center">
           <motion.div
@@ -240,7 +241,7 @@ export default function AdminBlogReview() {
   if (authzError) {
     return (
       <main
-        className={`${sans.className} flex min-h-screen items-center justify-center bg-[#f3efe7] px-6`}
+        className={`${sans.className} flex min-h-screen items-center justify-center bg-[var(--sh-bg-page)] px-6`}
       >
         <div className="max-w-md text-center">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d]">
@@ -264,53 +265,11 @@ export default function AdminBlogReview() {
 
   return (
     <main
-      className={`${sans.className} relative min-h-screen overflow-hidden bg-[#f3efe7] text-stone-900`}
+      className={`${sans.className} relative min-h-screen overflow-hidden bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}
     >
       <InactivityGate />
-      {/* AMBIENT */}
-      <svg
-        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.035]"
-        xmlns="http://www.w3.org/2000/svg"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        <defs>
-          <pattern
-            id="admin-contour"
-            x="0"
-            y="0"
-            width="320"
-            height="320"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M0 60 Q 80 30 160 60 T 320 60"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 130 Q 80 100 160 130 T 320 130"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 200 Q 80 170 160 200 T 320 200"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#admin-contour)" />
-      </svg>
-      <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 50% 35% at 88% 8%, rgba(196,147,78,0.18) 0%, rgba(196,147,78,0.06) 40%, transparent 75%)",
-        }}
-      />
+      {/* Unified harbor ambience — same on every authenticated page */}
+      <PageAmbience />
 
       <section className="relative z-10 mx-auto max-w-6xl px-4 py-8 md:px-8">
         {/* TOP NAV */}

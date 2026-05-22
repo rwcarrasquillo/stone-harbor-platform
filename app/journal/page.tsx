@@ -25,6 +25,9 @@ import {
   type IconProps,
 } from "@/app/components/icons";
 import { todaysPrompt as sharedTodaysPrompt } from "@/lib/dailyPrompts";
+import { useTheme } from "@/app/components/themeProvider";
+import { PageAmbience } from "@/app/components/pageAmbience";
+import { VentInput, VentTextarea } from "@/app/components/ventField";
 
 // Brand system — matches home + dashboard
 const GOLD = "#c4934e";
@@ -147,6 +150,9 @@ function buildMoodMap(
 }
 
 export default function JournalPage() {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -307,7 +313,7 @@ export default function JournalPage() {
   if (loading) {
     return (
       <main
-        className={`${sans.className} flex min-h-screen items-center justify-center bg-[#f3efe7]`}
+        className={`${sans.className} flex min-h-screen items-center justify-center bg-[var(--sh-bg-page)]`}
       >
         <div className="flex flex-col items-center">
           <motion.div
@@ -320,7 +326,7 @@ export default function JournalPage() {
             }}
           />
           <p
-            className={`${serif.className} mt-8 text-2xl italic text-stone-700`}
+            className={`${serif.className} mt-8 text-2xl italic text-[var(--sh-text-secondary)]`}
           >
             Opening your journal…
           </p>
@@ -331,84 +337,22 @@ export default function JournalPage() {
 
   return (
     <main
-      className={`${sans.className} relative min-h-screen overflow-hidden bg-[#f3efe7] text-stone-900`}
+      className={`${sans.className} relative min-h-screen overflow-hidden bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}
     >
       <InactivityGate />
       <audio ref={audioRef} src="/shimmering-breeze.mp3" preload="auto" />
 
-      {/* AMBIENT — contour pattern */}
-      <svg
-        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.035]"
-        xmlns="http://www.w3.org/2000/svg"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        <defs>
-          <pattern
-            id="journal-contour"
-            x="0"
-            y="0"
-            width="320"
-            height="320"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M0 60 Q 80 30 160 60 T 320 60"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 130 Q 80 100 160 130 T 320 130"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 200 Q 80 170 160 200 T 320 200"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-            <path
-              d="M0 270 Q 80 240 160 270 T 320 270"
-              fill="none"
-              stroke="#a9793d"
-              strokeWidth="1"
-            />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#journal-contour)" />
-      </svg>
-
-      {/* AMBIENT — paper grain */}
-      <svg
-        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.05] mix-blend-multiply"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <filter id="journal-grain">
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.85"
-            numOctaves="2"
-          />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#journal-grain)" />
-      </svg>
-
-      {/* AMBIENT — dawn glow upper-right */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 50% 35% at 88% 8%, rgba(196,147,78,0.18) 0%, rgba(196,147,78,0.06) 40%, transparent 75%)",
-        }}
-      />
+      {/* Unified harbor ambience — same on every authenticated page */}
+      <PageAmbience />
 
       {/* SOUND TOGGLE */}
       <button
         onClick={toggleSound}
-        className="fixed bottom-8 right-8 z-50 flex h-11 w-11 items-center justify-center rounded-none border border-white/40 bg-white/30 text-stone-800 shadow-[0_8px_24px_rgba(0,0,0,0.14)] backdrop-blur-2xl transition duration-300 hover:scale-110 hover:bg-white/45"
+        className={`fixed bottom-8 right-8 z-50 flex h-11 w-11 items-center justify-center rounded-none border shadow-[0_8px_24px_rgba(0,0,0,0.14)] backdrop-blur-2xl transition duration-300 hover:scale-110 ${
+          isDusk
+            ? "border-white/20 bg-white/[0.08] text-white hover:bg-white/[0.14]"
+            : "border-white/40 bg-white/30 text-[var(--sh-text-primary)] hover:bg-white/45"
+        }`}
         aria-label={soundOn ? "Mute Nature Sounds" : "Play Nature Sounds"}
         title={soundOn ? "Mute Nature Sounds" : "Play Nature Sounds"}
       >
@@ -431,7 +375,7 @@ export default function JournalPage() {
           </Link>
           <Link
             href="/"
-            className="text-xs font-bold uppercase tracking-[0.28em] text-stone-500 transition hover:text-[#a9793d]"
+            className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)] transition hover:text-[#a9793d]"
           >
             Stone Harbor
           </Link>
@@ -442,10 +386,14 @@ export default function JournalPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-10 grid gap-6 border-y border-stone-200 bg-white/40 px-6 py-7 backdrop-blur-sm md:grid-cols-4"
+          className={`mb-10 grid gap-6 border-y px-6 py-7 backdrop-blur-sm md:grid-cols-4 ${
+            isDusk
+              ? "border-white/10 bg-black/25"
+              : "border-[var(--sh-border-subtle)] bg-white/40"
+          }`}
         >
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
               {timeGreeting()}
             </p>
             <p
@@ -457,12 +405,12 @@ export default function JournalPage() {
           <div>
             <div className="flex items-center gap-2">
               <Flame size={14} className="text-[#a9793d]" />
-              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
                 Writing Streak
               </p>
             </div>
             <p
-              className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
+              className={`${serif.className} mt-2 text-2xl italic text-[var(--sh-text-primary)]`}
             >
               {streak === 0
                 ? "Begin today."
@@ -470,7 +418,7 @@ export default function JournalPage() {
                   ? "Day 1."
                   : `Day ${streak}.`}
             </p>
-            <p className="mt-1 text-xs leading-relaxed text-stone-500">
+            <p className="mt-1 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
               {lastEntryDays === null
                 ? "Your first entry is the heaviest. Then they get lighter."
                 : lastEntryDays === 0
@@ -483,16 +431,16 @@ export default function JournalPage() {
           <div className="md:col-span-2">
             <div className="flex items-center gap-2">
               <Speech size={14} className="text-[#a9793d]" />
-              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
                 Today&apos;s Prompt
               </p>
             </div>
             <p
-              className={`${serif.className} mt-2 text-xl italic leading-snug text-stone-900 md:text-2xl`}
+              className={`${serif.className} mt-2 text-xl italic leading-snug text-[var(--sh-text-primary)] md:text-2xl`}
             >
               &ldquo;{todaysPrompt()}&rdquo;
             </p>
-            <p className="mt-2 text-xs leading-relaxed text-stone-500">
+            <p className="mt-2 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
               Use it if it lands. Ignore it if it doesn&apos;t.
             </p>
           </div>
@@ -505,7 +453,11 @@ export default function JournalPage() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="rounded-none border border-white/50 bg-white/75 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.08)] backdrop-blur-2xl md:p-12"
+            className={`rounded-none border p-8 backdrop-blur-2xl md:p-12 ${
+              isDusk
+                ? "border-white/10 bg-black/30 shadow-[0_20px_80px_rgba(0,0,0,0.45)]"
+                : "border-white/50 bg-white/75 shadow-[0_20px_80px_rgba(0,0,0,0.08)]"
+            }`}
           >
             <p className="mb-5 text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
               Private Journal
@@ -515,23 +467,23 @@ export default function JournalPage() {
             >
               One honest sentence is enough.
             </h1>
-            <p className="mt-5 text-base leading-relaxed text-stone-600">
+            <p className="mt-5 text-base leading-relaxed text-[var(--sh-text-secondary)]">
               Your journal is private. Encrypted. Yours alone. No one — not even
               Stone Harbor staff — can read what you write here.
             </p>
 
             <form onSubmit={saveEntry} className="mt-10">
-              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-stone-600">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
                 Title
               </label>
-              <input
+              <VentInput
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="mb-6 w-full rounded-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d] focus:ring-2 focus:ring-[#586558]/30"
+                className="mb-6"
                 placeholder="Optional title"
               />
 
-              <label className="mb-3 block text-xs font-bold uppercase tracking-[0.22em] text-stone-600">
+              <label className="mb-3 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
                 Mood
               </label>
               <div className="mb-6 flex flex-wrap gap-2">
@@ -545,9 +497,23 @@ export default function JournalPage() {
                       onClick={() => setMood(option.value)}
                       className="flex items-center gap-2 border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] transition"
                       style={{
-                        borderColor: active ? option.color : "#d6d3d1",
-                        color: active ? option.color : "#57534e",
-                        backgroundColor: active ? "#ffffff" : "#f8f4ed",
+                        borderColor: active
+                          ? option.color
+                          : isDusk
+                            ? "rgba(255,255,255,0.15)"
+                            : "#d6d3d1",
+                        color: active
+                          ? option.color
+                          : isDusk
+                            ? "rgba(255,255,255,0.7)"
+                            : "#57534e",
+                        backgroundColor: active
+                          ? isDusk
+                            ? "rgba(255,255,255,0.1)"
+                            : "#ffffff"
+                          : isDusk
+                            ? "rgba(255,255,255,0.04)"
+                            : "#f8f4ed",
                         boxShadow: active
                           ? `inset 0 0 0 1px ${option.color}`
                           : undefined,
@@ -564,18 +530,18 @@ export default function JournalPage() {
                 })}
               </div>
 
-              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-stone-600">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
                 Reflection
               </label>
-              <textarea
+              <VentTextarea
                 required
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={9}
-                className="mb-2 w-full resize-none rounded-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d] focus:ring-2 focus:ring-[#586558]/30"
+                className="mb-2"
                 placeholder="What do you need to say today?"
               />
-              <div className="mb-8 flex items-center justify-between text-xs text-stone-500">
+              <div className="mb-8 flex items-center justify-between text-xs text-[var(--sh-text-tertiary)]">
                 <span>
                   {wordCount === 0
                     ? "Start anywhere. Even half a sentence counts."
@@ -604,14 +570,18 @@ export default function JournalPage() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.15 }}
-            className="rounded-none border border-white/50 bg-white/60 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.06)] backdrop-blur-2xl md:p-10"
+            className={`rounded-none border p-8 backdrop-blur-2xl md:p-10 ${
+              isDusk
+                ? "border-white/10 bg-black/30 shadow-[0_20px_80px_rgba(0,0,0,0.45)]"
+                : "border-white/50 bg-white/60 shadow-[0_20px_80px_rgba(0,0,0,0.06)]"
+            }`}
           >
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="mb-3 text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
                   Your Entries
                 </p>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)]">
                   Showing {filteredAndSortedEntries.length} of {entries.length}
                 </p>
               </div>
@@ -621,7 +591,11 @@ export default function JournalPage() {
                   setSearchTerm("");
                   setSortOption("newest");
                 }}
-                className="w-fit rounded-none border border-stone-300 bg-white/60 px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-stone-600 transition hover:border-[#a9793d] hover:bg-white"
+                className={`w-fit rounded-none border px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] transition hover:border-[var(--sh-accent-gold)] ${
+                  isDusk
+                    ? "border-white/15 bg-white/[0.04] text-[var(--sh-text-secondary)] hover:bg-white/[0.08]"
+                    : "border-[var(--sh-border-medium)] bg-white/60 text-[var(--sh-text-secondary)] hover:bg-white"
+                }`}
               >
                 Reset
               </button>
@@ -629,24 +603,27 @@ export default function JournalPage() {
 
             <div className="mb-6 grid gap-4 md:grid-cols-[1fr_0.55fr]">
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-stone-500">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)]">
                   Search Entries
                 </label>
-                <input
+                <VentInput
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d] focus:ring-2 focus:ring-[#586558]/30"
                   placeholder="Search title, mood, or content"
                 />
               </div>
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-stone-500">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)]">
                   Sort By
                 </label>
                 <select
                   value={sortOption}
                   onChange={(e) => setSortOption(e.target.value as SortOption)}
-                  className="w-full rounded-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
+                  className={`w-full rounded-none border px-5 py-4 outline-none transition focus:border-[var(--sh-accent-gold)] ${
+                    isDusk
+                      ? "border-white/15 bg-white/[0.04] text-white"
+                      : "border-[var(--sh-border-medium)] bg-[#f8f4ed] text-[var(--sh-text-primary)]"
+                  }`}
                 >
                   <option value="newest">Newest First</option>
                   <option value="oldest">Oldest First</option>
@@ -657,19 +634,31 @@ export default function JournalPage() {
             </div>
 
             {entries.length === 0 ? (
-              <div className="rounded-none border border-stone-200 bg-[#f8f4ed] p-8">
+              <div
+                className={`rounded-none border p-8 ${
+                  isDusk
+                    ? "border-white/10 bg-white/[0.03]"
+                    : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+                }`}
+              >
                 <p
-                  className={`${serif.className} text-3xl italic text-stone-700`}
+                  className={`${serif.className} text-3xl italic text-[var(--sh-text-secondary)]`}
                 >
                   Your first entry is the heaviest.
                 </p>
-                <p className="mt-3 text-sm leading-relaxed text-stone-600">
+                <p className="mt-3 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
                   Then they get lighter. Start with one honest sentence — no one
                   is reading.
                 </p>
               </div>
             ) : filteredAndSortedEntries.length === 0 ? (
-              <div className="rounded-none border border-stone-200 bg-[#f8f4ed] p-8 text-stone-600">
+              <div
+                className={`rounded-none border p-8 text-[var(--sh-text-secondary)] ${
+                  isDusk
+                    ? "border-white/10 bg-white/[0.03]"
+                    : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+                }`}
+              >
                 No entries match your search.
               </div>
             ) : (
@@ -680,7 +669,11 @@ export default function JournalPage() {
                   return (
                     <article
                       key={entry.id}
-                      className="rounded-none border border-stone-200 bg-[#f8f4ed] p-6 transition hover:border-[#a9793d]/40"
+                      className={`rounded-none border p-6 transition hover:border-[var(--sh-accent-gold)]/40 ${
+                        isDusk
+                          ? "border-white/10 bg-white/[0.03] backdrop-blur-sm"
+                          : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+                      }`}
                       style={{ borderLeft: `3px solid ${color}` }}
                     >
                       <div className="mb-4 flex items-start justify-between gap-4">
@@ -690,7 +683,9 @@ export default function JournalPage() {
                             style={{
                               borderColor: color,
                               color,
-                              backgroundColor: "white",
+                              backgroundColor: isDusk
+                                ? "rgba(255,255,255,0.06)"
+                                : "white",
                             }}
                           >
                             {EntryMoodIcon ? (
@@ -708,22 +703,22 @@ export default function JournalPage() {
                             {moodLabel(entry.mood)}
                           </span>
                           <h2
-                            className={`${serif.className} mt-3 text-3xl font-medium text-stone-900`}
+                            className={`${serif.className} mt-3 text-3xl font-medium text-[var(--sh-text-primary)]`}
                           >
                             {entry.title || "Untitled Entry"}
                           </h2>
-                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-stone-400">
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sh-text-muted)]">
                             {formatEntryDateTime(entry.created_at)}
                           </p>
                         </div>
                         <button
                           onClick={() => deleteEntry(entry.id)}
-                          className="rounded-none border border-stone-300 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-stone-500 transition hover:border-red-300 hover:text-red-600"
+                          className="rounded-none border border-[var(--sh-border-medium)] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)] transition hover:border-red-300 hover:text-red-600"
                         >
                           Delete
                         </button>
                       </div>
-                      <p className="whitespace-pre-wrap leading-relaxed text-stone-700">
+                      <p className="whitespace-pre-wrap leading-relaxed text-[var(--sh-text-secondary)]">
                         {entry.content}
                       </p>
                     </article>
@@ -741,7 +736,11 @@ export default function JournalPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.7 }}
-            className="mt-10 rounded-none border border-stone-200 bg-white/70 p-8 backdrop-blur-sm"
+            className={`mt-10 rounded-none border p-8 backdrop-blur-sm ${
+              isDusk
+                ? "border-white/10 bg-black/30"
+                : "border-[var(--sh-border-subtle)] bg-white/70"
+            }`}
           >
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
@@ -749,11 +748,11 @@ export default function JournalPage() {
                   Your Pattern
                 </p>
                 <h2
-                  className={`${serif.className} mt-2 text-4xl font-medium text-stone-900 md:text-5xl`}
+                  className={`${serif.className} mt-2 text-4xl font-medium text-[var(--sh-text-primary)] md:text-5xl`}
                 >
                   The last thirty days.
                 </h2>
-                <p className="mt-3 max-w-xl text-sm leading-relaxed text-stone-600">
+                <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--sh-text-secondary)]">
                   Each square is a day. The color is the mood you named. The
                   blanks are days you didn&apos;t write. No judgment — just
                   data, looking back at you.
@@ -765,7 +764,7 @@ export default function JournalPage() {
                   return (
                     <span
                       key={option.value}
-                      className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500"
+                      className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--sh-text-tertiary)]"
                     >
                       <Icon
                         size={14}
@@ -801,7 +800,7 @@ export default function JournalPage() {
       </section>
 
       {/* FOOTER — 988 crisis line, required on every authenticated screen */}
-      <footer className="relative z-10 mt-12 border-t border-stone-200 bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
+      <footer className="relative z-10 mt-12 border-t border-[var(--sh-border-subtle)] bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
         <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-3 md:items-center">
           <div>
             <p className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d]">
@@ -812,15 +811,15 @@ export default function JournalPage() {
             </p>
           </div>
           <div className="text-center">
-            <p className={`${serif.className} text-base italic text-stone-600`}>
+            <p className={`${serif.className} text-base italic text-[var(--sh-text-secondary)]`}>
               The harbor is patient.
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
               If You Are In Crisis
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-stone-700">
+            <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
               Call or text <span className="font-bold text-[#a9793d]">988</span>{" "}
               — 24/7. Free. Confidential.
             </p>
