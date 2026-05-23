@@ -30,11 +30,17 @@ import { PageAmbience } from "@/app/components/pageAmbience";
 import { VentInput, VentTextarea } from "@/app/components/ventField";
 import { BodyCheck, type BodySpot } from "@/app/components/bodyCheck";
 import { SubMoods } from "@/app/components/subMoods";
+import { LineageReference } from "@/app/components/lineageReference";
 import type { Mood } from "@/lib/moods";
 import {
   FEATURE_THRESHOLDS,
   isFeatureUnlocked,
 } from "@/lib/userProgress";
+import {
+  detectLineageThemes,
+  resolveLineageReferences,
+  type LineageContent,
+} from "@/lib/lineageMatcher";
 
 // Brand system — matches home + dashboard
 const GOLD = "#c4934e";
@@ -185,6 +191,19 @@ export default function JournalPage() {
   // This is the 5-second-rule pattern translated to the harbor's voice
   // — no countdown, no animation, just permission to begin badly.
   const [showStartNudge, setShowStartNudge] = useState(false);
+  // The member's lineage content, loaded once at profile fetch time.
+  // The reference-back matcher uses it to decide which "you wrote
+  // about this once" cards to surface after a save.
+  const [lineageContent, setLineageContent] = useState<LineageContent>({
+    fatherGrief: null,
+    fatherAnger: null,
+    patternToLeave: null,
+  });
+  // References surfaced for the most recent save. Cleared when the
+  // man starts writing the next entry OR explicitly dismisses each.
+  const [pendingReferences, setPendingReferences] = useState<
+    ReturnType<typeof resolveLineageReferences>
+  >([]);
   const [content, setContent] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState<SortOption>("newest");
@@ -214,6 +233,17 @@ export default function JournalPage() {
     return () => clearTimeout(id);
   }, [content, mood, moodSpecific]);
 
+  // Clear post-save lineage references once the man starts writing
+  // the next entry. The reference belongs to the previous reflection
+  // — leaving it overhead while he begins a new one would feel like
+  // the harbor failing to step back.
+  useEffect(() => {
+    if (content.length > 0 && pendingReferences.length > 0) {
+      setPendingReferences([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content]);
+
   async function toggleSound() {
     const audio = audioRef.current;
     if (!audio) return;
@@ -242,11 +272,14 @@ export default function JournalPage() {
       return;
     }
     // Suspension gate — keep suspended members off member-facing surfaces.
-    // Also fetch created_at here so we can compute progressive-disclosure
-    // thresholds for features like the body check.
+    // Also fetch created_at and the three lineage columns so we can
+    // compute progressive-disclosure thresholds and run the
+    // reference-back matcher after each entry save.
     const { data: gateRow } = await supabase
       .from("profiles")
-      .select("suspended_at, created_at")
+      .select(
+        "suspended_at, created_at, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave",
+      )
       .eq("id", user.id)
       .single();
     if (gateRow?.suspended_at) {
@@ -255,6 +288,11 @@ export default function JournalPage() {
     }
     setUserId(user.id);
     setUserCreatedAt(gateRow?.created_at ?? null);
+    setLineageContent({
+      fatherGrief: gateRow?.lineage_father_grief ?? null,
+      fatherAnger: gateRow?.lineage_father_anger ?? null,
+      patternToLeave: gateRow?.lineage_pattern_to_leave ?? null,
+    });
     const { data, error } = await supabase
       .from("journal_entries")
       .select("id, title, content, mood, created_at")
@@ -299,6 +337,20 @@ export default function JournalPage() {
         });
         setPendingBodySpots(null);
       }
+
+      // Reference-back lineage. Scan the just-saved entry against
+      // the man's lineage content. If any theme matches (e.g., he
+      // wrote about "my father" or "the cycle"), surface the line he
+      // wrote in his Lineage room. This connects today's entry back
+      // to the long-arc story he's been writing across his account.
+      // The references render above the textarea after save.
+      const detectedThemes = detectLineageThemes(content);
+      const references = resolveLineageReferences(
+        detectedThemes,
+        lineageContent,
+      );
+      setPendingReferences(references);
+
       setTitle("");
       setMood("grounded");
       setMoodSpecific(null);
@@ -537,6 +589,20 @@ export default function JournalPage() {
               Your journal is private. Encrypted. Yours alone. No one — not even
               Stone Harbor staff — can read what you write here.
             </p>
+
+            {/* LINEAGE REFERENCE — surfaces after a save if the just-saved
+                entry touched a theme the man has written about in his
+                Lineage room. Quietly connects today's reflection to the
+                long-arc story he's been writing. Clears the moment he
+                starts the next entry. */}
+            {pendingReferences.length > 0 && (
+              <div className="mt-8">
+                <LineageReference
+                  references={pendingReferences}
+                  onDismiss={() => setPendingReferences([])}
+                />
+              </div>
+            )}
 
             <form onSubmit={saveEntry} className="mt-10">
               <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
