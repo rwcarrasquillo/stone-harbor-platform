@@ -443,6 +443,30 @@ export default function AdminDashboard() {
                 )}
               </Link>
               <Link
+                href="/admin/tests"
+                aria-label="Test results"
+                className={`inline-flex items-center border p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[var(--sh-accent-gold)] md:gap-2 md:px-4 ${
+                  isDusk
+                    ? "border-white/15 bg-black/40 hover:bg-white/[0.06]"
+                    : "border-[var(--sh-border-medium)] bg-white/70 hover:bg-white"
+                }`}
+              >
+                {/* Inline checkmark — same line-art family */}
+                <svg
+                  width={12}
+                  height={12}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.6}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+                <span className="hidden md:inline">Tests</span>
+              </Link>
+              <Link
                 href="/dashboard"
                 aria-label="Member view"
                 className={`inline-flex items-center border p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[var(--sh-accent-gold)] md:gap-2 md:px-4 ${

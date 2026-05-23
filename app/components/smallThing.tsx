@@ -5,7 +5,12 @@ import { motion } from "framer-motion";
 import { useTheme } from "@/app/components/themeProvider";
 import { supabase } from "@/lib/supabaseClient";
 import { serif } from "@/lib/fonts";
-import { getPreviewDayOverride } from "@/lib/userProgress";
+// Re-export the cadence helper from its pure-logic module so the
+// existing dashboard import (`import { shouldShowSmallThingToday }
+// from "@/app/components/smallThing"`) keeps working. The split
+// exists so the cadence logic can be unit tested without loading
+// React.
+export { shouldShowSmallThingToday } from "@/lib/smallThingCadence";
 
 /**
  * Stone Harbor — SmallThing.
@@ -193,43 +198,7 @@ export function SmallThing({ userId }: Props) {
   );
 }
 
-/**
- * Decide whether the small thing should be shown TODAY for a given
- * member. Cadence: roughly 2-3 times per week, never two days in a
- * row. We use a deterministic hash of (user_id + ISO date) so the
- * decision is stable for the day — refreshing the dashboard doesn't
- * make the tile appear and disappear.
- *
- * The math: hash(userId + YYYY-MM-DD) modulo 7 maps each day to a
- * slot 0..6. Slots {1, 3, 5} are "show" days — three out of seven,
- * with at least one rest day between any two. This is intentionally
- * crude; we want predictable cadence, not perfect distribution.
- *
- * Preview override:
- *   When the founder is previewing a future day via ?previewDay=N,
- *   the cadence check is bypassed and the tile always renders. The
- *   point of preview mode is to verify how each feature LOOKS, not
- *   to gamble on a 3-in-7 chance that today happens to be a "show"
- *   day for the test account.
- */
-export function shouldShowSmallThingToday(userId: string): boolean {
-  if (!userId) return false;
-
-  // In preview mode, always show. The founder needs to be able to
-  // verify the tile renders correctly without waiting for a day that
-  // the hash happens to land on.
-  if (typeof window !== "undefined" && getPreviewDayOverride() !== null) {
-    return true;
-  }
-
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  const seed = userId + today;
-  // Tiny deterministic 32-bit hash (djb2 variant). Cryptographic
-  // strength is irrelevant — we just need stability per (user, day).
-  let hash = 5381;
-  for (let i = 0; i < seed.length; i++) {
-    hash = ((hash << 5) + hash + seed.charCodeAt(i)) | 0;
-  }
-  const slot = Math.abs(hash) % 7;
-  return slot === 1 || slot === 3 || slot === 5;
-}
+// shouldShowSmallThingToday now lives in @/lib/smallThingCadence and is
+// re-exported at the top of this file so external callers don't break.
+// Keeping pure logic out of component files makes it unit-testable
+// from Node without loading React.
