@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/app/components/themeProvider";
 import { supabase } from "@/lib/supabaseClient";
+import { trackMilestone } from "@/lib/memberUsage";
 import { serif } from "@/lib/fonts";
 
 /**
@@ -177,6 +178,7 @@ export function BrotherhoodPairing({ userId }: Props) {
     // 2. Try to match. If a partner exists, the function returns a
     // pairing id and the request status flips to "matched."
     await supabase.rpc("match_brotherhood_pairing", { p_user_id: userId });
+    trackMilestone("first_brotherhood_optin");
     await refresh();
     setSubmitting(false);
   }

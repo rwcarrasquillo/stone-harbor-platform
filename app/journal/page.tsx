@@ -9,6 +9,7 @@ import {
 } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { trackMilestone } from "@/lib/memberUsage";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
 import {
@@ -326,6 +327,11 @@ export default function JournalPage() {
       .single();
 
     if (!error && inserted) {
+      // First-journal milestone (idempotent server-side via UNIQUE).
+      trackMilestone("first_journal_entry");
+      // If they used a sub-mood chip, that's its own milestone.
+      if (moodSpecific) trackMilestone("first_sub_mood");
+
       // If the man did a body check before writing, link it to this
       // entry. Body checks are best-effort — a write failure here
       // should not block the journal flow.
@@ -336,6 +342,7 @@ export default function JournalPage() {
           spots: pendingBodySpots,
         });
         setPendingBodySpots(null);
+        trackMilestone("first_body_check");
       }
 
       // Reference-back lineage. Scan the just-saved entry against

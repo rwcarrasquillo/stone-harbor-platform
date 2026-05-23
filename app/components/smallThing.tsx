@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/app/components/themeProvider";
 import { supabase } from "@/lib/supabaseClient";
+import { trackMilestone } from "@/lib/memberUsage";
 import { serif } from "@/lib/fonts";
 // Re-export the cadence helper from its pure-logic module so the
 // existing dashboard import (`import { shouldShowSmallThingToday }
@@ -186,7 +187,10 @@ export function SmallThing({ userId }: Props) {
         </span>
         <button
           type="button"
-          onClick={handleRefresh}
+          onClick={() => {
+            trackMilestone("first_small_thing_click");
+            handleRefresh();
+          }}
           disabled={refreshing}
           className="text-[var(--sh-text-tertiary)] transition hover:text-[var(--sh-accent-gold)] disabled:opacity-50"
           aria-label="Show me a different one"

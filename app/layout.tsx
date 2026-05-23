@@ -6,6 +6,7 @@ import { ServiceWorkerRegistrar } from "@/app/components/serviceWorkerRegistrar"
 import { MobileTabBar } from "@/app/components/mobileTabBar";
 import { AnchorWatermark } from "@/app/components/anchorWatermark";
 import { PreviewDayBadge } from "@/app/components/previewDayBadge";
+import { MemberUsageTracker } from "@/app/components/memberUsageTracker";
 import { ThemeProvider, type Theme } from "@/app/components/themeProvider";
 
 /**
@@ -164,6 +165,11 @@ export default async function RootLayout({
               override is active (URL ?previewDay=N or persisted via
               localStorage). Invisible for normal members. */}
           <PreviewDayBadge />
+          {/* Headless member-page-view tracker. Writes one row into
+              public.member_page_views per route change while a
+              member is signed in. Surfaces in the admin /analytics
+              dashboard. Renders nothing. */}
+          <MemberUsageTracker />
         </ThemeProvider>
       </body>
     </html>

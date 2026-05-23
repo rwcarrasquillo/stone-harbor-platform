@@ -31,7 +31,7 @@ import { AmnioticBackdrop } from "@/app/components/amnioticBackdrop";
  * Pages must also set `relative overflow-hidden` on their <main>
  * element to anchor the fixed children correctly on iOS.
  *
- * Render in: /dashboard, /welcome, /journal, /admin, /messages,
+ * Render in: /dashboard, /welcome, /journal, /messages,
  * /roadmap, /members-blog, /reflections (any authenticated screen).
  *
  * Skip in: /meditation and /vent (focused immersive experiences

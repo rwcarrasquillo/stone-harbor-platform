@@ -18,7 +18,8 @@ import { supabase } from "@/lib/supabaseClient";
  *     targetUserId={post.user_id}
  *   />
  *
- * Flags go to the admin review queue at /admin/moderation. They never
+ * Flags go to the admin review queue (reviewed in the separate
+ * stone-harbor-admin app's /moderation route). They never
  * auto-action — admin reviews and decides dismiss / warn / suspend.
  */
 

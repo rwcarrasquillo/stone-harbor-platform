@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { trackMilestone } from "@/lib/memberUsage";
 import { serif, sans } from "@/lib/fonts";
 import { InactivityGate } from "@/app/components/inactivityGate";
 
@@ -140,6 +141,7 @@ export default function VentPage() {
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(DRAFT_KEY);
     }
+    trackMilestone("first_vent_post");
     setBody("");
     setMood(null);
     setSavedMessage("Saved to your journal. The harbor heard you.");

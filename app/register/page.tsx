@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { trackAcquisition, trackMilestone } from "@/lib/memberUsage";
 import { serif, sans } from "@/lib/fonts";
 import { Anchor, Lock, Spark } from "@/app/components/icons";
 import { LogIn, UserPlus } from "lucide-react";
@@ -187,6 +188,11 @@ export default function RegisterPage() {
           typeof navigator !== "undefined" ? navigator.userAgent : null,
       });
     }
+
+    // First-touch acquisition (utm + referrer). Fire-and-forget;
+    // the API is idempotent so re-entry on a retry is harmless.
+    trackAcquisition();
+    trackMilestone("registered");
 
     setMessage("Welcome to the harbor. Setting up your space…");
     setIsError(false);

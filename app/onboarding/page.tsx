@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { trackMilestone } from "@/lib/memberUsage";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
 import {
@@ -188,6 +189,7 @@ export default function OnboardingWizard() {
         .from("profiles")
         .update({ onboarding_completed_at: new Date().toISOString() })
         .eq("id", user.id);
+      trackMilestone("onboarding_skipped");
     }
     router.push("/dashboard");
   }
@@ -212,6 +214,7 @@ export default function OnboardingWizard() {
         onboarding_completed_at: new Date().toISOString(),
       })
       .eq("id", user.id);
+    trackMilestone("onboarding_complete");
     router.push("/dashboard");
   }
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { trackMilestone } from "@/lib/memberUsage";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
 import { Toast, type ToastState } from "@/app/components/toast";
@@ -601,6 +602,16 @@ export default function WelcomePage() {
       setSaving(false);
       fail(`Could not save profile: ${error.message}`);
       return;
+    }
+
+    // If any lineage field is now non-empty, mark the milestone. The
+    // server-side UNIQUE constraint keeps this idempotent.
+    if (
+      updatedProfile.lineage_father_grief ||
+      updatedProfile.lineage_father_anger ||
+      updatedProfile.lineage_pattern_to_leave
+    ) {
+      trackMilestone("first_lineage_entry");
     }
 
     await saveProfileHistory(userId, {
