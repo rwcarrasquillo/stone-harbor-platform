@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   FEATURE_THRESHOLDS,
   clearPreviewDay,
@@ -60,24 +61,57 @@ export function PreviewDayBadge() {
   // hydration mismatch.
   const [mounted, setMounted] = useState(false);
   const [activeDay, setActiveDay] = useState<number | null>(null);
+  // pathname re-fires the effect on client-side navigation between
+  // pages, so the badge updates if the member clicks a Link from
+  // /dashboard?previewDay=75 to /journal (the override persists via
+  // localStorage). We deliberately do NOT use useSearchParams here —
+  // it forces every consuming page into dynamic rendering and needs
+  // a Suspense boundary in production. The badge's own click
+  // handlers already do full reloads, so search-param-only changes
+  // happen via that path, not via soft routing.
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
-    // Read once on mount. If the URL has ?previewDay=N this also
-    // persists it to localStorage as a side effect of the getter.
+    // Re-read on every route change. getPreviewDayOverride also
+    // writes any URL value into localStorage as a side effect, so
+    // persistence and visibility stay in sync.
     setActiveDay(getPreviewDayOverride());
-  }, []);
+  }, [pathname]);
 
   if (!mounted || activeDay === null) return null;
 
+  /**
+   * Switching day chips: write localStorage AND update the URL's
+   * ?previewDay parameter, then full-reload. Earlier the URL was
+   * left stale, so after reload `getPreviewDayOverride` would read
+   * the URL first and revert localStorage back to the old day — the
+   * chip click appeared to do nothing.
+   *
+   * We use `window.location.href = newUrl.toString()` (full reload)
+   * rather than router.replace because most pages compute gating
+   * during render from a one-time fetch of created_at; a soft
+   * navigation wouldn't re-run those queries, so the gated features
+   * wouldn't re-evaluate. Hard reload is the correct primitive here.
+   */
   const handlePick = (day: number) => {
     setPreviewDayOverride(day);
-    window.location.reload();
+    const url = new URL(window.location.href);
+    url.searchParams.set("previewDay", String(day));
+    window.location.href = url.toString();
   };
 
+  /**
+   * Exit: clear localStorage AND remove the URL parameter, then
+   * reload. Without removing the URL parameter, the reload would
+   * find ?previewDay=N still in the URL and re-establish the
+   * override from there, undoing the exit.
+   */
   const handleExit = () => {
     clearPreviewDay();
-    window.location.reload();
+    const url = new URL(window.location.href);
+    url.searchParams.delete("previewDay");
+    window.location.href = url.toString();
   };
 
   return (
