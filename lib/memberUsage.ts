@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabaseClient";
+import { featureForPath } from "@/lib/featureNames";
 
 /**
  * Stone Harbor — member usage tracking (client side).
@@ -20,38 +21,11 @@ import { supabase } from "@/lib/supabaseClient";
  *   Every call here returns immediately. Errors are swallowed.
  *   The member experience must never wait on or surface
  *   analytics failures.
+ *
+ * The slug→brand mapping (Reflect / Vent / Brotherhood / Breathe)
+ * lives in lib/featureNames.ts so it can be unit-tested without
+ * loading React or the Supabase client.
  */
-
-/**
- * Brand-aligned feature names. Renames of the underlying route
- * won't lose the historical roll-up because the feature key is
- * what we group by, not the raw path. Keep in sync with the
- * dashboard tile labels in app/dashboard/page.tsx.
- */
-const SLUG_TO_FEATURE: Record<string, string> = {
-  journal: "Reflect",
-  vent: "Vent",
-  messages: "Brotherhood",
-  meditation: "Breathe",
-  "members-blog": "Members Blog",
-  dashboard: "Dashboard",
-  welcome: "Welcome",
-  roadmap: "Roadmap",
-  resources: "Resources",
-  "start-here": "Start Here",
-};
-
-function featureForPath(path: string): string {
-  const first = path.replace(/^\/+/, "").split("/")[0] ?? "";
-  if (first === "") return "Home";
-  const mapped = SLUG_TO_FEATURE[first.toLowerCase()];
-  if (mapped) return mapped;
-  return first
-    .toLowerCase()
-    .split("-")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
-}
 
 let lastTrackedPath: string | null = null;
 

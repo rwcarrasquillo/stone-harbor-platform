@@ -1,0 +1,550 @@
+{
+  "config": {
+    "configFile": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/playwright.config.ts",
+    "rootDir": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-results/e2e.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 2,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 60000
+    }
+  },
+  "suites": [
+    {
+      "title": "analytics-admin.spec.ts",
+      "file": "analytics-admin.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Admin /analytics smoke",
+          "file": "analytics-admin.spec.ts",
+          "line": 25,
+          "column": 6,
+          "specs": [
+            {
+              "title": "renders every analytics section heading",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Set ADMIN_EMAIL + ADMIN_PASSWORD to run.",
+                      "location": {
+                        "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/analytics-admin.spec.ts",
+                        "line": 26,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-24T00:10:19.923Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Set ADMIN_EMAIL + ADMIN_PASSWORD to run.",
+                          "location": {
+                            "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/analytics-admin.spec.ts",
+                            "line": 26,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a434fcf4b69671d09083-c03dc62ff182c480931d",
+              "file": "analytics-admin.spec.ts",
+              "line": 28,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "auth.spec.ts",
+      "file": "auth.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Member auth flow",
+          "file": "auth.spec.ts",
+          "line": 20,
+          "column": 6,
+          "specs": [
+            {
+              "title": "sign in with email + password lands on dashboard or onboarding",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Set TEST_MEMBER_EMAIL + TEST_MEMBER_PASSWORD to run.",
+                      "location": {
+                        "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/auth.spec.ts",
+                        "line": 21,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-24T00:10:19.927Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Set TEST_MEMBER_EMAIL + TEST_MEMBER_PASSWORD to run.",
+                          "location": {
+                            "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/auth.spec.ts",
+                            "line": 21,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d748ac400d08b85935ef-cac5707ae6c5f423a821",
+              "file": "auth.spec.ts",
+              "line": 23,
+              "column": 7
+            },
+            {
+              "title": "sign out from dashboard returns to /login or /",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Set TEST_MEMBER_EMAIL + TEST_MEMBER_PASSWORD to run.",
+                      "location": {
+                        "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/auth.spec.ts",
+                        "line": 21,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-24T00:10:19.930Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Set TEST_MEMBER_EMAIL + TEST_MEMBER_PASSWORD to run.",
+                          "location": {
+                            "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/auth.spec.ts",
+                            "line": 21,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d748ac400d08b85935ef-9759096a9caa22fc5863",
+              "file": "auth.spec.ts",
+              "line": 57,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "home.spec.ts",
+      "file": "home.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Public home page",
+          "file": "home.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "renders the brand mark and main heading",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1625,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-24T00:10:20.159Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d318381359a9b96acb1e-aa85e6599aa234cc7b14",
+              "file": "home.spec.ts",
+              "line": 9,
+              "column": 7
+            },
+            {
+              "title": "has a sign-in link reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1619,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-24T00:10:20.160Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d318381359a9b96acb1e-beae7f74026fe5f52a01",
+              "file": "home.spec.ts",
+              "line": 20,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "journal.spec.ts",
+      "file": "journal.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Journal flow",
+          "file": "journal.spec.ts",
+          "line": 19,
+          "column": 6,
+          "specs": [
+            {
+              "title": "write and save a journal entry",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Set TEST_MEMBER_EMAIL + TEST_MEMBER_PASSWORD to run.",
+                      "location": {
+                        "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/journal.spec.ts",
+                        "line": 20,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-24T00:10:21.894Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Set TEST_MEMBER_EMAIL + TEST_MEMBER_PASSWORD to run.",
+                          "location": {
+                            "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/journal.spec.ts",
+                            "line": 20,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d2a24f3341738d6e64f5-372467c507095d60b999",
+              "file": "journal.spec.ts",
+              "line": 22,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "preview-badge.spec.ts",
+      "file": "preview-badge.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "PreviewDayBadge",
+          "file": "preview-badge.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "appears when ?previewDay=60 is set",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 495,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-24T00:10:21.899Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e2b59b57f7b160800cf3-71924767e99497c20d27",
+              "file": "preview-badge.spec.ts",
+              "line": 13,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "theme-toggle.spec.ts",
+      "file": "theme-toggle.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Theme toggle",
+          "file": "theme-toggle.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "flipping the theme persists across reload",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "No theme toggle on the public home — skipping.",
+                      "location": {
+                        "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/theme-toggle.spec.ts",
+                        "line": 29,
+                        "column": 12
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 1,
+                      "status": "skipped",
+                      "duration": 1180,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-24T00:10:21.904Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "No theme toggle on the public home — skipping.",
+                          "location": {
+                            "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/theme-toggle.spec.ts",
+                            "line": 29,
+                            "column": 12
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "28924747feb34f610bb0-7693dcf312e91fafaf0d",
+              "file": "theme-toggle.spec.ts",
+              "line": 13,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-05-24T00:10:17.983Z",
+    "duration": 5166.8240000000005,
+    "expected": 3,
+    "skipped": 5,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
