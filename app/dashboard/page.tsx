@@ -1893,7 +1893,7 @@ export default function DashboardPage() {
                 already keeps all four cards in the same row at equal
                 height. h-full would re-introduce the stretch bug. */}
             <div
-              className={`hide-scrollbar flex min-w-0 items-start gap-3 overflow-x-auto pr-8 snap-x snap-mandatory md:grid md:items-start md:gap-6 md:overflow-visible md:pr-0 ${
+              className={`hide-scrollbar flex min-w-0 items-stretch gap-3 overflow-x-auto pr-8 snap-x snap-mandatory md:grid md:items-stretch md:gap-6 md:overflow-visible md:pr-0 ${
                 introExpanded
                   ? "md:grid-cols-2 md:grid-rows-2"
                   : "md:grid-cols-2 xl:grid-cols-4"
@@ -2572,7 +2572,13 @@ function DashboardCard({
       <p className="mt-2 text-[13px] leading-snug text-[var(--sh-text-secondary)] md:text-sm">
         {text}
       </p>
-      <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--sh-text-muted)] transition group-hover:text-[var(--sh-accent-gold)] md:mt-4">
+      {/* `mt-auto` pushes "Open →" to the bottom of the card. Combined
+          with the parent grid's items-stretch, every card in a row
+          ends up the same height with content top-anchored and the
+          Open → CTA bottom-anchored — no flex-1 fill on the
+          description needed (which previously expanded short-text
+          cards into viewport-tall blocks). */}
+      <p className="mt-auto pt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--sh-text-muted)] transition group-hover:text-[var(--sh-accent-gold)] md:pt-4">
         Open →
       </p>
       <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
