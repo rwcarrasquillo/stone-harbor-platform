@@ -36,6 +36,7 @@ import {
   shouldShowSmallThingToday,
 } from "@/app/components/smallThing";
 import { LineageDoorCard } from "@/app/components/lineageDoorCard";
+import { TheMapTile } from "@/app/components/theMapTile";
 import {
   FEATURE_THRESHOLDS,
   isFeatureUnlocked,
@@ -44,7 +45,9 @@ import { useTheme } from "@/app/components/themeProvider";
 import { PersonalizedGreeting } from "@/app/components/personalizedGreeting";
 import { TodayIntention } from "@/app/components/todayIntention";
 import { BreathCircle } from "@/app/components/breathCircle";
-import { X, Wind, Heart, Users, BookOpen } from "lucide-react";
+// Note: Compass is imported from the local icons module above (line 15).
+// Importing it from lucide-react too would create a duplicate identifier.
+import { X, Wind, Heart, Users, BookOpen, Newspaper } from "lucide-react";
 import {
   dismissalKey,
   resolveActiveAcknowledgment,
@@ -899,7 +902,7 @@ export default function DashboardPage() {
 
   return (
     <main
-      className={`${sans.className} relative min-h-screen overflow-hidden bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}
+      className={`${sans.className} relative flex min-h-screen flex-col overflow-hidden bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}
     >
       <InactivityGate />
 
@@ -908,7 +911,7 @@ export default function DashboardPage() {
           every authenticated page so the harbor feels continuous. */}
       <PageAmbience />
 
-      <section className="relative z-10 mx-auto max-w-7xl px-3 py-4 md:px-8 md:py-8">
+      <section className="relative z-10 mx-auto w-full max-w-7xl flex-1 px-3 py-4 md:px-8 md:py-8">
         {/* TOP NAV */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:mb-8 md:gap-4">
           <Link href="/" className="group flex flex-col leading-none no-underline">
@@ -1198,6 +1201,14 @@ export default function DashboardPage() {
               <SmallThing userId={userId} />
             </div>
           )}
+
+        {/* THE MAP — Eidos entry tile. Renders for every signed-in
+            member, always. The tile itself reads /api/map/state and
+            decides whether to show "Begin", "Continue", "Assemble
+            Chapter 1", or "Open Operating Manual" — so the dashboard
+            doesn't need to know the member's Map status. Routes to
+            the locale the member last selected (NEXT_LOCALE cookie). */}
+        {userId && <TheMapTile />}
 
         {/* LINEAGE DOOR — once-shown announcement that the Lineage
             room exists in the profile. Renders only at day 90+ and
@@ -1862,15 +1873,27 @@ export default function DashboardPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="h-full"
+            // No `h-full` here. Earlier this was set so the doors
+            // column matched the (now-hidden) anchor aside's height
+            // via the parent grid's items-stretch. With the aside
+            // gone, h-full propagated down through the 4-card row
+            // and stretched the cards to consume the entire grid
+            // cell — pushing the PATIENCE LINE and Library/Resources
+            // rows below the viewport. Letting the section size to
+            // its content makes all three children visible in order.
+            className=""
           >
             {/* Mobile: horizontal swipe through the four destinations.
                 Desktop: original 2x2 / 4-up grid. The hide-scrollbar +
                 snap-mandatory pattern matches the home pillars carousel —
                 next card peeks on the right edge so the swipe affordance
-                is visible without dots or arrows. */}
+                is visible without dots or arrows.
+
+                No `h-full` on this row either — the grid's items-stretch
+                already keeps all four cards in the same row at equal
+                height. h-full would re-introduce the stretch bug. */}
             <div
-              className={`hide-scrollbar flex h-full min-w-0 gap-3 overflow-x-auto pr-8 snap-x snap-mandatory md:grid md:gap-6 md:overflow-visible md:pr-0 ${
+              className={`hide-scrollbar flex min-w-0 items-start gap-3 overflow-x-auto pr-8 snap-x snap-mandatory md:grid md:items-start md:gap-6 md:overflow-visible md:pr-0 ${
                 introExpanded
                   ? "md:grid-cols-2 md:grid-rows-2"
                   : "md:grid-cols-2 xl:grid-cols-4"
@@ -1917,6 +1940,57 @@ export default function DashboardPage() {
                 title="Breathe"
                 text="One breath at the door of the harbor. Stay as long as you want."
                 Icon={Wind}
+              />
+            </div>
+
+            {/* PATIENCE LINE — sits between the four primary doors
+                and the Library/Resources row as a quiet exhale. The
+                harbor will be here tomorrow whether or not the man
+                walks through any door today. Earlier this line lived
+                at the bottom of the dashboard where it ended up
+                visually under the new Library/Resources row; this
+                placement gives it breathing room on both sides and
+                lets the man encounter it before deciding to scroll
+                further into the secondary reading row. */}
+            <div className="relative mt-8 overflow-hidden px-6 py-6 md:mt-12 md:py-8">
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 40% 70% at 50% 50%, rgba(196,147,78,0.14) 0%, rgba(196,147,78,0.04) 50%, transparent 80%)",
+                }}
+              />
+              <p
+                className={`${serif.className} relative text-center text-base italic md:text-lg ${
+                  isDusk ? "text-white/80" : "text-stone-500"
+                }`}
+              >
+                The harbor will be here tomorrow.
+              </p>
+            </div>
+
+            {/* OTHER DOORS — Read + Resources. Long-form blog content
+                from the team (curated, AI-drafted, human-edited) and
+                external reading aggregated from vetted sources via
+                the daily RSS pipeline. Quieter row on desktop; same
+                horizontal scroll behavior on mobile so the two cards
+                sit beside the four primary doors above without
+                crowding the eye. Bottom margin keeps the row from
+                pressing against the global crisis footer. */}
+            <div className="mt-3 hide-scrollbar mb-12 flex gap-3 overflow-x-auto pr-8 snap-x snap-mandatory md:mt-6 md:mb-20 md:grid md:grid-cols-2 md:gap-6 md:overflow-visible md:pr-0">
+              <DashboardCard
+                href="/members-blog"
+                label="Read"
+                title="The Library"
+                text="Long-form pieces from the team. The thinking the harbor returns to, written in the voice of someone who knows."
+                Icon={Newspaper}
+              />
+              <DashboardCard
+                href="/resources"
+                label="Curated"
+                title="Resources"
+                text="External reading the team has read first — books, essays, talks worth carrying with you between sessions."
+                Icon={Compass}
               />
             </div>
           </motion.section>
@@ -2095,33 +2169,6 @@ export default function DashboardPage() {
         </motion.section>
         )}
 
-        {/* CLOSING LINE — explicit permission to leave. The opposite
-            of every social product. On the dark theme, the page is
-            already dark; the line floats as a quiet italic with a
-            soft warm glow halo for emphasis. */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.9 }}
-          className="relative mt-12 overflow-hidden px-6 py-10 md:mt-20 md:py-14"
-        >
-          {/* Warm dawn glow centered behind the line */}
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 40% 70% at 50% 50%, rgba(196,147,78,0.14) 0%, rgba(196,147,78,0.04) 50%, transparent 80%)",
-            }}
-          />
-          <p
-            className={`${serif.className} relative text-center text-base italic md:text-lg ${
-              isDusk ? "text-white/80" : "text-stone-500"
-            }`}
-          >
-            The harbor will be here tomorrow.
-          </p>
-        </motion.div>
       </section>
 
       {/* COVER IMAGE VIEWER */}
@@ -2194,53 +2241,6 @@ export default function DashboardPage() {
       )}
 
       <Toast toast={toast} onDismiss={() => setToast(null)} />
-
-      {/* FOOTER — 988 crisis line required on every authenticated screen */}
-      <footer
-        className={`relative z-10 mt-6 border-t px-4 py-5 backdrop-blur-sm md:mt-12 md:px-6 md:py-10 ${
-          isDusk
-            ? "border-white/10 bg-black/60"
-            : "border-stone-200 bg-[#efe8dc]/70"
-        }`}
-      >
-        <div className="mx-auto grid max-w-7xl gap-3 md:grid-cols-3 md:items-center md:gap-6">
-          <div>
-            <p className="text-base font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold)]">
-              Stone Harbor
-            </p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--sh-accent-gold)]/70">
-              Men&apos;s Mental Wellness
-            </p>
-          </div>
-          <div className="text-center">
-            <p
-              className={`${serif.className} text-base italic text-[var(--sh-text-secondary)]`}
-            >
-              The harbor is patient.
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
-              If You Are In Crisis
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-              Call or text{" "}
-              <span className="font-bold text-[var(--sh-accent-gold)]">988</span>{" "}
-              — 24/7. Free. Confidential.
-            </p>
-            {acknowledgment?.amplify988 && (
-              <motion.p
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                className={`${serif.className} mt-3 text-base italic leading-snug text-[#a9793d]`}
-              >
-                Tonight more than most nights, you are not alone.
-              </motion.p>
-            )}
-          </div>
-        </div>
-      </footer>
     </main>
   );
 }
@@ -2514,43 +2514,50 @@ function DashboardCard({
   return (
     <Link
       href={href}
-      className={`group relative flex h-full w-[78%] shrink-0 snap-start flex-col overflow-hidden rounded-none p-5 transition duration-300 hover:-translate-y-1 md:w-auto md:p-7 ${
+      // Compact card — heights matched by the parent grid's items-stretch
+      // (so siblings in the same row end up identical) but the per-card
+      // padding/typography is sized down to only what the title and one
+      // line of description need. Earlier the cards rendered noticeably
+      // taller than the text inside them, with extra whitespace below
+      // the "Open →" affordance.
+      className={`group relative flex w-[78%] shrink-0 snap-start flex-col overflow-hidden rounded-none p-4 transition duration-300 hover:-translate-y-1 md:w-auto md:p-5 ${
         isDusk
           ? "border border-white/10 bg-black/35 shadow-[0_18px_50px_rgba(0,0,0,0.4)] backdrop-blur-md hover:border-[#c4934e]/40 hover:bg-black/45"
           : "border border-white/70 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.05)] hover:border-[#a9793d]/40 hover:shadow-[0_18px_55px_rgba(0,0,0,0.09)]"
       }`}
     >
       {badge > 0 && (
-        <span className="absolute right-3 top-3 z-20 flex h-7 min-w-7 items-center justify-center border border-[#c4934e] bg-[#a9793d] px-2 text-xs font-black text-white shadow-[0_8px_20px_rgba(169,121,61,0.35)] md:right-5 md:top-5 md:h-8 md:min-w-8">
+        <span className="absolute right-3 top-3 z-20 flex h-6 min-w-6 items-center justify-center border border-[#c4934e] bg-[#a9793d] px-2 text-[11px] font-black text-white shadow-[0_8px_20px_rgba(169,121,61,0.35)] md:right-4 md:top-4 md:h-7 md:min-w-7">
           {badge}
         </span>
       )}
-      {/* Hero icon block — gold ring on mobile. The tinted-dark version on Dusk
-          uses subtle gold-on-dark; on Sunlit a cream-gradient ring. */}
+      {/* Hero icon block — gold ring on mobile. Smaller (10x10 vs 12x12)
+          so the card collapses to a tighter footprint when the row
+          stretches all cards to match the tallest. */}
       {Icon && (
         <div
-          className={`mb-3 flex h-12 w-12 items-center justify-center rounded-full md:hidden ${
+          className={`mb-2 flex h-10 w-10 items-center justify-center rounded-full md:hidden ${
             isDusk
               ? "border border-[#c4934e]/30 bg-[#c4934e]/10"
               : "border border-[#a9793d]/25 bg-gradient-to-br from-[#f8f4ed] to-[#efe8dc]"
           }`}
         >
           <Icon
-            size={22}
+            size={20}
             strokeWidth={1.5}
             className="text-[var(--sh-accent-gold)]"
           />
         </div>
       )}
-      <div className="mb-3 hidden items-center gap-3 pr-10 md:mb-4 md:flex">
+      <div className="mb-2 hidden items-center gap-2 pr-10 md:flex">
         {Icon && (
           <Icon
-            size={22}
+            size={18}
             strokeWidth={1.5}
             className="text-[var(--sh-accent-gold)]"
           />
         )}
-        <p className="text-xs font-bold uppercase tracking-[0.24em] text-[var(--sh-accent-gold)]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--sh-accent-gold)]">
           {label}
         </p>
       </div>
@@ -2558,14 +2565,14 @@ function DashboardCard({
         {label}
       </p>
       <h3
-        className={`${serif.className} text-2xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
+        className={`${serif.className} text-xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-2xl`}
       >
         {title}
       </h3>
-      <p className="mt-3 flex-1 text-sm leading-relaxed text-[var(--sh-text-secondary)] md:mt-4 md:text-base">
+      <p className="mt-2 text-[13px] leading-snug text-[var(--sh-text-secondary)] md:text-sm">
         {text}
       </p>
-      <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--sh-text-muted)] transition group-hover:text-[var(--sh-accent-gold)] md:mt-6 md:text-xs">
+      <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--sh-text-muted)] transition group-hover:text-[var(--sh-accent-gold)] md:mt-4">
         Open →
       </p>
       <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />

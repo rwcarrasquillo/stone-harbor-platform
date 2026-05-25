@@ -1,40 +1,40 @@
 {
-  "duration_ms": 302,
+  "duration_ms": 250,
   "tests": [
     {
       "name": "match_pairing",
       "status": "passed",
-      "duration_ms": 3,
+      "duration_ms": 25,
       "error": null
     },
     {
       "name": "rls_enabled",
       "status": "passed",
-      "duration_ms": 1,
+      "duration_ms": 8,
       "error": null
     },
     {
       "name": "select_policies_present",
       "status": "passed",
-      "duration_ms": 3,
+      "duration_ms": 15,
       "error": null
     },
     {
       "name": "analytics_views",
       "status": "passed",
-      "duration_ms": 5,
+      "duration_ms": 15,
       "error": null
     },
     {
       "name": "is_admin_helper",
       "status": "passed",
-      "duration_ms": 0,
+      "duration_ms": 2,
       "error": null
     },
     {
       "name": "milestone_uniqueness",
       "status": "passed",
-      "duration_ms": 1,
+      "duration_ms": 4,
       "error": null
     }
   ]

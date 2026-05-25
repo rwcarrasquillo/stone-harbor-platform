@@ -8,6 +8,7 @@ import { trackAcquisition, trackMilestone } from "@/lib/memberUsage";
 import { serif, sans } from "@/lib/fonts";
 import { Anchor, Lock, Spark } from "@/app/components/icons";
 import { LogIn, UserPlus } from "lucide-react";
+import { PasswordInput } from "@/app/components/passwordInput";
 
 // Brand system — matches home, dashboard, journal, login
 const GOLD = "#c4934e";
@@ -646,19 +647,34 @@ function Field({
   setValue: (value: string) => void;
   placeholder: string;
 }) {
+  // Same dark-glass surface across name / email / password — only the
+  // input implementation differs so password variants can host the
+  // eye toggle without breaking the layout for the other fields.
+  const inputClass =
+    "h-[52px] w-full border border-white/20 bg-black/30 px-4 text-base text-white outline-none transition placeholder:text-white/40 focus:border-[#c4934e] focus:bg-black/45 focus:ring-2 focus:ring-[#c4934e]/30";
   return (
     <div className="w-full">
       <label className="mb-3 block text-xs font-bold uppercase tracking-[0.22em] text-[#c4934e]">
         {label}
       </label>
-      <input
-        required
-        type={type}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
-        className="h-[52px] w-full border border-white/20 bg-black/30 px-4 text-base text-white outline-none transition placeholder:text-white/40 focus:border-[#c4934e] focus:bg-black/45 focus:ring-2 focus:ring-[#c4934e]/30"
-      />
+      {type === "password" ? (
+        <PasswordInput
+          required
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder}
+          className={inputClass}
+        />
+      ) : (
+        <input
+          required
+          type={type}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder}
+          className={inputClass}
+        />
+      )}
     </div>
   );
 }

@@ -17,7 +17,14 @@ export default defineConfig({
   },
   test: {
     environment: "happy-dom",
-    include: ["tests/unit/**/*.test.ts"],
+    include: [
+      "tests/unit/**/*.test.ts",
+      // Eidos engine tests live colocated with the engine code so
+      // they travel with the engine if it's ever extracted into a
+      // separate package. Adding the glob here keeps them in the
+      // existing unit-test run.
+      "lib/eidos/__tests__/**/*.test.ts",
+    ],
     reporters: ["default", "json"],
     outputFile: { json: ".test-results/unit.json" },
   },

@@ -249,15 +249,6 @@ export default function MeditationPage() {
               : "Tap the speaker to add ambient sound. Or breathe in silence."}
         </p>
       </section>
-
-      {/* FOOTER — 988, always present on auth surfaces */}
-      <footer className="relative z-20 border-t border-white/10 bg-black/40 px-4 py-4 backdrop-blur md:px-10 md:py-6">
-        <p className="text-center text-[10px] leading-relaxed text-white/55 md:text-xs">
-          If you are in crisis, call or text{" "}
-          <span className="font-bold text-[#c4934e]">988</span> — the Suicide
-          &amp; Crisis Lifeline. 24/7. Free. Confidential.
-        </p>
-      </footer>
     </main>
   );
 }

@@ -107,7 +107,7 @@
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-24T00:10:19.923Z",
+                      "startTime": "2026-05-24T13:49:20.721Z",
                       "annotations": [
                         {
                           "type": "skip",
@@ -178,7 +178,7 @@
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-24T00:10:19.927Z",
+                      "startTime": "2026-05-24T13:49:20.733Z",
                       "annotations": [
                         {
                           "type": "skip",
@@ -232,7 +232,7 @@
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-24T00:10:19.930Z",
+                      "startTime": "2026-05-24T13:49:20.736Z",
                       "annotations": [
                         {
                           "type": "skip",
@@ -288,12 +288,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1625,
+                      "duration": 1562,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-24T00:10:20.159Z",
+                      "startTime": "2026-05-24T13:49:21.139Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -322,12 +322,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1619,
+                      "duration": 1483,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-24T00:10:20.160Z",
+                      "startTime": "2026-05-24T13:49:21.138Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -388,7 +388,7 @@
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-24T00:10:21.894Z",
+                      "startTime": "2026-05-24T13:49:23.156Z",
                       "annotations": [
                         {
                           "type": "skip",
@@ -409,6 +409,273 @@
               "id": "d2a24f3341738d6e64f5-372467c507095d60b999",
               "file": "journal.spec.ts",
               "line": 22,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "map-crisis-modal.spec.ts",
+      "file": "map-crisis-modal.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "/map crisis modal",
+          "file": "map-crisis-modal.spec.ts",
+          "line": 28,
+          "column": 6,
+          "specs": [
+            {
+              "title": "severe baseline surfaces the crisis modal with resources",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Set TEST_MEMBER_CRISIS_EMAIL + TEST_MEMBER_CRISIS_PASSWORD to run.",
+                      "location": {
+                        "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/map-crisis-modal.spec.ts",
+                        "line": 29,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-24T13:49:23.156Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Set TEST_MEMBER_CRISIS_EMAIL + TEST_MEMBER_CRISIS_PASSWORD to run.",
+                          "location": {
+                            "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/map-crisis-modal.spec.ts",
+                            "line": 29,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be19017a369e3b439a7b-b5896e58fbbc5c560a39",
+              "file": "map-crisis-modal.spec.ts",
+              "line": 34,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "map-happy-path.spec.ts",
+      "file": "map-happy-path.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "/map happy path",
+          "file": "map-happy-path.spec.ts",
+          "line": 23,
+          "column": 6,
+          "specs": [
+            {
+              "title": "member can begin the Map and complete Module 1.1 with safe values",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Set TEST_MEMBER_EMAIL + TEST_MEMBER_PASSWORD to run.",
+                      "location": {
+                        "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/map-happy-path.spec.ts",
+                        "line": 24,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-24T13:49:23.159Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Set TEST_MEMBER_EMAIL + TEST_MEMBER_PASSWORD to run.",
+                          "location": {
+                            "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/map-happy-path.spec.ts",
+                            "line": 24,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "85bf60418da07156a981-46e5f192bcc31a550fb9",
+              "file": "map-happy-path.spec.ts",
+              "line": 26,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "moderation-admin.spec.ts",
+      "file": "moderation-admin.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Admin /moderation smoke",
+          "file": "moderation-admin.spec.ts",
+          "line": 31,
+          "column": 6,
+          "specs": [
+            {
+              "title": "queue page renders with the expected structure",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Set ADMIN_EMAIL + ADMIN_PASSWORD to run.",
+                      "location": {
+                        "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/moderation-admin.spec.ts",
+                        "line": 32,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-24T13:49:23.166Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Set ADMIN_EMAIL + ADMIN_PASSWORD to run.",
+                          "location": {
+                            "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/moderation-admin.spec.ts",
+                            "line": 32,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "39f74271b2a0743b74e4-6cf604f82c422c1dc390",
+              "file": "moderation-admin.spec.ts",
+              "line": 34,
+              "column": 7
+            },
+            {
+              "title": "page accepts navigation away without leaking state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Set ADMIN_EMAIL + ADMIN_PASSWORD to run.",
+                      "location": {
+                        "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/moderation-admin.spec.ts",
+                        "line": 32,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-24T13:49:23.170Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Set ADMIN_EMAIL + ADMIN_PASSWORD to run.",
+                          "location": {
+                            "file": "/Volumes/My Shared Files/Home/Documents/Claude/Projects/Stone Harbor/stone-harbor-launch-ready/tests/e2e/moderation-admin.spec.ts",
+                            "line": 32,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "39f74271b2a0743b74e4-e3c04d33b5c58b87797c",
+              "file": "moderation-admin.spec.ts",
+              "line": 77,
               "column": 7
             }
           ]
@@ -444,12 +711,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 495,
+                      "duration": 709,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-24T00:10:21.899Z",
+                      "startTime": "2026-05-24T13:49:23.176Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -505,12 +772,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 1,
                       "status": "skipped",
-                      "duration": 1180,
+                      "duration": 1421,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-24T00:10:21.904Z",
+                      "startTime": "2026-05-24T13:49:23.177Z",
                       "annotations": [
                         {
                           "type": "skip",
@@ -540,10 +807,10 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-05-24T00:10:17.983Z",
-    "duration": 5166.8240000000005,
+    "startTime": "2026-05-24T13:49:16.381Z",
+    "duration": 8293.418,
     "expected": 3,
-    "skipped": 5,
+    "skipped": 9,
     "unexpected": 0,
     "flaky": 0
   }

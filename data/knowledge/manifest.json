@@ -1,0 +1,125 @@
+{
+  "_comment": "Stone Harbor knowledge corpus — Phase A seed. Editorial standards: every source is peer-reviewed OR established clinical literature OR primary source. Chunks are author-quotable paragraphs that capture a self-contained idea. Aim for 1-3 chunks per source in the seed; full corpus build comes after the clinical advisor reviews.",
+  "_format": "Each source has metadata (title, authors, year, type, citation, tags) and an array of chunks. Tags use the KnowledgeTag union in lib/knowledge/types.ts.",
+  "sources": [
+    {
+      "title": "Writing to Heal",
+      "authors": ["James W. Pennebaker"],
+      "year": 2004,
+      "source_type": "book",
+      "citation": "Pennebaker, J. W. (2004). Writing to Heal: A Guided Journal for Recovering from Trauma and Emotional Upheaval. New Harbinger.",
+      "tags": ["expressive-writing", "grief", "betrayal"],
+      "chunks": [
+        "Expressive writing about emotionally significant material — the events that have shaped us in ways we don't fully understand — has produced, in studies across many populations, measurable improvements in immune function, sleep, and reported well-being. The mechanism appears to be the construction of a coherent narrative: when a person can put words to what happened to them, the experience moves from a raw sensory loop into a story that can be examined, edited, and ultimately set down.",
+        "What matters is not the polish of the writing but the willingness to look. Twenty minutes for three or four consecutive days has been the protocol in most studies. The first session tends to be the hardest. The second feels different. By the fourth, most participants report that the material has changed in some way — usually softened, sometimes clarified, occasionally reframed entirely."
+      ]
+    },
+    {
+      "title": "Complex PTSD: From Surviving to Thriving",
+      "authors": ["Pete Walker"],
+      "year": 2013,
+      "source_type": "book",
+      "citation": "Walker, P. (2013). Complex PTSD: From Surviving to Thriving. Azure Coyote.",
+      "tags": ["complex-ptsd", "mens-development", "shame"],
+      "chunks": [
+        "Complex PTSD differs from single-incident PTSD primarily in its developmental nature: the trauma occurred during the years when the personality was still forming, and so the patterns of avoidance, hypervigilance, and self-criticism are not bolted on top of an otherwise intact self — they are woven into the structure of the self. Recovery is consequently less about resolving a discrete memory and more about gradually rewiring habitual responses that have felt, until recently, like simply how the person is.",
+        "Most adults with complex PTSD operate from one of four habitual responses to perceived threat: fight, flight, freeze, or fawn. The fawn response — automatic appeasement, suppression of one's own preferences, immediate attempts to manage the other person's emotional state — is the least recognized and often the most exhausting. Many high-functioning men spend decades in fawn mode without naming it.",
+        "The inner critic in complex PTSD is not an abstract self-doubt. It is a specific voice that internalized whichever caregiver did the most damage. Hearing the critic as a learned voice, rather than as one's own honest assessment, is often the first real opening in recovery."
+      ]
+    },
+    {
+      "title": "Attachment in Adulthood",
+      "authors": ["Mario Mikulincer", "Phillip R. Shaver"],
+      "year": 2016,
+      "source_type": "book",
+      "citation": "Mikulincer, M., & Shaver, P. R. (2016). Attachment in Adulthood: Structure, Dynamics, and Change (2nd ed.). Guilford Press.",
+      "tags": ["attachment", "divorce", "betrayal"],
+      "chunks": [
+        "Adult attachment styles cluster along two dimensions: anxiety about abandonment and avoidance of intimacy. Secure adults are low on both. Anxious adults are high on the abandonment dimension; small signs of partner withdrawal are read as imminent loss. Avoidant adults are high on the intimacy dimension; closeness is read as a threat to autonomy. Disorganized adults score high on both and oscillate.",
+        "Attachment styles are not destinies. Earned security — moving from an insecure pattern in childhood toward a secure pattern in adulthood — has been documented in longitudinal studies and is associated with at least one consistent corrective experience in adulthood: a relationship (romantic, therapeutic, fraternal) in which the person learned, slowly, that needs could be expressed without catastrophe."
+      ]
+    },
+    {
+      "title": "Internal Family Systems Therapy",
+      "authors": ["Richard C. Schwartz"],
+      "year": 1995,
+      "source_type": "book",
+      "citation": "Schwartz, R. C. (1995). Internal Family Systems Therapy. Guilford Press.",
+      "tags": ["ifs", "shame", "narrative-identity"],
+      "chunks": [
+        "What we experience as inner conflict — the part that wants to leave, the part that wants to stay; the part that wants to numb, the part that wants to feel — is most usefully understood not as a single confused self in disagreement with itself, but as a system of parts, each holding a role, each formed in response to a particular kind of past pressure. None of these parts is the self. The self is the underlying capacity to listen to all of them with curiosity.",
+        "Most chronic self-criticism is not the Self speaking. It is a part — historically called the inner critic, in IFS called a manager — that learned, at some earlier point, that pre-emptively shaming the person could ward off worse shaming from others. The work is not to silence this part; it is to thank it for what it has been trying to do and to ask it to stand aside while the Self addresses the wound the manager has been protecting."
+      ]
+    },
+    {
+      "title": "The Heart and Soul of Change",
+      "authors": ["Barry L. Duncan", "Scott D. Miller", "Bruce E. Wampold", "Mark A. Hubble"],
+      "year": 2010,
+      "source_type": "book",
+      "citation": "Duncan, B. L., Miller, S. D., Wampold, B. E., & Hubble, M. A. (2010). The Heart and Soul of Change: Delivering What Works in Therapy (2nd ed.). American Psychological Association.",
+      "tags": ["mens-development"],
+      "chunks": [
+        "Across decades of research, the variables that most consistently predict therapeutic change are not specific to any school of therapy. They are: the strength of the alliance between the helper and the person being helped, the person's belief that change is possible, what the person brings to the work (their resources, networks, prior experiences), and, surprisingly far down the list, the specific technique being used. This is not an argument against technique. It is an argument for the primacy of the relational ground in which any technique is applied."
+      ]
+    },
+    {
+      "title": "The Polyvagal Theory",
+      "authors": ["Stephen W. Porges"],
+      "year": 2011,
+      "source_type": "book",
+      "citation": "Porges, S. W. (2011). The Polyvagal Theory: Neurophysiological Foundations of Emotions, Attachment, Communication, and Self-Regulation. W. W. Norton.",
+      "tags": ["polyvagal", "somatic"],
+      "chunks": [
+        "Slow paced breathing — particularly the deliberate lengthening of the exhale — activates the ventral branch of the vagus nerve and shifts the autonomic state from sympathetic arousal toward parasympathetic calm. This is not a metaphor. It is measurable in heart-rate variability, in skin conductance, and in the subjective experience of being able to think clearly. For a man whose nervous system has been running hot for months or years, sixty seconds of slow exhalation, repeated daily, is not a small intervention.",
+        "The autonomic nervous system has a hierarchy of responses to perceived danger. Engagement is the top of the hierarchy: the person can stay present, make eye contact, modulate their voice. As threat increases, the system steps down to fight-or-flight, then to dorsal vagal shutdown — numbness, dissociation, the felt sense of having gone away. Recovery from prolonged stress is the slow rebuilding of access to the top of the hierarchy."
+      ]
+    },
+    {
+      "title": "In a Different Voice",
+      "authors": ["Carol Gilligan"],
+      "year": 1982,
+      "source_type": "book",
+      "citation": "Gilligan, C. (1982). In a Different Voice: Psychological Theory and Women's Development. Harvard University Press.",
+      "tags": ["narrative-identity", "values"],
+      "chunks": [
+        "Identity is not a list of attributes. It is a story a person tells themselves about who they have been, who they are, and who they are becoming. When the story breaks — through divorce, betrayal, illness, the death of a parent — the work is not to deny the break but to write the next chapter from where the person actually is, not from where they expected to be."
+      ]
+    },
+    {
+      "title": "Acceptance and Commitment Therapy",
+      "authors": ["Steven C. Hayes", "Kirk D. Strosahl", "Kelly G. Wilson"],
+      "year": 1999,
+      "source_type": "book",
+      "citation": "Hayes, S. C., Strosahl, K. D., & Wilson, K. G. (1999). Acceptance and Commitment Therapy: An Experiential Approach to Behavior Change. Guilford Press.",
+      "tags": ["act", "values", "motivation"],
+      "chunks": [
+        "Values are not goals. A goal is a thing you can finish — get the promotion, fix the marriage, hit the weight. A value is a direction you can keep moving in for the rest of your life — toward honesty, toward generosity, toward being a particular kind of father. Goals can be reached and then leave you wondering why you don't feel different. Values do not run out.",
+        "Psychological flexibility is the capacity to feel what you feel, see what you see, and move toward what matters to you anyway. It is not the same as positive thinking. It is, in some ways, the opposite of positive thinking: it is the willingness to carry difficult feelings while still acting on the values you have chosen."
+      ]
+    },
+    {
+      "title": "Meditations",
+      "authors": ["Marcus Aurelius"],
+      "year": 180,
+      "source_type": "book",
+      "citation": "Marcus Aurelius. (c. 170-180 CE). Meditations. (G. Long, Trans.).",
+      "tags": ["stoic", "values"],
+      "chunks": [
+        "You have power over your mind — not outside events. Realize this, and you will find strength.",
+        "Begin the morning by saying to yourself: I shall meet with the busybody, the ungrateful, arrogant, deceitful, envious, unsocial. All these things happen to them by reason of their ignorance of what is good and evil. But I, who have seen the nature of the good — that it is beautiful — and of the bad — that it is ugly — and the nature of him who does wrong, that it is akin to me, can neither be injured by any of them, nor be angry with my kinsman, nor hate him."
+      ]
+    },
+    {
+      "title": "The Body Keeps the Score",
+      "authors": ["Bessel van der Kolk"],
+      "year": 2014,
+      "source_type": "book",
+      "citation": "van der Kolk, B. (2014). The Body Keeps the Score: Brain, Mind, and Body in the Healing of Trauma. Viking.",
+      "tags": ["somatic", "complex-ptsd"],
+      "chunks": [
+        "Trauma is not the event itself but what gets stuck in the body afterward — the patterns of muscle tension, the breath that won't fully drop, the startle response that fires too quickly. Talk therapy alone often cannot reach this layer. The body has to be given access to the experience again, slowly, in a context safe enough to allow the system to learn that the danger has passed.",
+        "The single most important predictor of recovery from trauma is not the severity of what happened. It is the quality of the relationships available to the person afterward — whether there is someone, even one person, who can listen without flinching, without rushing to fix, without changing the subject."
+      ]
+    }
+  ]
+}

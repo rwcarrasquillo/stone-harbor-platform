@@ -462,7 +462,7 @@ export default function JournalPage() {
 
   return (
     <main
-      className={`${sans.className} relative min-h-screen overflow-hidden bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}
+      className={`${sans.className} relative flex min-h-screen flex-col overflow-hidden bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}
     >
       <InactivityGate />
       <audio ref={audioRef} src="/shimmering-breeze.mp3" preload="auto" />
@@ -484,7 +484,7 @@ export default function JournalPage() {
         {soundOn ? <SoundOn size={16} /> : <SoundOff size={16} />}
       </button>
 
-      <section className="relative z-10 mx-auto max-w-7xl px-6 py-10 md:px-8">
+      <section className="relative z-10 mx-auto w-full max-w-7xl flex-1 px-6 py-10 md:px-8">
         {/* TOP NAV */}
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <Link
@@ -993,34 +993,6 @@ export default function JournalPage() {
           </motion.section>
         )}
       </section>
-
-      {/* FOOTER — 988 crisis line, required on every authenticated screen */}
-      <footer className="relative z-10 mt-12 border-t border-[var(--sh-border-subtle)] bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
-        <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-3 md:items-center">
-          <div>
-            <p className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d]">
-              Stone Harbor
-            </p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70">
-              Men&apos;s Mental Wellness
-            </p>
-          </div>
-          <div className="text-center">
-            <p className={`${serif.className} text-base italic text-[var(--sh-text-secondary)]`}>
-              The harbor is patient.
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
-              If You Are In Crisis
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-              Call or text <span className="font-bold text-[#a9793d]">988</span>{" "}
-              — 24/7. Free. Confidential.
-            </p>
-          </div>
-        </div>
-      </footer>
 
       {/* BODY CHECK OVERLAY — invitation only, optional always.
           Mounted at page level (not inside the form) so the backdrop

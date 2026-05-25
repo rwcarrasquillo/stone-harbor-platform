@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { serif, sans } from "@/lib/fonts";
 import { ArrowLeft } from "lucide-react";
+import { PasswordInput } from "@/app/components/passwordInput";
 // Brand system — matches home, dashboard, journal, login, register, messages
 const GOLD = "#c4934e";
 const GOLD_DEEP = "#a9793d";
@@ -391,14 +392,14 @@ export default function ForgotPasswordPage() {
                     <label className="mb-3 block text-xs font-bold uppercase tracking-[0.22em] text-[#c4934e]">
                       New Password
                     </label>
-                    <input
+                    <PasswordInput
                       required
-                      type="password"
                       minLength={8}
                       value={password}
                       disabled={saving}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Minimum 8 characters"
+                      autoComplete="new-password"
                       className="h-[52px] w-full border border-white/20 bg-black/30 px-4 text-base text-white outline-none transition placeholder:text-white/40 focus:border-[#c4934e] focus:bg-black/45 focus:ring-2 focus:ring-[#c4934e]/30 disabled:opacity-60"
                     />
                     {passwordHint && (
@@ -418,14 +419,14 @@ export default function ForgotPasswordPage() {
                     <label className="mb-3 block text-xs font-bold uppercase tracking-[0.22em] text-[#c4934e]">
                       Confirm Password
                     </label>
-                    <input
+                    <PasswordInput
                       required
-                      type="password"
                       minLength={8}
                       value={confirmPassword}
                       disabled={saving}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Re-enter password"
+                      autoComplete="new-password"
                       className="h-[52px] w-full border border-white/20 bg-black/30 px-4 text-base text-white outline-none transition placeholder:text-white/40 focus:border-[#c4934e] focus:bg-black/45 focus:ring-2 focus:ring-[#c4934e]/30 disabled:opacity-60"
                     />
                     {matchHint && (

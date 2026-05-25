@@ -1,0 +1,78 @@
+{
+  "common": {
+    "brand": "Stone Harbor",
+    "tagline": "Bienestar mental masculino",
+    "language": {
+      "label": "Idioma",
+      "en": "English",
+      "es": "Español"
+    },
+    "back": "Atrás",
+    "loading": "Cargando…"
+  },
+  "home": {
+    "nav": {
+      "start": "Empieza",
+      "roadmap": "Hoja de ruta",
+      "resources": "Recursos",
+      "about": "Acerca",
+      "login": "Iniciar",
+      "logout": "Salir",
+      "join": "Unirse",
+      "dashboard": "Panel"
+    },
+    "hero": {
+      "h1Line1": "La tormenta",
+      "h1Line2": "te cambió.",
+      "sub": "Ahora reconstruye lo que queda — con claridad, calma, fuerza y propósito.",
+      "mirrorPrefix": "Sea que la tormenta haya sido",
+      "mirrorSuffix": "— estás en el lugar correcto.",
+      "storms": {
+        "divorce": "un divorcio",
+        "betrayal": "una traición",
+        "burnout": "agotamiento",
+        "loss": "la pérdida de un padre",
+        "stranger": "despertar sin reconocerte"
+      },
+      "cta": {
+        "begin": "Comienza hoy",
+        "ahead": "Mira lo que viene"
+      },
+      "brotherhoodCountSingular": "{count} hombre",
+      "brotherhoodCountPlural": "{count} hombres",
+      "brotherhoodSuffix": "comenzaron a recuperarse esta semana."
+    },
+    "breath": {
+      "label": "Antes de seguir bajando",
+      "title": "Tómate sesenta segundos.",
+      "prompt": "Un respiro es suficiente para empezar. Lo demás vendrá.",
+      "complete": "Sesenta segundos. Bien hecho. El puerto es paciente."
+    }
+  },
+  "login": {
+    "title": "Bienvenido de regreso.",
+    "subtitle": "El puerto sigue firme. Inicia sesión para continuar.",
+    "labels": {
+      "email": "Correo electrónico",
+      "password": "Contraseña"
+    },
+    "placeholders": {
+      "email": "tu@ejemplo.com",
+      "password": "Ingresa tu contraseña"
+    },
+    "actions": {
+      "submit": "Iniciar sesión",
+      "submitting": "Iniciando sesión…",
+      "forgot": "¿Olvidaste tu contraseña?",
+      "joinPrompt": "¿Primera vez aquí?",
+      "joinLink": "Únete al puerto",
+      "back": "Volver al inicio"
+    },
+    "errors": {
+      "invalid": "El correo y la contraseña no coinciden.",
+      "generic": "Algo salió mal. Inténtalo de nuevo.",
+      "needsConfirm": "Confirma tu correo antes de iniciar sesión.",
+      "tooMany": "Demasiados intentos. Espera un momento e inténtalo de nuevo."
+    }
+  }
+}

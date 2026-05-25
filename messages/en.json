@@ -1,0 +1,78 @@
+{
+  "common": {
+    "brand": "Stone Harbor",
+    "tagline": "Men's Mental Wellness",
+    "language": {
+      "label": "Language",
+      "en": "English",
+      "es": "Español"
+    },
+    "back": "Back",
+    "loading": "Loading…"
+  },
+  "home": {
+    "nav": {
+      "start": "Start",
+      "roadmap": "Roadmap",
+      "resources": "Resources",
+      "about": "About",
+      "login": "Login",
+      "logout": "Logout",
+      "join": "Join",
+      "dashboard": "Dashboard"
+    },
+    "hero": {
+      "h1Line1": "The storm",
+      "h1Line2": "changed you.",
+      "sub": "Now rebuild what remains — with clarity, calm, strength, and purpose.",
+      "mirrorPrefix": "Whether the storm was",
+      "mirrorSuffix": "— you're in the right place.",
+      "storms": {
+        "divorce": "a divorce",
+        "betrayal": "a betrayal",
+        "burnout": "burnout",
+        "loss": "the loss of a parent",
+        "stranger": "waking up not recognizing yourself"
+      },
+      "cta": {
+        "begin": "Begin Today",
+        "ahead": "See What's Ahead"
+      },
+      "brotherhoodCountSingular": "{count} man",
+      "brotherhoodCountPlural": "{count} men",
+      "brotherhoodSuffix": "began recovery this week."
+    },
+    "breath": {
+      "label": "Before You Scroll Further",
+      "title": "Take sixty seconds.",
+      "prompt": "One breath is enough to begin. The rest will follow.",
+      "complete": "Sixty seconds. Well done. The harbor is patient."
+    }
+  },
+  "login": {
+    "title": "Welcome back.",
+    "subtitle": "The harbor is steady. Sign in to continue.",
+    "labels": {
+      "email": "Email",
+      "password": "Password"
+    },
+    "placeholders": {
+      "email": "you@example.com",
+      "password": "Enter password"
+    },
+    "actions": {
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "forgot": "Forgot Password?",
+      "joinPrompt": "New here?",
+      "joinLink": "Join the harbor",
+      "back": "Back to home"
+    },
+    "errors": {
+      "invalid": "That email and password don't match.",
+      "generic": "Something went wrong. Please try again.",
+      "needsConfirm": "Please confirm your email before signing in.",
+      "tooMany": "Too many attempts. Please wait a moment and try again."
+    }
+  }
+}

@@ -695,7 +695,7 @@ export default function WelcomePage() {
 
   return (
     <main
-      className={`${sans.className} relative min-h-screen overflow-hidden bg-[var(--sh-bg-page)] px-4 py-8 text-[var(--sh-text-primary)] md:px-8`}
+      className={`${sans.className} relative flex min-h-screen flex-col overflow-hidden bg-[var(--sh-bg-page)] py-8 text-[var(--sh-text-primary)]`}
     >
       <InactivityGate />
 
@@ -703,7 +703,7 @@ export default function WelcomePage() {
           feels continuous as the member moves between pages. */}
       <PageAmbience />
 
-      <section className="relative z-10 mx-auto max-w-5xl">
+      <section className="relative z-10 mx-auto w-full max-w-5xl flex-1 px-4 md:px-8">
         <div className="mb-8 flex items-center justify-between">
           <Link
             href="/dashboard"
@@ -1305,33 +1305,6 @@ export default function WelcomePage() {
       </section>
 
       <Toast toast={toast} onDismiss={() => setToast(null)} />
-
-      {/* FOOTER — 988 crisis line required on every authenticated screen */}
-      <footer
-        className={`relative z-10 mt-12 border-t border-[var(--sh-border-subtle)] px-6 py-8 backdrop-blur-sm ${
-          isDusk ? "bg-black/30" : "bg-[#efe8dc]/70"
-        }`}
-      >
-        <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-3 md:items-center">
-          <p className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d]">
-            Stone Harbor
-          </p>
-          <p
-            className={`${serif.className} text-center text-base italic text-[var(--sh-text-secondary)]`}
-          >
-            The harbor is patient.
-          </p>
-          <p className="text-right text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-            <span className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
-              If You Are In Crisis
-            </span>
-            <span className="mt-1 block">
-              Call or text <span className="font-bold text-[#a9793d]">988</span>{" "}
-              — 24/7. Free. Confidential.
-            </span>
-          </p>
-        </div>
-      </footer>
     </main>
   );
 }

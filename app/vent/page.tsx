@@ -272,14 +272,6 @@ export default function VentPage() {
           </div>
         </div>
       </section>
-
-      <footer className="relative z-20 border-t border-white/10 bg-black/40 px-4 py-4 backdrop-blur md:px-10 md:py-5">
-        <p className="text-center text-[10px] leading-relaxed text-white/55">
-          If you are in crisis, call or text{" "}
-          <span className="font-bold text-[#c4934e]">988</span> — 24/7. Free.
-          Confidential.
-        </p>
-      </footer>
     </main>
   );
 }
