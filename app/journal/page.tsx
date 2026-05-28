@@ -1024,7 +1024,7 @@ export default function JournalPage() {
                             {formatEntryDateTime(entry.created_at)}
                             {entry.edited_at && (
                               <span className="ml-2 text-[10px] font-normal italic normal-case tracking-normal text-[var(--sh-text-muted)]">
-                                · edited
+                                · edited {formatEntryDateTime(entry.edited_at)}
                               </span>
                             )}
                           </p>
