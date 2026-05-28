@@ -1020,25 +1020,14 @@ export default function JournalPage() {
                           >
                             {entry.title || "Untitled Entry"}
                           </h2>
-                          {(() => {
-                            // Capture edited_at in a const so TypeScript's
-                            // null narrowing survives the JSX boundary. The
-                            // previous inline `{entry.edited_at && ...}`
-                            // pattern works at dev-time but the production
-                            // build (stricter type-check) sometimes loses
-                            // the narrowing inside the JSX expression.
-                            const editedAt = entry.edited_at;
-                            return (
-                              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sh-text-muted)]">
-                                {formatEntryDateTime(entry.created_at)}
-                                {editedAt && (
-                                  <span className="ml-2 text-[10px] font-normal italic normal-case tracking-normal text-[var(--sh-text-muted)]">
-                                    · edited {formatEntryDateTime(editedAt)}
-                                  </span>
-                                )}
-                              </p>
-                            );
-                          })()}
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sh-text-muted)]">
+                            {formatEntryDateTime(entry.created_at)}
+                            {entry.edited_at && (
+                              <span className="ml-2 text-[10px] font-normal italic normal-case tracking-normal text-[var(--sh-text-muted)]">
+                                · edited {formatEntryDateTime(entry.edited_at)}
+                              </span>
+                            )}
+                          </p>
                         </div>
                         <div className="flex flex-col gap-2 sm:flex-row">
                           {/* Edit affordance — only rendered while the
