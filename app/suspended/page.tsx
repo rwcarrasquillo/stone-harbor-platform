@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
+import { UnsavedChangesModal } from "@/app/components/unsavedChangesModal";
+import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
 const GOLD_DEEP = "#a9793d";
 
 type Warning = {
@@ -42,9 +44,17 @@ export default function SuspendedPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [appealText, setAppealText] = useState("");
+  const [originalAppealText, setOriginalAppealText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Unsaved-changes guard for the appeal composer. Dirty only when the
+  // text has been modified from the last-saved version (so existing
+  // appeals don't trigger the warning on page load). Cleared after
+  // submission re-syncs originalAppealText to appealText.
+  const appealDirty = appealText !== originalAppealText && !submitted;
+  const appealUnsaved = useUnsavedChangesWarning(appealDirty);
 
   useEffect(() => {
     async function load() {
@@ -71,6 +81,7 @@ export default function SuspendedPage() {
       setProfile(prof as Profile);
       if (prof.suspension_appeal_text) {
         setAppealText(prof.suspension_appeal_text);
+        setOriginalAppealText(prof.suspension_appeal_text);
         setSubmitted(!!prof.suspension_appeal_submitted_at);
       }
 
@@ -99,6 +110,9 @@ export default function SuspendedPage() {
         suspension_appeal_submitted_at: new Date().toISOString(),
       })
       .eq("id", user.id);
+    // Sync the last-saved snapshot so isDirty becomes false and the
+    // unsaved-changes guard releases.
+    setOriginalAppealText(appealText.trim());
     setSubmitting(false);
     setSubmitted(true);
   }
@@ -312,6 +326,12 @@ export default function SuspendedPage() {
           </p>
         </section>
       </motion.section>
+      <UnsavedChangesModal
+        open={appealUnsaved.showModal}
+        onStay={appealUnsaved.cancelNavigation}
+        onLeave={appealUnsaved.confirmNavigation}
+        bodyLabel="your appeal"
+      />
     </main>
   );
 }

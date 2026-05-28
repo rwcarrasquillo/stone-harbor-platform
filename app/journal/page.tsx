@@ -29,6 +29,8 @@ import { todaysPrompt as sharedTodaysPrompt } from "@/lib/dailyPrompts";
 import { useTheme } from "@/app/components/themeProvider";
 import { PageAmbience } from "@/app/components/pageAmbience";
 import { VentInput, VentTextarea } from "@/app/components/ventField";
+import { UnsavedChangesModal } from "@/app/components/unsavedChangesModal";
+import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
 import { BodyCheck, type BodySpot } from "@/app/components/bodyCheck";
 import { SubMoods } from "@/app/components/subMoods";
 import { LineageReference } from "@/app/components/lineageReference";
@@ -207,6 +209,12 @@ export default function JournalPage() {
   >([]);
   const [content, setContent] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Unsaved-changes guard for the journal composer. Dirty whenever
+  // the textarea or title contains content that hasn't been saved.
+  // Cleared automatically after saveEntry resets content + title to "".
+  const journalDirty = content.trim().length > 0 || title.trim().length > 0;
+  const journalUnsaved = useUnsavedChangesWarning(journalDirty);
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -1006,6 +1014,12 @@ export default function JournalPage() {
           setPendingBodySpots(spots);
           setBodyCheckOpen(false);
         }}
+      />
+      <UnsavedChangesModal
+        open={journalUnsaved.showModal}
+        onStay={journalUnsaved.cancelNavigation}
+        onLeave={journalUnsaved.confirmNavigation}
+        bodyLabel="your journal entry"
       />
     </main>
   );

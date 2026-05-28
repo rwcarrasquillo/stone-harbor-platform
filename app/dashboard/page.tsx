@@ -45,6 +45,8 @@ import { useTheme } from "@/app/components/themeProvider";
 import { PersonalizedGreeting } from "@/app/components/personalizedGreeting";
 import { TodayIntention } from "@/app/components/todayIntention";
 import { BreathCircle } from "@/app/components/breathCircle";
+import { UnsavedChangesModal } from "@/app/components/unsavedChangesModal";
+import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
 // Note: Compass is imported from the local icons module above (line 15).
 // Importing it from lucide-react too would create a duplicate identifier.
 import { X, Wind, Heart, Users, BookOpen, Newspaper } from "lucide-react";
@@ -220,6 +222,13 @@ export default function DashboardPage() {
   const [postPrivacy, setPostPrivacy] = useState("members");
   const [memberPosts, setMemberPosts] = useState<MemberPost[]>([]);
   const [posting, setPosting] = useState(false);
+
+  // Unsaved-changes guard for the Ripples (Reflection) composer.
+  // Dirty whenever the textarea contains content that hasn't been
+  // submitted yet. Cleared automatically after createMemberPost
+  // resets postBody to "".
+  const ripplesDirty = postBody.trim().length > 0;
+  const ripplesUnsaved = useUnsavedChangesWarning(ripplesDirty);
   const [breathPhase, setBreathPhase] = useState<"inhale" | "exhale">("inhale");
 
   const activeCover = useMemo(() => {
@@ -2241,6 +2250,12 @@ export default function DashboardPage() {
       )}
 
       <Toast toast={toast} onDismiss={() => setToast(null)} />
+      <UnsavedChangesModal
+        open={ripplesUnsaved.showModal}
+        onStay={ripplesUnsaved.cancelNavigation}
+        onLeave={ripplesUnsaved.confirmNavigation}
+        bodyLabel="your ripple"
+      />
     </main>
   );
 }
