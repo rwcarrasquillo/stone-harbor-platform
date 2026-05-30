@@ -361,19 +361,24 @@
   },
   "vent": {
     "statusBadge": "Desahogo · Privado",
-    "title": "Descárgalo.",
-    "subtitle": "Sin estado de ánimo. Sin título. Solo escribe. Esto queda entre tú y el puerto.",
-    "placeholder": "¿Qué tienes en la cabeza?",
-    "save": "Guardar desahogo",
+    "title": "Déjalo aquí.",
+    "subtitle": "Nada de lo que escribas aquí va a ningún lado. Se guarda en tu diario privado y solo tú puedes leerlo.",
+    "moodGroupLabel": "Lo que estás sintiendo (opcional)",
+    "placeholder": "Lo que sea. Sin formato, sin audiencia.",
+    "statusAutosaving": "Guardando borrador automáticamente.",
+    "statusNothing": "Todavía no has escrito nada.",
+    "leaveDraft": "Dejar Borrador",
+    "saveToJournal": "Guardar En Diario",
     "saving": "Guardando…",
-    "saved": "Guardado",
-    "moodLabel": "Si quieres nombrarlo (opcional)",
     "moods": {
       "angry": "Enojado",
       "scared": "Asustado",
       "sad": "Triste",
       "numb": "Adormecido"
     },
-    "back": "Puerto"
+    "back": "Puerto",
+    "aria": {
+      "back": "Volver al panel"
+    }
   }
 }

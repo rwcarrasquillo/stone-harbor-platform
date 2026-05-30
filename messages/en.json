@@ -361,19 +361,24 @@
   },
   "vent": {
     "statusBadge": "Vent · Private",
-    "title": "Dump it.",
-    "subtitle": "No mood. No title. Just write. This stays between you and the harbor.",
-    "placeholder": "What's on your mind?",
-    "save": "Save vent",
+    "title": "Put it down here.",
+    "subtitle": "Nothing you write here goes anywhere. It's saved to your private journal and only you can read it.",
+    "moodGroupLabel": "What you're feeling (optional)",
+    "placeholder": "Whatever it is. No formatting, no audience.",
+    "statusAutosaving": "Auto-saving as a draft.",
+    "statusNothing": "Nothing's been written yet.",
+    "leaveDraft": "Leave Draft",
+    "saveToJournal": "Save To Journal",
     "saving": "Saving…",
-    "saved": "Saved",
-    "moodLabel": "If you want to name it (optional)",
     "moods": {
       "angry": "Angry",
       "scared": "Scared",
       "sad": "Sad",
       "numb": "Numb"
     },
-    "back": "Harbor"
+    "back": "Harbor",
+    "aria": {
+      "back": "Back to dashboard"
+    }
   }
 }

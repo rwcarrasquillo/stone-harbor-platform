@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
@@ -87,6 +88,7 @@ function ResourceCard({
   item: ExternalItem;
   isDusk: boolean;
 }) {
+  const t = useTranslations("resources");
   return (
     <a
       href={item.external_url}
@@ -112,13 +114,15 @@ function ResourceCard({
         </p>
       )}
       <span className="mt-auto pt-4 text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold)] transition group-hover:text-[var(--sh-text-primary)]">
-        Read at source →
+        {t("readAtSource")}
       </span>
     </a>
   );
 }
 
 export default function ResourcesPage() {
+  const t = useTranslations("resources");
+  const tPillar = useTranslations("pillar");
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
   const [items, setItems] = useState<ExternalItem[]>([]);
@@ -255,17 +259,15 @@ export default function ResourcesPage() {
           className="pt-6 md:pt-12"
         >
           <p className="text-[10px] font-bold uppercase tracking-[0.36em] text-[var(--sh-accent-gold)]">
-            Curated
+            {t("eyebrow")}
           </p>
           <h1
             className={`${serif.className} mt-3 max-w-3xl text-4xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-5xl`}
           >
-            Reading the team has read first.
+            {t("title")}
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-[var(--sh-text-secondary)] md:text-lg">
-            Articles, essays, and talks the team has vetted before they
-            appear here. Grouped by the pillar each one tends to speak
-            to. Tap any card to open the source in a new tab.
+            {t("subtitle")}
           </p>
           <div className="mt-8 h-px w-16 bg-[var(--sh-accent-gold)]" />
         </motion.div>
@@ -275,16 +277,22 @@ export default function ResourcesPage() {
         ) : items.length === 0 ? (
           <div className="mt-16 max-w-xl">
             <p className="text-base leading-relaxed text-[var(--sh-text-secondary)] md:text-lg">
-              The resource library is being prepared. Once the team has
-              approved the next round of curated reading, it appears here.
-              Check back in a few days.
+              {t("emptyMessage")}
             </p>
           </div>
         ) : (
           <div className="mt-12 space-y-16">
             {pillarSections.map((section) => {
               if (section.items.length === 0) return null;
-              const meta = PILLAR_META[section.pillar];
+              // PILLAR_META stays as a structural fallback. Labels and
+              // descriptions are localized via the shared `pillar`
+              // namespace (tPillar) so the chrome flips with the
+              // interface language.
+              const pillarLabel = tPillar(section.pillar);
+              const pillarSub = tPillar(`${section.pillar}Sub` as
+                | "claritySub"
+                | "calmSub"
+                | "strengthSub");
               const isYours = section.pillar === userStage;
               const isExpanded = expandedPillar === section.pillar;
               const totalSlides = section.items.length + 1; // +1 for "See all" card
@@ -300,7 +308,7 @@ export default function ResourcesPage() {
                   viewport={{ once: true, margin: "-60px" }}
                   transition={{ duration: 0.5 }}
                   aria-roledescription="carousel"
-                  aria-label={`${meta.label} resources`}
+                  aria-label={`${pillarLabel} resources`}
                 >
                   {/* Pillar header — title left, arrows + See-all right */}
                   <div className="mb-5 flex items-end justify-between border-b border-[var(--sh-border-medium)] pb-3 md:mb-6">
@@ -309,18 +317,18 @@ export default function ResourcesPage() {
                         <h2
                           className={`${serif.className} text-3xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
                         >
-                          {meta.label}
+                          {pillarLabel}
                         </h2>
                         {isYours && (
                           <span className="border border-[var(--sh-accent-gold)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.22em] text-[var(--sh-accent-gold)]">
-                            Your Path
+                            {t("yourPathBadge")}
                           </span>
                         )}
                       </div>
                       <p
                         className={`${serif.className} mt-1 text-sm italic text-[var(--sh-text-secondary)] md:text-base`}
                       >
-                        {meta.description}
+                        {pillarSub}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -337,7 +345,7 @@ export default function ResourcesPage() {
                               scrollStrip(section.pillar, "left")
                             }
                             disabled={activeIdx === 0}
-                            aria-label={`Scroll ${meta.label} backward`}
+                            aria-label={`Scroll ${pillarLabel} backward`}
                             className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
                               isDusk
                                 ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
@@ -352,7 +360,7 @@ export default function ResourcesPage() {
                               scrollStrip(section.pillar, "right")
                             }
                             disabled={activeIdx >= totalSlides - 1}
-                            aria-label={`Scroll ${meta.label} forward`}
+                            aria-label={`Scroll ${pillarLabel} forward`}
                             className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
                               isDusk
                                 ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
@@ -369,8 +377,11 @@ export default function ResourcesPage() {
                         className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)] transition hover:text-[var(--sh-accent-gold)]"
                       >
                         {isExpanded
-                          ? "Collapse ↑"
-                          : `See all in ${meta.label} (${section.items.length}) →`}
+                          ? t("collapse")
+                          : t("seeAll", {
+                              pillar: pillarLabel,
+                              count: section.items.length,
+                            })}
                       </button>
                     </div>
                   </div>
@@ -397,7 +408,7 @@ export default function ResourcesPage() {
                         }}
                         onScroll={handleStripScroll(section.pillar)}
                         role="region"
-                        aria-label={`${meta.label} resources strip`}
+                        aria-label={`${pillarLabel} resources strip`}
                         tabIndex={0}
                         className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] md:-mx-0 md:px-0 [&::-webkit-scrollbar]:hidden"
                         style={{ scrollPaddingLeft: "1rem" }}
@@ -417,7 +428,10 @@ export default function ResourcesPage() {
                         <button
                           type="button"
                           onClick={() => togglePillar(section.pillar)}
-                          aria-label={`See all ${section.items.length} resources in ${meta.label}`}
+                          aria-label={t("seeAll", {
+                            pillar: pillarLabel,
+                            count: section.items.length,
+                          })}
                           className={`group flex w-[78%] shrink-0 snap-start flex-col items-center justify-center border border-dashed p-8 text-center transition sm:w-[46%] md:w-[32%] lg:w-[28%] ${
                             isDusk
                               ? "border-white/15 bg-white/[0.02] hover:border-[var(--sh-accent-gold)]/60 hover:bg-white/[0.05]"
@@ -425,18 +439,21 @@ export default function ResourcesPage() {
                           }`}
                         >
                           <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold)]">
-                            See all in {meta.label}
+                            {t("seeAll", {
+                              pillar: pillarLabel,
+                              count: section.items.length,
+                            })}
                           </span>
                           <span
                             className={`${serif.className} mt-3 text-3xl italic text-[var(--sh-text-secondary)]`}
                           >
                             {section.items.length}{" "}
                             {section.items.length === 1
-                              ? "piece"
-                              : "pieces"}
+                              ? t("piece")
+                              : t("pieces")}
                           </span>
                           <span className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)] transition group-hover:text-[var(--sh-accent-gold)]">
-                            Open full view →
+                            {t("openFullView")}
                           </span>
                         </button>
                       </div>

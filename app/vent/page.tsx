@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
@@ -45,16 +46,20 @@ import { InactivityGate } from "@/app/components/inactivityGate";
 
 type Mood = "angry" | "scared" | "sad" | "numb";
 
-const MOOD_OPTIONS: { value: Mood; label: string; color: string }[] = [
-  { value: "angry", label: "Angry", color: "#b14a3a" },
-  { value: "scared", label: "Scared", color: "#586558" },
-  { value: "sad", label: "Sad", color: "#5d6a85" },
-  { value: "numb", label: "Numb", color: "#7a7a78" },
+// Mood labels resolved at render via t() so they localize with the
+// interface language. Color stays fixed (brand palette is not
+// translated).
+const MOOD_OPTIONS: { value: Mood; color: string }[] = [
+  { value: "angry", color: "#b14a3a" },
+  { value: "scared", color: "#586558" },
+  { value: "sad", color: "#5d6a85" },
+  { value: "numb", color: "#7a7a78" },
 ];
 
 const DRAFT_KEY = "stone-harbor:vent-draft";
 
 export default function VentPage() {
+  const t = useTranslations("vent");
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [mood, setMood] = useState<Mood | null>(null);
@@ -169,16 +174,16 @@ export default function VentPage() {
       <header className="relative z-20 flex items-center justify-between px-4 py-3 md:px-10 md:py-5">
         <Link
           href="/dashboard"
-          aria-label="Back to dashboard"
+          aria-label={t("aria.back")}
           className="flex items-center gap-2 text-[#c4934e] transition hover:text-white"
         >
           <ArrowLeft size={18} aria-hidden="true" />
           <span className="hidden text-xs font-bold uppercase tracking-[0.22em] md:inline">
-            Harbor
+            {t("back")}
           </span>
         </Link>
         <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-white/55">
-          Vent · Private
+          {t("statusBadge")}
         </p>
       </header>
 
@@ -192,11 +197,10 @@ export default function VentPage() {
           <h1
             className={`${serif.className} text-2xl italic leading-snug text-white md:text-3xl`}
           >
-            Put it down here.
+            {t("title")}
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/65 md:text-base">
-            Nothing you write here goes anywhere. It's saved to your private
-            journal and only you can read it.
+            {t("subtitle")}
           </p>
         </motion.div>
 
@@ -204,7 +208,7 @@ export default function VentPage() {
         <div
           className="mb-4 flex flex-wrap gap-2"
           role="radiogroup"
-          aria-label="What you're feeling (optional)"
+          aria-label={t("moodGroupLabel")}
         >
           {MOOD_OPTIONS.map((opt) => {
             const active = mood === opt.value;
@@ -229,7 +233,7 @@ export default function VentPage() {
                     : undefined
                 }
               >
-                {opt.label}
+                {t(`moods.${opt.value}`)}
               </button>
             );
           })}
@@ -239,7 +243,7 @@ export default function VentPage() {
           ref={textareaRef}
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="Whatever it is. No formatting, no audience."
+          placeholder={t("placeholder")}
           rows={10}
           className="flex-1 w-full resize-none border border-white/15 bg-white/[0.04] p-5 text-base leading-relaxed text-white outline-none transition placeholder:text-white/30 focus:border-[#c4934e]/60 focus:bg-white/[0.06] md:text-lg"
         />
@@ -250,16 +254,14 @@ export default function VentPage() {
             aria-live="polite"
           >
             {savedMessage ||
-              (body.trim()
-                ? "Auto-saving as a draft."
-                : "Nothing's been written yet.")}
+              (body.trim() ? t("statusAutosaving") : t("statusNothing"))}
           </p>
           <div className="flex gap-3">
             <Link
               href="/dashboard"
               className="rounded-none border border-white/20 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-white/75 transition hover:border-white/40 hover:text-white"
             >
-              Leave Draft
+              {t("leaveDraft")}
             </Link>
             <button
               type="button"
@@ -267,7 +269,7 @@ export default function VentPage() {
               disabled={!body.trim() || saving}
               className="group relative overflow-hidden rounded-none border border-[#c4934e] bg-[#a9793d] px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] disabled:opacity-50"
             >
-              {saving ? "Saving…" : "Save To Journal"}
+              {saving ? t("saving") : t("saveToJournal")}
             </button>
           </div>
         </div>
