@@ -34,6 +34,13 @@
     "roadmap": "Roadmap",
     "me": "Me"
   },
+  "crisisFooter": {
+    "patience": "The harbor is patient.",
+    "crisisLabel": "If You Are In Crisis",
+    "crisisLineStart": "Call or text",
+    "crisisLineEnd": "— 24/7. Free. Confidential.",
+    "amplify": "Tonight more than most nights, you are not alone."
+  },
   "pillar": {
     "clarity": "Clarity",
     "calm": "Calm",

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { serif } from "@/lib/fonts";
 import { useTheme } from "@/app/components/themeProvider";
 import { LanguagePicker } from "@/app/components/languagePicker";
@@ -47,6 +48,8 @@ type Props = {
 export function CrisisFooter({ amplify988 = false }: Props) {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
+  const t = useTranslations("crisisFooter");
+  const tCommon = useTranslations("common");
 
   return (
     <footer
@@ -97,10 +100,10 @@ export function CrisisFooter({ amplify988 = false }: Props) {
           </motion.span>
           <div>
             <p className="text-base font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold)]">
-              Stone Harbor
+              {tCommon("brand")}
             </p>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--sh-accent-gold)]/70">
-              Men&apos;s Mental Wellness
+              {tCommon("tagline")}
             </p>
           </div>
         </div>
@@ -110,25 +113,27 @@ export function CrisisFooter({ amplify988 = false }: Props) {
           <p
             className={`${serif.className} text-base italic text-[var(--sh-text-secondary)]`}
           >
-            The harbor is patient.
+            {t("patience")}
           </p>
         </div>
 
-        {/* RIGHT — 988 crisis line */}
+        {/* RIGHT — 988 crisis line. The 988 number itself stays
+            untranslated — it's the US Suicide & Crisis Lifeline and
+            is brand-fixed. The surrounding copy localizes. */}
         <div className="text-right">
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
-            If You Are In Crisis
+            {t("crisisLabel")}
           </p>
           <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-            Call or text{" "}
+            {t("crisisLineStart")}{" "}
             <span className="font-bold text-[var(--sh-accent-gold)]">988</span>{" "}
-            — 24/7. Free. Confidential.
+            {t("crisisLineEnd")}
           </p>
           {amplify988 && (
             <p
               className={`${serif.className} mt-3 text-base italic leading-snug text-[#a9793d]`}
             >
-              Tonight more than most nights, you are not alone.
+              {t("amplify")}
             </p>
           )}
         </div>

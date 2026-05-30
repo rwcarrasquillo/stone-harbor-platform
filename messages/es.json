@@ -34,6 +34,13 @@
     "roadmap": "Ruta",
     "me": "Yo"
   },
+  "crisisFooter": {
+    "patience": "El puerto es paciente.",
+    "crisisLabel": "Si Estás En Crisis",
+    "crisisLineStart": "Llama o envía mensaje al",
+    "crisisLineEnd": "— 24/7. Gratis. Confidencial.",
+    "amplify": "Esta noche, más que la mayoría, no estás solo."
+  },
   "pillar": {
     "clarity": "Claridad",
     "calm": "Calma",
