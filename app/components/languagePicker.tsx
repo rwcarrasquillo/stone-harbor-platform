@@ -22,13 +22,15 @@ import { routing } from "@/i18n/routing";
  *     does the cookie write itself once the navigation completes, so
  *     we don't have to handle it here.
  *
- * URL transform rules:
- *   /        ↔ /es
- *   /login   ↔ /es/login
- *   /es/foo  → /foo (when switching back to English)
+ * URL transform rules (routing.localePrefix === "always"):
+ *   /en/foo  ↔ /es/foo
+ *   /en      ↔ /es
  *
- * The default locale (English) follows localePrefix: "as-needed", so
- * its URLs are unprefixed. Spanish gets the /es/ prefix.
+ * Both locales carry an explicit prefix because the routing config
+ * uses localePrefix: "always". An earlier version of this file
+ * stripped the English prefix to produce unprefixed URLs ("/foo"),
+ * which 404'd against the [locale]-segmented routes once "always"
+ * was adopted — bug surfaced 2026-05-31 on /es/map → English click.
  */
 export function LanguagePicker() {
   const locale = useLocale();
@@ -49,15 +51,13 @@ export function LanguagePicker() {
       segments.shift();
     }
 
+    // With localePrefix: "always", every locale carries its prefix —
+    // including the default (English at /en/*). Build the URL with
+    // the next locale's prefix unconditionally; the old "as-needed"
+    // branch that produced unprefixed URLs for English produced 404s
+    // because the [locale] segment requires the prefix to match.
     const rest = segments.join("/");
-    const target =
-      next === routing.defaultLocale
-        ? rest
-          ? `/${rest}`
-          : "/"
-        : rest
-          ? `/${next}/${rest}`
-          : `/${next}`;
+    const target = rest ? `/${next}/${rest}` : `/${next}`;
 
     startTransition(() => {
       router.replace(target);

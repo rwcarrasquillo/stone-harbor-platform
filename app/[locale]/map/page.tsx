@@ -80,7 +80,12 @@ const COPY = {
 };
 
 export default function MapHubPage() {
-  const locale = useLocale() as "en" | "es";
+  // Defensive narrowing: useLocale() should always return "en" or "es"
+  // since the page lives under app/[locale]/, but if a hydration edge
+  // ever returned an empty string the PageTopNav backHref would
+  // evaluate to "//dashboard" and 404 on click. Coerce here.
+  const rawLocale = useLocale();
+  const locale = (rawLocale === "es" ? "es" : "en") as "en" | "es";
   const t = COPY[locale];
   const [state, setState] = useState<MapState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -114,13 +119,22 @@ export default function MapHubPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) return;
+      // Request BOTH locales on a single Assemble click. Stone Harbor
+      // is bilingual; a member who toggles the language switch later
+      // should find their Manual already prepared in either language
+      // rather than seeing a "not ready yet" gap (which was the
+      // 2026-05-31 bug for members who completed the Map in one
+      // language and later read in the other).
       const resp = await fetch("/api/map/generate-chapter", {
         method: "POST",
         headers: {
           "content-type": "application/json",
           authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ chapterNumber: 1, language: locale }),
+        body: JSON.stringify({
+          chapterNumber: 1,
+          languages: ["en", "es"],
+        }),
       });
       if (resp.ok) await loadState();
     } finally {
