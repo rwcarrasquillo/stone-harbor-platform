@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { serif } from "@/lib/fonts";
 import { useTheme } from "@/app/components/themeProvider";
+import { LanguagePicker } from "@/app/components/languagePicker";
 
 /**
  * Stone Harbor — CrisisFooter.
@@ -131,6 +132,14 @@ export function CrisisFooter({ amplify988 = false }: Props) {
             </p>
           )}
         </div>
+      </div>
+
+      {/* Language picker — added 2026-05-31 so members on any
+          authenticated page can flip the interface language without
+          hunting for it. Lives below the main 3-column grid in its
+          own row so it doesn't crowd the 988 column. */}
+      <div className="mx-auto mt-4 flex max-w-7xl justify-center border-t border-[var(--sh-border-subtle)] pt-4 md:mt-6 md:pt-5">
+        <LanguagePicker />
       </div>
     </footer>
   );

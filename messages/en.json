@@ -8,7 +8,72 @@
       "es": "Español"
     },
     "back": "Back",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "open": "Open",
+    "submit": "Submit",
+    "retry": "Try again",
+    "yes": "Yes",
+    "no": "No",
+    "comingSoon": "Coming soon"
+  },
+  "nav": {
+    "backToDashboard": "Dashboard",
+    "returnToHarbor": "Return To Harbor",
+    "openManual": "Open your Operating Manual",
+    "harbor": "Harbor"
+  },
+  "tabBar": {
+    "home": "Home",
+    "journal": "Journal",
+    "messages": "Brotherhood",
+    "roadmap": "Roadmap",
+    "me": "Me"
+  },
+  "pillar": {
+    "clarity": "Clarity",
+    "calm": "Calm",
+    "strength": "Strength",
+    "claritySub": "Seeing the storm for what it was. Naming what happened.",
+    "calmSub": "The nervous system as a place to come home to.",
+    "strengthSub": "Rebuilding identity, boundaries, the forward motion."
+  },
+  "stage": {
+    "yourPath": "Your path",
+    "clarity": "Clarity",
+    "calm": "Calm",
+    "strength": "Strength",
+    "discovery": "Discovery"
+  },
+  "mood": {
+    "grounded": "Grounded",
+    "confused": "Confused",
+    "angry": "Angry",
+    "sad": "Sad",
+    "hopeful": "Hopeful",
+    "strong": "Strong",
+    "scared": "Scared",
+    "numb": "Numb"
+  },
+  "timeOfDay": {
+    "lateNight": "Late night",
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening",
+    "tonight": "Tonight"
+  },
+  "dayOfWeek": {
+    "sun": "Sun",
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat"
   },
   "home": {
     "nav": {
@@ -74,5 +139,241 @@
       "needsConfirm": "Please confirm your email before signing in.",
       "tooMany": "Too many attempts. Please wait a moment and try again."
     }
+  },
+  "dashboard": {
+    "eyebrow": "Today at the harbor",
+    "welcome": "Welcome",
+    "welcomeBack": "Welcome back",
+    "doors": {
+      "reflect": "Reflect",
+      "reflectSub": "A quiet moment with yourself",
+      "journal": "Journal",
+      "journalSub": "Write what's true today",
+      "breath": "Daily Breath",
+      "breathSub": "Sixty seconds. One breath.",
+      "messages": "Brotherhood",
+      "messagesSub": "Quiet, asynchronous company",
+      "members": "Reading",
+      "membersSub": "The library",
+      "resources": "Resources",
+      "resourcesSub": "What the team has read first",
+      "map": "The Map",
+      "mapSub": "How you are wired",
+      "manual": "Operating Manual",
+      "manualSub": "Read your chapter",
+      "vent": "Vent",
+      "ventSub": "A place to dump it"
+    },
+    "reflection": {
+      "title": "How are you arriving today?",
+      "subtitle": "One sentence is enough. Or skip — the harbor waits.",
+      "moodLabel": "Mood",
+      "placeholder": "Today I feel…",
+      "save": "Save reflection",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "skip": "Skip for now"
+    },
+    "strip": {
+      "smallThing": "A small thing",
+      "smallThingSub": "Something gentle for today",
+      "ripples": "Ripples",
+      "ripplesSub": "Echoes from yesterday",
+      "anchor": "Anchor",
+      "anchorSub": "Where you are right now"
+    },
+    "streak": {
+      "label": "Streak",
+      "days": "{count} days",
+      "today": "Today"
+    },
+    "today": {
+      "label": "Today's prompt",
+      "writeAbout": "Write about this →"
+    },
+    "footerNote": "The harbor is patient.",
+    "yourPath": "Your path: {pillar}"
+  },
+  "journal": {
+    "eyebrow": "Today",
+    "title": "Write what's true.",
+    "subtitle": "One sentence is enough. The harbor waits.",
+    "placeholderTitle": "Title (optional)",
+    "placeholder": "What do you want to say today?",
+    "save": "Save entry",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "moodLabel": "Mood",
+    "bodyCheck": "Body check",
+    "bodyCheckLater": "Skip body check",
+    "sortNewest": "Newest first",
+    "sortOldest": "Oldest first",
+    "sortMood": "By mood",
+    "sortTitle": "By title",
+    "filterAll": "All",
+    "searchPlaceholder": "Search your entries…",
+    "noEntriesYet": "No entries yet.",
+    "noEntriesYetSub": "Your first reflection lives here.",
+    "edited": "edited",
+    "editEntry": "Edit",
+    "saveEdit": "Save edit",
+    "cancelEdit": "Cancel",
+    "editingDisabled": "Edit window has passed",
+    "deleteConfirmTitle": "Delete this entry?",
+    "deleteConfirmBody": "This is permanent — the harbor remembers what you've written, but only if you keep it.",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Keep",
+    "patternTitle": "The last thirty days.",
+    "patternEyebrow": "Your Pattern",
+    "patternSub": "Each square is a day. The color is the mood you named. The blanks are days you didn't write. No judgment — just data, looking back at you.",
+    "streakLabel": "Streak",
+    "streakDays": "{count} days",
+    "promptLabel": "Today's prompt",
+    "promptCopy": "Use this prompt",
+    "promptCopied": "Copied",
+    "storyPromptTitle": "From the Story Series",
+    "storyPromptSubtitle": "A prompt for you, this week.",
+    "storyPromptSkip": "Skip for now",
+    "storyPromptStart": "Open this prompt"
+  },
+  "messages": {
+    "eyebrow": "Brotherhood",
+    "title": "Asynchronous company.",
+    "subtitle": "No streaks. No likes. No performance. Just quiet writing together.",
+    "promptLabel": "This week's prompt",
+    "writePlaceholder": "Reply, witness, or write your own…",
+    "send": "Send",
+    "sending": "Sending…",
+    "noMessages": "No messages yet.",
+    "noMessagesSub": "The next member to write goes first.",
+    "pairingLabel": "Brotherhood pairing",
+    "pairingUnlock": "Unlocks at Day 120",
+    "pairingMatched": "You've been paired with another harbor member.",
+    "anonymous": "A brother",
+    "you": "You",
+    "muted": "Muted",
+    "report": "Report",
+    "reportReason": "Why are you reporting this?",
+    "reportSubmit": "Submit report"
+  },
+  "membersBlog": {
+    "eyebrow": "Members Library",
+    "title": "Read.",
+    "yourPath": "Your path: {pillar}",
+    "sourceLabel": "Source",
+    "sourceBoth": "Both",
+    "sourceInternal": "Stone Harbor",
+    "sourceExternal": "Trusted Sources",
+    "featured": "Featured",
+    "stoneHarborOriginal": "Stone Harbor Original",
+    "fromTrustedSources": "From Trusted Sources",
+    "yourPathBadge": "Your Path",
+    "entries": "{count} entries",
+    "entry": "1 entry",
+    "seeAll": "See all in {pillar} ({count}) →",
+    "collapse": "Collapse ↑",
+    "openFullView": "Open full view →",
+    "piece": "piece",
+    "pieces": "pieces",
+    "emptyTitle": "Nothing here yet.",
+    "emptySub": "Try the other source, or come back soon.",
+    "loadingLibrary": "Opening the library…",
+    "readAtSource": "Read at source →"
+  },
+  "resources": {
+    "eyebrow": "Curated",
+    "title": "Reading the team has read first.",
+    "subtitle": "Articles, essays, and talks the team has vetted before they appear here. Grouped by the pillar each one tends to speak to. Tap any card to open the source in a new tab.",
+    "emptyMessage": "The resource library is being prepared. Once the team has approved the next round of curated reading, it appears here. Check back in a few days.",
+    "readAtSource": "Read at source →",
+    "yourPathBadge": "Your Path",
+    "seeAll": "See all in {pillar} ({count}) →",
+    "collapse": "Collapse ↑",
+    "openFullView": "Open full view →",
+    "piece": "piece",
+    "pieces": "pieces"
+  },
+  "roadmap": {
+    "eyebrow": "Your Path",
+    "title": "What's ahead.",
+    "subtitle": "Stone Harbor unfolds slowly. New doors open as you keep showing up. Here is the shape of the path.",
+    "now": "Now",
+    "soon": "Soon",
+    "later": "Later",
+    "day": "Day {n}",
+    "dayRange": "Day {a}–{b}",
+    "openNow": "Open now",
+    "locked": "Locked",
+    "unlocksIn": "Unlocks in {days} days",
+    "phases": {
+      "discovery": "Discovery",
+      "discoverySub": "The first days. Naming what happened.",
+      "ground": "Ground",
+      "groundSub": "Building the floor under you.",
+      "lineage": "Lineage",
+      "lineageSub": "The people who shaped you.",
+      "brotherhood": "Brotherhood",
+      "brotherhoodSub": "Quiet company for the way forward."
+    }
+  },
+  "welcome": {
+    "eyebrow": "Welcome",
+    "title": "A little about you.",
+    "subtitle": "Tell us who you are — just enough to make the harbor feel like yours. You can change any of this later.",
+    "labels": {
+      "displayName": "What should we call you?",
+      "displayNameHelp": "First name is enough. Or whatever you'd like to be called here.",
+      "healingStage": "Where are you right now?",
+      "healingStageHelp": "Pick the closest. Doesn't have to be perfect.",
+      "preferredLanguage": "Preferred language",
+      "preferredLanguageHelp": "We'll remember this. You can switch any time.",
+      "avatar": "Avatar",
+      "avatarHelp": "Optional. A picture, a symbol, a quiet face."
+    },
+    "stages": {
+      "clarity": "Clarity — naming what happened",
+      "calm": "Calm — coming home to yourself",
+      "strength": "Strength — moving forward"
+    },
+    "save": "Save and enter",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "skip": "Skip — I'll fill this in later"
+  },
+  "meditation": {
+    "eyebrow": "Daily Breath",
+    "stay": "Stay as long as you want.",
+    "patterns": {
+      "box": "For the calm",
+      "longExhale": "For the storm"
+    },
+    "guidance": {
+      "longExhale": "Four in. Seven out. For when something is sitting heavy.",
+      "withSound": "Breathe with the rhythm. Leave whenever you're ready.",
+      "silence": "Tap the speaker to add ambient sound. Or breathe in silence."
+    },
+    "aria": {
+      "back": "Back to dashboard",
+      "muteSound": "Mute ambient sound",
+      "playSound": "Play ambient sound"
+    },
+    "back": "Harbor"
+  },
+  "vent": {
+    "statusBadge": "Vent · Private",
+    "title": "Dump it.",
+    "subtitle": "No mood. No title. Just write. This stays between you and the harbor.",
+    "placeholder": "What's on your mind?",
+    "save": "Save vent",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "moodLabel": "If you want to name it (optional)",
+    "moods": {
+      "angry": "Angry",
+      "scared": "Scared",
+      "sad": "Sad",
+      "numb": "Numb"
+    },
+    "back": "Harbor"
   }
 }

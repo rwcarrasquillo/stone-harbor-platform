@@ -8,7 +8,72 @@
       "es": "Español"
     },
     "back": "Atrás",
-    "loading": "Cargando…"
+    "loading": "Cargando…",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "open": "Abrir",
+    "submit": "Enviar",
+    "retry": "Intentar de nuevo",
+    "yes": "Sí",
+    "no": "No",
+    "comingSoon": "Próximamente"
+  },
+  "nav": {
+    "backToDashboard": "Panel",
+    "returnToHarbor": "Volver Al Puerto",
+    "openManual": "Abrir tu Manual de Operación",
+    "harbor": "Puerto"
+  },
+  "tabBar": {
+    "home": "Inicio",
+    "journal": "Diario",
+    "messages": "Hermandad",
+    "roadmap": "Ruta",
+    "me": "Yo"
+  },
+  "pillar": {
+    "clarity": "Claridad",
+    "calm": "Calma",
+    "strength": "Fuerza",
+    "claritySub": "Ver la tormenta como fue. Nombrar lo que pasó.",
+    "calmSub": "El sistema nervioso como un lugar al cual volver.",
+    "strengthSub": "Reconstruir la identidad, los límites, el movimiento hacia adelante."
+  },
+  "stage": {
+    "yourPath": "Tu camino",
+    "clarity": "Claridad",
+    "calm": "Calma",
+    "strength": "Fuerza",
+    "discovery": "Descubrimiento"
+  },
+  "mood": {
+    "grounded": "Tranquilo",
+    "confused": "Confundido",
+    "angry": "Enojado",
+    "sad": "Triste",
+    "hopeful": "Esperanzado",
+    "strong": "Fuerte",
+    "scared": "Asustado",
+    "numb": "Adormecido"
+  },
+  "timeOfDay": {
+    "lateNight": "Es tarde",
+    "morning": "Buenos días",
+    "afternoon": "Buenas tardes",
+    "evening": "Buenas noches",
+    "tonight": "Esta noche"
+  },
+  "dayOfWeek": {
+    "sun": "Dom",
+    "mon": "Lun",
+    "tue": "Mar",
+    "wed": "Mié",
+    "thu": "Jue",
+    "fri": "Vie",
+    "sat": "Sáb"
   },
   "home": {
     "nav": {
@@ -74,5 +139,241 @@
       "needsConfirm": "Confirma tu correo antes de iniciar sesión.",
       "tooMany": "Demasiados intentos. Espera un momento e inténtalo de nuevo."
     }
+  },
+  "dashboard": {
+    "eyebrow": "Hoy en el puerto",
+    "welcome": "Bienvenido",
+    "welcomeBack": "Bienvenido de nuevo",
+    "doors": {
+      "reflect": "Reflexiona",
+      "reflectSub": "Un momento contigo mismo",
+      "journal": "Diario",
+      "journalSub": "Escribe lo que es cierto hoy",
+      "breath": "Respiración Diaria",
+      "breathSub": "Sesenta segundos. Una respiración.",
+      "messages": "Hermandad",
+      "messagesSub": "Compañía silenciosa y sin prisa",
+      "members": "Lectura",
+      "membersSub": "La biblioteca",
+      "resources": "Recursos",
+      "resourcesSub": "Lo que el equipo ha leído primero",
+      "map": "El Mapa",
+      "mapSub": "Cómo estás construido",
+      "manual": "Manual de Operación",
+      "manualSub": "Lee tu capítulo",
+      "vent": "Desahogo",
+      "ventSub": "Un lugar para descargarlo"
+    },
+    "reflection": {
+      "title": "¿Cómo llegas hoy?",
+      "subtitle": "Una oración es suficiente. O sáltatelo — el puerto espera.",
+      "moodLabel": "Estado de ánimo",
+      "placeholder": "Hoy me siento…",
+      "save": "Guardar reflexión",
+      "saving": "Guardando…",
+      "saved": "Guardado",
+      "skip": "Sáltatelo por ahora"
+    },
+    "strip": {
+      "smallThing": "Algo pequeño",
+      "smallThingSub": "Algo suave para hoy",
+      "ripples": "Ecos",
+      "ripplesSub": "Resonancias de ayer",
+      "anchor": "Ancla",
+      "anchorSub": "Dónde estás ahora mismo"
+    },
+    "streak": {
+      "label": "Racha",
+      "days": "{count} días",
+      "today": "Hoy"
+    },
+    "today": {
+      "label": "Prompt de hoy",
+      "writeAbout": "Escribe sobre esto →"
+    },
+    "footerNote": "El puerto es paciente.",
+    "yourPath": "Tu camino: {pillar}"
+  },
+  "journal": {
+    "eyebrow": "Hoy",
+    "title": "Escribe lo que es cierto.",
+    "subtitle": "Una oración es suficiente. El puerto espera.",
+    "placeholderTitle": "Título (opcional)",
+    "placeholder": "¿Qué quieres decir hoy?",
+    "save": "Guardar entrada",
+    "saving": "Guardando…",
+    "saved": "Guardado",
+    "moodLabel": "Estado de ánimo",
+    "bodyCheck": "Chequeo del cuerpo",
+    "bodyCheckLater": "Sáltate el chequeo",
+    "sortNewest": "Más recientes primero",
+    "sortOldest": "Más antiguos primero",
+    "sortMood": "Por estado de ánimo",
+    "sortTitle": "Por título",
+    "filterAll": "Todos",
+    "searchPlaceholder": "Busca tus entradas…",
+    "noEntriesYet": "Aún no hay entradas.",
+    "noEntriesYetSub": "Tu primera reflexión vive aquí.",
+    "edited": "editado",
+    "editEntry": "Editar",
+    "saveEdit": "Guardar edición",
+    "cancelEdit": "Cancelar",
+    "editingDisabled": "La ventana de edición ya pasó",
+    "deleteConfirmTitle": "¿Eliminar esta entrada?",
+    "deleteConfirmBody": "Esto es permanente — el puerto recuerda lo que has escrito, pero solo si tú lo guardas.",
+    "deleteConfirm": "Eliminar",
+    "deleteCancel": "Conservar",
+    "patternTitle": "Los últimos treinta días.",
+    "patternEyebrow": "Tu Patrón",
+    "patternSub": "Cada cuadro es un día. El color es el estado de ánimo que nombraste. Los blancos son días en los que no escribiste. Sin juicio — solo datos, mirándote.",
+    "streakLabel": "Racha",
+    "streakDays": "{count} días",
+    "promptLabel": "Prompt de hoy",
+    "promptCopy": "Usar este prompt",
+    "promptCopied": "Copiado",
+    "storyPromptTitle": "De la Serie de Historias",
+    "storyPromptSubtitle": "Un prompt para ti, esta semana.",
+    "storyPromptSkip": "Sáltatelo por ahora",
+    "storyPromptStart": "Abrir este prompt"
+  },
+  "messages": {
+    "eyebrow": "Hermandad",
+    "title": "Compañía sin prisa.",
+    "subtitle": "Sin rachas. Sin likes. Sin actuación. Solo escribir juntos en silencio.",
+    "promptLabel": "Prompt de esta semana",
+    "writePlaceholder": "Responde, acompaña, o escribe lo tuyo…",
+    "send": "Enviar",
+    "sending": "Enviando…",
+    "noMessages": "Aún no hay mensajes.",
+    "noMessagesSub": "El próximo miembro que escriba va primero.",
+    "pairingLabel": "Pareja de hermandad",
+    "pairingUnlock": "Se desbloquea en el Día 120",
+    "pairingMatched": "Te han emparejado con otro miembro del puerto.",
+    "anonymous": "Un hermano",
+    "you": "Tú",
+    "muted": "Silenciado",
+    "report": "Reportar",
+    "reportReason": "¿Por qué lo reportas?",
+    "reportSubmit": "Enviar reporte"
+  },
+  "membersBlog": {
+    "eyebrow": "Biblioteca De Miembros",
+    "title": "Lee.",
+    "yourPath": "Tu camino: {pillar}",
+    "sourceLabel": "Fuente",
+    "sourceBoth": "Ambas",
+    "sourceInternal": "Stone Harbor",
+    "sourceExternal": "Fuentes Confiables",
+    "featured": "Destacado",
+    "stoneHarborOriginal": "Original De Stone Harbor",
+    "fromTrustedSources": "De Fuentes Confiables",
+    "yourPathBadge": "Tu Camino",
+    "entries": "{count} entradas",
+    "entry": "1 entrada",
+    "seeAll": "Ver todo en {pillar} ({count}) →",
+    "collapse": "Cerrar ↑",
+    "openFullView": "Abrir vista completa →",
+    "piece": "pieza",
+    "pieces": "piezas",
+    "emptyTitle": "Aún no hay nada aquí.",
+    "emptySub": "Prueba la otra fuente, o regresa pronto.",
+    "loadingLibrary": "Abriendo la biblioteca…",
+    "readAtSource": "Leer en la fuente →"
+  },
+  "resources": {
+    "eyebrow": "Curado",
+    "title": "Lecturas que el equipo leyó primero.",
+    "subtitle": "Artículos, ensayos y charlas que el equipo ha revisado antes de aparecer aquí. Agrupados por el pilar al que cada uno tiende a hablarle. Toca cualquier tarjeta para abrir la fuente en una pestaña nueva.",
+    "emptyMessage": "La biblioteca de recursos se está preparando. Una vez que el equipo apruebe la próxima tanda de lecturas curadas, aparecerán aquí. Regresa en unos días.",
+    "readAtSource": "Leer en la fuente →",
+    "yourPathBadge": "Tu Camino",
+    "seeAll": "Ver todo en {pillar} ({count}) →",
+    "collapse": "Cerrar ↑",
+    "openFullView": "Abrir vista completa →",
+    "piece": "pieza",
+    "pieces": "piezas"
+  },
+  "roadmap": {
+    "eyebrow": "Tu Camino",
+    "title": "Lo que viene.",
+    "subtitle": "Stone Harbor se abre lentamente. Nuevas puertas se abren mientras sigues llegando. Esta es la forma del camino.",
+    "now": "Ahora",
+    "soon": "Pronto",
+    "later": "Después",
+    "day": "Día {n}",
+    "dayRange": "Día {a}–{b}",
+    "openNow": "Abrir ahora",
+    "locked": "Bloqueado",
+    "unlocksIn": "Se desbloquea en {days} días",
+    "phases": {
+      "discovery": "Descubrimiento",
+      "discoverySub": "Los primeros días. Nombrar lo que pasó.",
+      "ground": "Tierra firme",
+      "groundSub": "Construir el piso bajo tus pies.",
+      "lineage": "Linaje",
+      "lineageSub": "Las personas que te formaron.",
+      "brotherhood": "Hermandad",
+      "brotherhoodSub": "Compañía silenciosa para seguir adelante."
+    }
+  },
+  "welcome": {
+    "eyebrow": "Bienvenido",
+    "title": "Un poco sobre ti.",
+    "subtitle": "Cuéntanos quién eres — solo lo suficiente para que el puerto se sienta tuyo. Puedes cambiar todo esto después.",
+    "labels": {
+      "displayName": "¿Cómo te llamamos?",
+      "displayNameHelp": "Tu nombre alcanza. O como quieras que te digan aquí.",
+      "healingStage": "¿Dónde estás ahora?",
+      "healingStageHelp": "Elige lo más cercano. No tiene que ser perfecto.",
+      "preferredLanguage": "Idioma preferido",
+      "preferredLanguageHelp": "Lo recordaremos. Puedes cambiarlo cuando quieras.",
+      "avatar": "Avatar",
+      "avatarHelp": "Opcional. Una foto, un símbolo, un rostro tranquilo."
+    },
+    "stages": {
+      "clarity": "Claridad — nombrar lo que pasó",
+      "calm": "Calma — volver a ti mismo",
+      "strength": "Fuerza — seguir adelante"
+    },
+    "save": "Guardar y entrar",
+    "saving": "Guardando…",
+    "saved": "Guardado",
+    "skip": "Sáltatelo — lo lleno después"
+  },
+  "meditation": {
+    "eyebrow": "Respiración Diaria",
+    "stay": "Quédate todo el tiempo que quieras.",
+    "patterns": {
+      "box": "Para la calma",
+      "longExhale": "Para la tormenta"
+    },
+    "guidance": {
+      "longExhale": "Cuatro adentro. Siete afuera. Para cuando algo se siente pesado.",
+      "withSound": "Respira con el ritmo. Sal cuando estés listo.",
+      "silence": "Toca la bocina para sumar sonido ambiental. O respira en silencio."
+    },
+    "aria": {
+      "back": "Volver al panel",
+      "muteSound": "Silenciar el sonido ambiental",
+      "playSound": "Reproducir el sonido ambiental"
+    },
+    "back": "Puerto"
+  },
+  "vent": {
+    "statusBadge": "Desahogo · Privado",
+    "title": "Descárgalo.",
+    "subtitle": "Sin estado de ánimo. Sin título. Solo escribe. Esto queda entre tú y el puerto.",
+    "placeholder": "¿Qué tienes en la cabeza?",
+    "save": "Guardar desahogo",
+    "saving": "Guardando…",
+    "saved": "Guardado",
+    "moodLabel": "Si quieres nombrarlo (opcional)",
+    "moods": {
+      "angry": "Enojado",
+      "scared": "Asustado",
+      "sad": "Triste",
+      "numb": "Adormecido"
+    },
+    "back": "Puerto"
   }
 }

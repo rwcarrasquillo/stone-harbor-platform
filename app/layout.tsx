@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
+import { NextIntlClientProvider } from "next-intl";
 import "./globals.css";
 import { sans } from "@/lib/fonts";
 import { ServiceWorkerRegistrar } from "@/app/components/serviceWorkerRegistrar";
@@ -156,35 +157,23 @@ export default async function RootLayout({
       data-theme={theme}
     >
       <body className="flex min-h-screen flex-col">
-        <ThemeProvider initialTheme={theme}>
-          {/* Page content slot. `flex-1` lets the page <main> grow to
-              fill the available height between the top of the body
-              and the GlobalCrisisFooter below, so the footer reliably
-              sits at the viewport bottom on short pages. `min-w-0`
-              keeps long horizontal content (preformatted blocks,
-              wide tables) from forcing the column wider than the
-              viewport. */}
-          <div className="flex min-w-0 flex-1 flex-col">{children}</div>
-          {/* Crisis-line banner. Rendered here at body level — not
-              inside each page's <main> — so it's never narrowed by
-              <main>'s horizontal padding, max-width, or overflow.
-              Visibility is path-aware (see globalCrisisFooter.tsx).
-              The brand anchor (previously a floating watermark in the
-              bottom-right corner via AnchorWatermark) now lives INSIDE
-              this banner, breathing slowly alongside the wordmark. */}
-          <GlobalCrisisFooter />
-          <MobileTabBar />
-          <ServiceWorkerRegistrar />
-          {/* Preview-day override badge — only renders when an
-              override is active (URL ?previewDay=N or persisted via
-              localStorage). Invisible for normal members. */}
-          <PreviewDayBadge />
-          {/* Headless member-page-view tracker. Writes one row into
-              public.member_page_views per route change while a
-              member is signed in. Surfaces in the admin /analytics
-              dashboard. Renders nothing. */}
-          <MemberUsageTracker />
-        </ThemeProvider>
+        {/* NextIntlClientProvider wraps the whole authenticated app
+            so any page (including pages outside the [locale] segment)
+            can call useTranslations() / useLocale(). The provider
+            reads its locale + messages from i18n/request.ts, which
+            falls back to the NEXT_LOCALE cookie when no URL locale
+            is present. See i18n/request.ts for the three-step
+            resolution. */}
+        <NextIntlClientProvider>
+          <ThemeProvider initialTheme={theme}>
+            <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+            <GlobalCrisisFooter />
+            <MobileTabBar />
+            <ServiceWorkerRegistrar />
+            <PreviewDayBadge />
+            <MemberUsageTracker />
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

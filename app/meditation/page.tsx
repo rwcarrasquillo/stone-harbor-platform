@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, Volume2, VolumeX } from "lucide-react";
 import { serif, sans } from "@/lib/fonts";
 import { supabase } from "@/lib/supabaseClient";
@@ -61,6 +62,7 @@ const BREATH_IMAGES = [
 ];
 
 export default function MeditationPage() {
+  const t = useTranslations("meditation");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
 
@@ -158,18 +160,18 @@ export default function MeditationPage() {
       <header className="relative z-20 flex items-center justify-between px-4 py-4 md:px-10 md:py-6">
         <Link
           href="/dashboard"
-          aria-label="Back to dashboard"
+          aria-label={t("aria.back")}
           className="group flex items-center gap-2 text-[#c4934e] transition hover:text-white"
         >
           <ArrowLeft size={18} aria-hidden="true" />
           <span className="hidden text-xs font-bold uppercase tracking-[0.22em] md:inline">
-            Harbor
+            {t("back")}
           </span>
         </Link>
 
         <button
           onClick={toggleSound}
-          aria-label={soundOn ? "Mute ambient sound" : "Play ambient sound"}
+          aria-label={soundOn ? t("aria.muteSound") : t("aria.playSound")}
           className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white shadow-[0_6px_20px_rgba(0,0,0,0.4)] backdrop-blur-md transition hover:scale-110 hover:bg-white/20 md:h-12 md:w-12"
         >
           {soundOn ? (
@@ -183,12 +185,12 @@ export default function MeditationPage() {
       {/* CENTER — breath circle */}
       <section className="relative z-20 flex flex-1 flex-col items-center justify-center px-6 pb-16 text-center">
         <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.4em] text-white/65 md:mb-6 md:text-xs">
-          Daily Breath
+          {t("eyebrow")}
         </p>
         <p
           className={`${serif.className} mb-10 text-2xl italic leading-snug text-white md:mb-16 md:text-4xl`}
         >
-          Stay as long as you want.
+          {t("stay")}
         </p>
 
         {/* Shared BreathCircle component — keeps the rhythm and styling
@@ -223,7 +225,7 @@ export default function MeditationPage() {
               }`}
               aria-pressed={!isLongExhale}
             >
-              For the calm
+              {t("patterns.box")}
             </button>
             <span className="text-white/20">·</span>
             <button
@@ -236,17 +238,17 @@ export default function MeditationPage() {
               }`}
               aria-pressed={isLongExhale}
             >
-              For the storm
+              {t("patterns.longExhale")}
             </button>
           </div>
         )}
 
         <p className="mt-6 max-w-md text-xs leading-relaxed text-white/70 md:mt-8 md:text-sm">
           {isLongExhale
-            ? "Four in. Seven out. For when something is sitting heavy."
+            ? t("guidance.longExhale")
             : soundOn
-              ? "Breathe with the rhythm. Leave whenever you're ready."
-              : "Tap the speaker to add ambient sound. Or breathe in silence."}
+              ? t("guidance.withSound")
+              : t("guidance.silence")}
         </p>
       </section>
     </main>
