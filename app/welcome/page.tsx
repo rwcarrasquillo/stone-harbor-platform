@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabaseClient";
 import { trackMilestone } from "@/lib/memberUsage";
 import { InactivityGate } from "@/app/components/inactivityGate";
@@ -123,6 +124,12 @@ export default function WelcomePage() {
   const router = useRouter();
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
+  // i18n — `t` covers the welcome namespace, which holds every label
+  // and helper string the page renders. Option labels (relationship,
+  // healing-stage, privacy, education, months, languages) live under
+  // `welcome.options.*` so the English value persisted to the DB stays
+  // untouched while the rendered label flips locale.
+  const t = useTranslations("welcome");
   const [userId, setUserId] = useState<string | null>(null);
   // Account age for progressive disclosure (the Lineage section is
   // hidden until day 90+).
@@ -199,7 +206,7 @@ export default function WelcomePage() {
     });
     if (error) {
       setClosing(false);
-      setCloseError(`Could not submit: ${error.message}`);
+      setCloseError(t("errors.submitFailed", { message: error.message }));
       return;
     }
     // Sign the member out and route to home with a quiet confirmation.
@@ -248,7 +255,7 @@ export default function WelcomePage() {
       .maybeSingle();
 
     if (error) {
-      fail(`Could not load profile: ${error.message}`);
+      fail(t("errors.loadFailed", { message: error.message }));
     }
 
     setFormData({
@@ -376,7 +383,7 @@ export default function WelcomePage() {
 
   async function useCurrentLocation() {
     if (!navigator.geolocation) {
-      fail("Location services are not supported by this browser.");
+      fail(t("errors.locationUnsupported"));
       return;
     }
 
@@ -410,7 +417,7 @@ export default function WelcomePage() {
             city && state ? `${city}, ${state}` : city || state || "";
 
           if (!locationLabel) {
-            fail("Could not determine your city from your coordinates.");
+            fail(t("errors.locationNoCity"));
             return;
           }
 
@@ -419,7 +426,7 @@ export default function WelcomePage() {
             location: locationLabel,
           }));
         } catch {
-          fail("Could not convert your coordinates into a city/state.");
+          fail(t("errors.locationReverseFailed"));
         } finally {
           setDetectingLocation(false);
         }
@@ -430,15 +437,13 @@ export default function WelcomePage() {
         const code = error?.code;
 
         if (code === 1) {
-          fail(
-            "Location permission was denied. Please allow location access in your browser.",
-          );
+          fail(t("errors.locationDenied"));
         } else if (code === 2) {
-          fail("Your location is currently unavailable.");
+          fail(t("errors.locationUnavailable"));
         } else if (code === 3) {
-          fail("Location request timed out. Please try again.");
+          fail(t("errors.locationTimeout"));
         } else {
-          fail("Could not detect your location.");
+          fail(t("errors.locationGeneric"));
         }
       },
       {
@@ -466,7 +471,7 @@ export default function WelcomePage() {
 
     if (error) {
       setUploadingAvatar(false);
-      fail(`Avatar upload failed: ${error.message}`);
+      fail(t("errors.avatarFailed", { message: error.message }));
       return formData.avatar_url;
     }
 
@@ -495,7 +500,7 @@ export default function WelcomePage() {
 
     if (error) {
       setUploadingCover(false);
-      fail(`Cover upload failed: ${error.message}`);
+      fail(t("errors.coverFailed", { message: error.message }));
       return formData.cover_url;
     }
 
@@ -600,7 +605,7 @@ export default function WelcomePage() {
 
     if (error) {
       setSaving(false);
-      fail(`Could not save profile: ${error.message}`);
+      fail(t("errors.saveFailed", { message: error.message }));
       return;
     }
 
@@ -687,7 +692,7 @@ export default function WelcomePage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--sh-bg-page)]">
         <p className="text-sm font-bold uppercase tracking-[0.3em] text-[var(--sh-text-secondary)]">
-          Loading Profile...
+          {t("loading")}
         </p>
       </main>
     );
@@ -709,7 +714,7 @@ export default function WelcomePage() {
             href="/dashboard"
             className="rounded-none text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]"
           >
-            ← Dashboard
+            {t("backToDashboard")}
           </Link>
         </div>
 
@@ -738,7 +743,7 @@ export default function WelcomePage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-transparent" />
 
               <label className="absolute right-4 top-4 z-20 cursor-pointer rounded-none border border-white/30 bg-black/30 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white backdrop-blur-md transition hover:bg-black/45">
-                Change Cover
+                {t("changeCover")}
                 <input
                   type="file"
                   accept="image/*"
@@ -758,7 +763,7 @@ export default function WelcomePage() {
                   {avatarPreview ? (
                     <img
                       src={avatarPreview}
-                      alt="Profile avatar"
+                      alt={t("avatarAlt")}
                       className="h-full w-full rounded-full object-cover"
                     />
                   ) : (
@@ -766,7 +771,7 @@ export default function WelcomePage() {
                   )}
 
                   <label className="absolute bottom-0 left-0 right-0 cursor-pointer rounded-none bg-black/45 py-2 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm transition hover:bg-black/60">
-                    Change
+                    {t("changeAvatar")}
                     <input
                       type="file"
                       accept="image/*"
@@ -786,7 +791,7 @@ export default function WelcomePage() {
               <h2
                 className={`${serif.className} text-4xl font-medium leading-tight text-[var(--sh-text-primary)]`}
               >
-                {formData.display_name || "Your Profile"}
+                {formData.display_name || t("fallbackName")}
               </h2>
 
               <p className="mt-1 text-sm font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
@@ -794,11 +799,11 @@ export default function WelcomePage() {
               </p>
 
               <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold text-[var(--sh-text-tertiary)]">
-                <span>{formData.location || "Location not set"}</span>
+                <span>{formData.location || t("locationNotSet")}</span>
                 <span>•</span>
-                <span>{formData.healing_stage}</span>
+                <span>{t(`options.healingStage.${formData.healing_stage}`)}</span>
                 <span>•</span>
-                <span>{formData.privacy_level}</span>
+                <span>{t(`options.privacy.${formData.privacy_level}`)}</span>
               </div>
             </div>
           </div>
@@ -807,37 +812,37 @@ export default function WelcomePage() {
             <h1
               className={`${serif.className} text-5xl font-medium text-[var(--sh-text-primary)] md:text-7xl`}
             >
-              Edit Profile
+              {t("pageTitle")}
             </h1>
 
             <p className="mt-3 max-w-2xl text-lg leading-relaxed text-[var(--sh-text-secondary)]">
-              Update your personal information, privacy, and location.
+              {t("pageSubtitle")}
             </p>
 
             <div className="mt-10 grid gap-8">
               <div className="grid gap-6 md:grid-cols-2">
                 <TextInput
-                  label="Display Name"
+                  label={t("fields.displayName")}
                   value={formData.display_name}
                   onChange={(value) =>
                     setFormData({ ...formData, display_name: value })
                   }
-                  placeholder="Rafael Carrasquillo"
+                  placeholder={t("placeholders.displayName")}
                 />
 
                 <TextInput
-                  label="Username"
+                  label={t("fields.username")}
                   value={formData.username}
                   onChange={(value) =>
                     setFormData({ ...formData, username: value })
                   }
-                  placeholder="rafael102476"
+                  placeholder={t("placeholders.username")}
                 />
 
                 <div>
                   <div className="mb-2 flex items-center justify-between">
                     <label className="block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
-                      Location
+                      {t("fields.location")}
                     </label>
 
                     <button
@@ -849,8 +854,8 @@ export default function WelcomePage() {
                           ? "border-white/15 bg-black/40 text-[var(--sh-text-tertiary)]"
                           : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-tertiary)]"
                       }`}
-                      aria-label="Use current location"
-                      title="Use current location"
+                      aria-label={t("useLocation")}
+                      title={t("useLocation")}
                     >
                       {detectingLocation ? (
                         <span className="text-xs">...</span>
@@ -881,7 +886,7 @@ export default function WelcomePage() {
                         location: e.target.value,
                       })
                     }
-                    placeholder="Davenport, Florida"
+                    placeholder={t("placeholders.location")}
                     className={`w-full border px-4 py-3 text-sm transition focus:border-[var(--sh-accent-gold)] focus:outline-none ${
                       isDusk
                         ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-stone-500"
@@ -891,36 +896,39 @@ export default function WelcomePage() {
                 </div>
 
                 <TextInput
-                  label="Hometown"
+                  label={t("fields.hometown")}
                   value={formData.hometown}
                   onChange={(value) =>
                     setFormData({ ...formData, hometown: value })
                   }
-                  placeholder="San Juan, Puerto Rico"
+                  placeholder={t("placeholders.hometown")}
                 />
 
                 <SelectInput
-                  label="Healing Stage"
+                  label={t("fields.healingStage")}
                   value={formData.healing_stage}
                   options={healingStageOptions}
+                  labelFor={(v) => t(`options.healingStage.${v}`)}
                   onChange={(value) =>
                     setFormData({ ...formData, healing_stage: value })
                   }
                 />
 
                 <SelectInput
-                  label="Privacy"
+                  label={t("fields.privacy")}
                   value={formData.privacy_level}
                   options={privacyOptions}
+                  labelFor={(v) => t(`options.privacy.${v}`)}
                   onChange={(value) =>
                     setFormData({ ...formData, privacy_level: value })
                   }
                 />
 
                 <SelectInput
-                  label="Relationship"
+                  label={t("fields.relationship")}
                   value={formData.relationship_status}
                   options={relationshipOptions}
+                  labelFor={(v) => t(`options.relationship.${v}`)}
                   onChange={(value) =>
                     setFormData({
                       ...formData,
@@ -930,7 +938,7 @@ export default function WelcomePage() {
                 />
 
                 <CompanyInput
-                  label="Work"
+                  label={t("fields.work")}
                   value={formData.work}
                   logoUrl={formData.work_company_logo_url}
                   domain={formData.work_company_domain}
@@ -938,12 +946,15 @@ export default function WelcomePage() {
                   searching={searchingCompanies}
                   onChange={searchCompanies}
                   onSelect={selectCompany}
+                  placeholder={t("placeholders.companySearch")}
+                  searchingLabel={t("placeholders.searching")}
                 />
 
                 <SelectInput
-                  label="Education"
+                  label={t("fields.education")}
                   value={formData.education}
                   options={educationOptions}
+                  labelFor={(v) => t(`options.education.${v}`)}
                   onChange={(value) =>
                     setFormData({
                       ...formData,
@@ -953,47 +964,47 @@ export default function WelcomePage() {
                 />
 
                 <TextInput
-                  label="Website"
+                  label={t("fields.website")}
                   value={formData.website}
                   onChange={(value) =>
                     setFormData({ ...formData, website: value })
                   }
-                  placeholder="https://example.com"
+                  placeholder={t("placeholders.website")}
                 />
 
                 <TextInput
-                  label="Languages"
+                  label={t("fields.languages")}
                   value={formData.languages}
                   onChange={(value) =>
                     setFormData({ ...formData, languages: value })
                   }
-                  placeholder="English, Spanish"
+                  placeholder={t("placeholders.languages")}
                 />
 
                 <TextInput
-                  label="Interests"
+                  label={t("fields.interests")}
                   value={formData.interests}
                   onChange={(value) =>
                     setFormData({ ...formData, interests: value })
                   }
-                  placeholder="Healing, fitness, technology, family"
+                  placeholder={t("placeholders.interests")}
                 />
               </div>
 
               <TextArea
-                label="Perspective"
+                label={t("fields.perspective")}
                 value={formData.bio}
                 onChange={(value) => setFormData({ ...formData, bio: value })}
-                placeholder="Rebuilding with clarity, strength, and purpose..."
+                placeholder={t("placeholders.perspective")}
               />
 
               <TextArea
-                label="Favorite Quote"
+                label={t("fields.favoriteQuote")}
                 value={formData.favorite_quote}
                 onChange={(value) =>
                   setFormData({ ...formData, favorite_quote: value })
                 }
-                placeholder="Rebuilding isn’t about returning to who I was—it’s about becoming who I was meant to be."
+                placeholder={t("placeholders.favoriteQuote")}
               />
 
               {/* ────────── LINEAGE ──────────
@@ -1034,23 +1045,20 @@ export default function WelcomePage() {
                   notices the day; it never celebrates. */}
               <section className="border-t border-[var(--sh-border-subtle)] pt-8">
                 <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d]">
-                  The Dates We Notice
+                  {t("dates.eyebrow")}
                 </p>
                 <h3
                   className={`${serif.className} mt-3 text-3xl font-medium leading-tight text-[var(--sh-text-primary)]`}
                 >
-                  If you want us to mark a day with you.
+                  {t("dates.title")}
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-                  Stone Harbor quietly notices your birthday and a few of the
-                  hardest days of the year — Thanksgiving, Christmas, New
-                  Year&apos;s Eve, Father&apos;s Day. We will not celebrate. We
-                  will simply notice. Both can be turned off.
+                  {t("dates.body")}
                 </p>
 
                 <div className="mt-8">
                   <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
-                    Your Birthday (Optional)
+                    {t("dates.birthdayLabel")}
                   </label>
                   <div className="grid max-w-xl grid-cols-3 gap-3">
                     <select
@@ -1067,10 +1075,10 @@ export default function WelcomePage() {
                           : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-secondary)]"
                       }`}
                     >
-                      <option value="">Month</option>
+                      <option value="">{t("dates.month")}</option>
                       {MONTH_NAMES.map((name, i) => (
                         <option key={name} value={i + 1}>
-                          {name}
+                          {t(`options.months.${name}`)}
                         </option>
                       ))}
                     </select>
@@ -1089,7 +1097,7 @@ export default function WelcomePage() {
                           : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-secondary)]"
                       }`}
                     >
-                      <option value="">Day</option>
+                      <option value="">{t("dates.day")}</option>
                       {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                         <option key={d} value={d}>
                           {d}
@@ -1108,7 +1116,7 @@ export default function WelcomePage() {
                           birth_year: e.target.value,
                         })
                       }
-                      placeholder="Year (optional)"
+                      placeholder={t("dates.yearPlaceholder")}
                       className={`h-[46px] w-full border px-4 text-sm transition focus:border-[var(--sh-accent-gold)] focus:outline-none ${
                         isDusk
                           ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-stone-500"
@@ -1117,8 +1125,7 @@ export default function WelcomePage() {
                     />
                   </div>
                   <p className="mt-2 text-[11px] text-[var(--sh-text-tertiary)]">
-                    The year is optional. We don&apos;t need your age — we just
-                    remember the day.
+                    {t("dates.yearHelp")}
                   </p>
                 </div>
 
@@ -1136,9 +1143,9 @@ export default function WelcomePage() {
                       className="mt-1 h-4 w-4 accent-[#a9793d]"
                     />
                     <span className="text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-                      Acknowledge my birthday quietly when it arrives.
+                      {t("dates.ackBirthday")}
                       <span className="block text-[11px] text-[var(--sh-text-tertiary)]">
-                        A single tile on the dashboard. No popup. No email.
+                        {t("dates.ackBirthdayHelp")}
                       </span>
                     </span>
                   </label>
@@ -1156,10 +1163,9 @@ export default function WelcomePage() {
                       className="mt-1 h-4 w-4 accent-[#a9793d]"
                     />
                     <span className="text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-                      Acknowledge the hard holidays with me.
+                      {t("dates.ackSeasonal")}
                       <span className="block text-[11px] text-[var(--sh-text-tertiary)]">
-                        Thanksgiving, Christmas, New Year&apos;s Eve,
-                        Father&apos;s Day. One quiet tile only on those days.
+                        {t("dates.ackSeasonalHelp")}
                       </span>
                     </span>
                   </label>
@@ -1174,8 +1180,8 @@ export default function WelcomePage() {
                   className="rounded-none bg-[var(--sh-accent-gold)] px-8 py-4 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-md transition hover:bg-[#8d6432] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving || uploadingAvatar || uploadingCover
-                    ? "Saving..."
-                    : "Save Profile"}
+                    ? t("saving")
+                    : t("save")}
                 </button>
 
                 <Link
@@ -1186,7 +1192,7 @@ export default function WelcomePage() {
                       : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-secondary)]"
                   }`}
                 >
-                  Cancel
+                  {t("cancel")}
                 </Link>
               </div>
 
@@ -1206,25 +1212,22 @@ export default function WelcomePage() {
                   className="text-xs font-bold uppercase tracking-[0.3em]"
                   style={{ color: "#b14a3a" }}
                 >
-                  Leaving the Harbor
+                  {t("leaving.eyebrow")}
                 </p>
                 <h3
                   className={`${serif.className} mt-3 text-3xl font-medium leading-tight text-[var(--sh-text-primary)]`}
                 >
-                  Close your account.
+                  {t("leaving.title")}
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-                  You can close your account at any time. We will delete your
-                  private journal entries within 30 days and your other personal
-                  data within 90 days, as described in our{" "}
+                  {t("leaving.body1")}{" "}
                   <Link
                     href="/privacy"
                     className="font-semibold text-[#a9793d] underline-offset-4 hover:underline"
                   >
-                    Privacy Policy
+                    {t("leaving.privacyPolicy")}
                   </Link>
-                  . If you ever want to come back, you are welcome — but a new
-                  account will start fresh.
+                  {t("leaving.body2")}
                 </p>
 
                 {!closeOpen ? (
@@ -1235,7 +1238,7 @@ export default function WelcomePage() {
                       isDusk ? "bg-black/40" : "bg-white"
                     }`}
                   >
-                    Close My Account
+                    {t("leaving.closeButton")}
                   </button>
                 ) : (
                   <div
@@ -1245,20 +1248,17 @@ export default function WelcomePage() {
                     style={{ borderLeftColor: "#b14a3a" }}
                   >
                     <p className="text-sm font-semibold text-[var(--sh-text-primary)]">
-                      Are you sure?
+                      {t("leaving.confirmTitle")}
                     </p>
                     <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-                      Once submitted, your account is queued for deletion. You
-                      will be signed out immediately. You can leave a brief note
-                      below if you want to tell us why — it helps us improve,
-                      and we read every one.
+                      {t("leaving.confirmBody")}
                     </p>
                     <textarea
                       value={closeReason}
                       onChange={(e) => setCloseReason(e.target.value)}
                       rows={3}
                       maxLength={1000}
-                      placeholder="Anything you'd like us to know? (optional)"
+                      placeholder={t("leaving.reasonPlaceholder")}
                       className={`mt-4 w-full border px-3 py-2 text-sm focus:border-[#b14a3a] focus:outline-none ${
                         isDusk
                           ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-stone-500"
@@ -1277,7 +1277,7 @@ export default function WelcomePage() {
                         disabled={closing}
                         className="rounded-none bg-[#b14a3a] px-6 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d2f21] disabled:opacity-50"
                       >
-                        {closing ? "Submitting…" : "Yes, Close My Account"}
+                        {closing ? t("leaving.submitting") : t("leaving.submit")}
                       </button>
                       <button
                         type="button"
@@ -1293,7 +1293,7 @@ export default function WelcomePage() {
                             : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-secondary)]"
                         }`}
                       >
-                        Stay
+                        {t("leaving.stay")}
                       </button>
                     </div>
                   </div>
@@ -1318,6 +1318,8 @@ function CompanyInput({
   searching,
   onChange,
   onSelect,
+  placeholder,
+  searchingLabel,
 }: {
   label: string;
   value: string;
@@ -1327,6 +1329,8 @@ function CompanyInput({
   searching: boolean;
   onChange: (value: string) => void;
   onSelect: (company: CompanySuggestion) => void;
+  placeholder?: string;
+  searchingLabel?: string;
 }) {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
@@ -1358,7 +1362,7 @@ function CompanyInput({
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Start typing company name..."
+          placeholder={placeholder ?? "Start typing company name..."}
           className={`w-full bg-transparent px-4 py-3 text-sm transition focus:outline-none ${
             isDusk
               ? "text-stone-100 placeholder:text-stone-500"
@@ -1373,7 +1377,7 @@ function CompanyInput({
 
       {searching && (
         <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sh-text-muted)]">
-          Searching...
+          {searchingLabel ?? "Searching..."}
         </p>
       )}
 
@@ -1488,16 +1492,26 @@ function TextArea({
   );
 }
 
+/**
+ * SelectInput renders a labeled <select>. Option values are kept in
+ * English (they're persisted to the DB as canonical strings, e.g.
+ * "Clarity", "Married", "GED"). The optional `labelFor` callback maps
+ * each English value to a locale-aware display label without changing
+ * what gets saved. If `labelFor` is omitted, the value renders as its
+ * own label (legacy behavior).
+ */
 function SelectInput({
   label,
   value,
   options,
   onChange,
+  labelFor,
 }: {
   label: string;
   value: string;
   options: string[];
   onChange: (value: string) => void;
+  labelFor?: (value: string) => string;
 }) {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
@@ -1519,7 +1533,7 @@ function SelectInput({
       >
         {options.map((option) => (
           <option key={option} value={option}>
-            {option}
+            {labelFor ? labelFor(option) : option}
           </option>
         ))}
       </select>
