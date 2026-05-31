@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { routing } from "@/i18n/routing";
 import { supabase } from "@/lib/supabaseClient";
 import { trackMilestone } from "@/lib/memberUsage";
 import { InactivityGate } from "@/app/components/inactivityGate";
@@ -60,7 +61,39 @@ type ProfileForm = {
   lineage_father_grief: string;
   lineage_father_anger: string;
   lineage_pattern_to_leave: string;
+  // known_languages — text[] in the DB (see migration
+  // profile_001_known_languages.sql). Stored as canonical English
+  // lowercase keys ("english", "spanish", "portuguese", …). Distinct
+  // from the legacy free-text `languages` field above: this one is
+  // structured and used by matching/tone logic, while `languages`
+  // remains a freeform display string the man controls. Default in
+  // the DB is ['english']; loading defaults to ['english'] when null.
+  known_languages: string[];
 };
+
+/**
+ * Canonical language keys for the Known Languages multi-select.
+ * Stored in the DB exactly as written here (lowercase English).
+ * The rendered chip label is resolved via `t(`options.languages.${key}`)`
+ * so the chip flips with the interface language.
+ */
+const knownLanguageOptions = [
+  "english",
+  "spanish",
+  "portuguese",
+  "french",
+  "italian",
+  "german",
+  "mandarin",
+  "arabic",
+  "russian",
+  "hindi",
+  "japanese",
+  "korean",
+  "tagalog",
+  "vietnamese",
+  "other",
+] as const;
 
 const relationshipOptions = [
   "Prefer not to say",
@@ -130,6 +163,13 @@ export default function WelcomePage() {
   // `welcome.options.*` so the English value persisted to the DB stays
   // untouched while the rendered label flips locale.
   const t = useTranslations("welcome");
+  // `currentLocale` drives the Interface Language pill row. Changing
+  // it writes the NEXT_LOCALE cookie and triggers a full reload so
+  // every authenticated page (Phase 2, cookie-driven) re-renders in
+  // the new locale. Same pattern as LanguagePicker — see component
+  // header for why router.refresh() isn't enough here.
+  const currentLocale = useLocale();
+  const [switchingLocale, setSwitchingLocale] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   // Account age for progressive disclosure (the Lineage section is
   // hidden until day 90+).
@@ -170,6 +210,7 @@ export default function WelcomePage() {
     lineage_father_grief: "",
     lineage_father_anger: "",
     lineage_pattern_to_leave: "",
+    known_languages: ["english"],
   });
 
   const [loading, setLoading] = useState(true);
@@ -249,7 +290,7 @@ export default function WelcomePage() {
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, favorite_quote, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave, lineage_section_visit_count",
+        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, favorite_quote, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave, lineage_section_visit_count, known_languages",
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -289,6 +330,14 @@ export default function WelcomePage() {
       lineage_father_grief: data?.lineage_father_grief ?? "",
       lineage_father_anger: data?.lineage_father_anger ?? "",
       lineage_pattern_to_leave: data?.lineage_pattern_to_leave ?? "",
+      // Defensive: if the DB row predates the known_languages migration
+      // or somehow stored NULL, fall back to the canonical [english]
+      // default rather than rendering an empty multi-select.
+      known_languages:
+        (data?.known_languages as string[] | null | undefined) &&
+        (data?.known_languages as string[]).length > 0
+          ? (data?.known_languages as string[])
+          : ["english"],
     });
 
     // Lineage auto-collapse bookkeeping.
@@ -379,6 +428,32 @@ export default function WelcomePage() {
     }));
 
     setCompanySuggestions([]);
+  }
+
+  /**
+   * Switch the member's interface language.
+   *
+   * Writes the NEXT_LOCALE cookie (1-year max-age) and reloads the
+   * page so:
+   *   1. The server (`i18n/request.ts` → `getRequestConfig`) re-reads
+   *      the cookie and serves the matching `messages/<locale>.json`.
+   *   2. `NextIntlClientProvider` remounts on the client with the
+   *      fresh messages bundle.
+   *
+   * We use `window.location.reload()` rather than `router.refresh()`
+   * for the same reason LanguagePicker does: `router.refresh()` did
+   * NOT reliably re-mount the provider when only the cookie changed
+   * (page text stayed in the old locale and only the toggle button
+   * updated). Heavier reload is reliable; language switching is rare
+   * enough that the cost doesn't matter.
+   *
+   * Calling this while a switch is already in-flight is a no-op.
+   */
+  function switchInterfaceLanguage(next: string) {
+    if (next === currentLocale || switchingLocale) return;
+    setSwitchingLocale(true);
+    document.cookie = `NEXT_LOCALE=${next}; path=/; max-age=31536000; SameSite=Lax`;
+    window.location.reload();
   }
 
   async function useCurrentLocation() {
@@ -598,6 +673,13 @@ export default function WelcomePage() {
       lineage_father_grief: formData.lineage_father_grief.trim() || null,
       lineage_father_anger: formData.lineage_father_anger.trim() || null,
       lineage_pattern_to_leave: formData.lineage_pattern_to_leave.trim() || null,
+      // known_languages: persist the structured selection. If somehow
+      // the user cleared every checkbox we fall back to [english] so
+      // matching/tone logic always has something to read.
+      known_languages:
+        formData.known_languages.length > 0
+          ? formData.known_languages
+          : ["english"],
       updated_at: new Date().toISOString(),
     };
 
@@ -839,6 +921,52 @@ export default function WelcomePage() {
                   placeholder={t("placeholders.username")}
                 />
 
+                {/* INTERFACE LANGUAGE — switches the whole app on click,
+                    not on save. Uses the same NEXT_LOCALE-cookie-plus-
+                    reload mechanism as the LanguagePicker that lives in
+                    the footer; this one is a form-styled pill row so
+                    it reads as a profile preference rather than a UI
+                    toggle. Active locale stays in gold. */}
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
+                    {t("fields.interfaceLanguage")}
+                  </label>
+                  <div
+                    role="radiogroup"
+                    aria-label={t("fields.interfaceLanguage")}
+                    className={`inline-flex w-full border ${
+                      isDusk
+                        ? "border-white/15 bg-black/40"
+                        : "border-[var(--sh-border-medium)] bg-white"
+                    }`}
+                  >
+                    {routing.locales.map((code) => {
+                      const active = currentLocale === code;
+                      return (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => switchInterfaceLanguage(code)}
+                          disabled={switchingLocale}
+                          aria-pressed={active}
+                          className={`flex-1 px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                            active
+                              ? "bg-[#a9793d] text-white"
+                              : isDusk
+                                ? "text-stone-300 hover:bg-white/[0.05]"
+                                : "text-[var(--sh-text-secondary)] hover:bg-[#f8f4ed]"
+                          }`}
+                        >
+                          {code === "en" ? "English" : "Español"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-2 text-[11px] italic text-[var(--sh-text-tertiary)]">
+                    {t("interfaceLanguageHelp")}
+                  </p>
+                </div>
+
                 <div>
                   <div className="mb-2 flex items-center justify-between">
                     <label className="block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
@@ -980,6 +1108,55 @@ export default function WelcomePage() {
                   }
                   placeholder={t("placeholders.languages")}
                 />
+
+                {/* KNOWN LANGUAGES — structured multi-select that
+                    writes to the profiles.known_languages text[]
+                    column (see migration profile_001_known_languages.sql).
+                    Values are stored as canonical English lowercase
+                    keys so matching/tone logic always reads the same
+                    set; the chip label flips with the interface
+                    language. Spans both grid columns so the chip
+                    cloud has room to breathe. */}
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
+                    {t("fields.knownLanguages")}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {knownLanguageOptions.map((code) => {
+                      const active = formData.known_languages.includes(code);
+                      return (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => {
+                              const set = new Set(prev.known_languages);
+                              if (set.has(code)) {
+                                set.delete(code);
+                              } else {
+                                set.add(code);
+                              }
+                              return { ...prev, known_languages: Array.from(set) };
+                            });
+                          }}
+                          aria-pressed={active}
+                          className={`border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.22em] transition ${
+                            active
+                              ? "border-[#a9793d] bg-[#a9793d] text-white"
+                              : isDusk
+                                ? "border-white/15 bg-black/40 text-stone-300 hover:border-[#c4934e] hover:text-[#c4934e]"
+                                : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-secondary)] hover:border-[#a9793d] hover:text-[#a9793d]"
+                          }`}
+                        >
+                          {t(`options.languages.${code}`)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-2 text-[11px] italic text-[var(--sh-text-tertiary)]">
+                    {t("knownLanguagesHelp")}
+                  </p>
+                </div>
 
                 <TextInput
                   label={t("fields.interests")}
