@@ -8,6 +8,7 @@ import {
   type ComponentType,
 } from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { trackMilestone } from "@/lib/memberUsage";
@@ -67,6 +68,10 @@ const MOSS = "#586558";
 
 // Mood taxonomy — its own small color system, separate from brand accents.
 // Used for chips, entry-card left borders, and the mood map.
+// `label` is the English fallback; the chip/badge/legend each call
+// `tMood(option.value)` to render the locale-aware label. Keeping the
+// English string here means any code path that doesn't have a
+// translator still renders something readable.
 const moodOptions = [
   { value: "grounded", label: "Grounded", color: "#586558" },
   { value: "confused", label: "Confused", color: "#9c8a6e" },
@@ -104,10 +109,22 @@ function moodIconFor(
   return moodIcons[value.toLowerCase()] ?? null;
 }
 
-function moodLabel(value: string | null | undefined) {
-  if (!value) return "Reflection";
+/**
+ * Resolve a mood value into a localized display label.
+ * Accepts the `tMood` (mood namespace) and `tJournal` (journal namespace)
+ * translators so it stays a pure function — no hook calls inside.
+ * Returns the journal-specific "Reflection" fallback when the value is
+ * null/undefined, matching the legacy English behavior.
+ */
+function moodLabel(
+  value: string | null | undefined,
+  tMood: (key: string) => string,
+  tJournal: (key: string) => string,
+): string {
+  if (!value) return tJournal("reflectionFallback");
   const found = moodOptions.find((o) => o.value === value.toLowerCase());
-  return found ? found.label : value;
+  if (!found) return value;
+  return tMood(found.value);
 }
 
 // Daily writing prompts live in @/lib/dailyPrompts so the dashboard's
@@ -117,13 +134,18 @@ function todaysPrompt() {
   return sharedTodaysPrompt();
 }
 
-function timeGreeting() {
+/**
+ * Returns the catalog KEY for the current time-of-day band. The caller
+ * resolves it via `tJournal(`timeGreeting.${key}`)` so the same logic
+ * works in any locale.
+ */
+function timeGreetingKey(): string {
   const h = new Date().getHours();
-  if (h < 5) return "Late night";
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  if (h < 21) return "Good evening";
-  return "Tonight";
+  if (h < 5) return "lateNight";
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  if (h < 21) return "evening";
+  return "tonight";
 }
 
 type JournalEntry = {
@@ -214,6 +236,12 @@ function buildMoodMap(
 export default function JournalPage() {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
+  // i18n — three namespaces so chrome (mood chips, time greeting) and
+  // page-specific copy each read from the catalog that owns them.
+  // Keeping these as separate hooks (vs. one root translator) lets the
+  // translator stay strictly typed against the namespace it covers.
+  const t = useTranslations("journal");
+  const tMood = useTranslations("mood");
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
@@ -561,7 +589,7 @@ export default function JournalPage() {
   }
 
   async function deleteEntry(id: string) {
-    const confirmed = window.confirm("Delete this journal entry?");
+    const confirmed = window.confirm(t("alerts.deleteConfirm"));
     if (!confirmed) return;
     await supabase.from("journal_entries").delete().eq("id", id);
     await loadJournal();
@@ -597,15 +625,11 @@ export default function JournalPage() {
     if (savingEdit) return;
     const trimmedContent = editingDraft.trim();
     if (!trimmedContent) {
-      window.alert(
-        "Entry body can't be empty. Cancel instead to leave as-is.",
-      );
+      window.alert(t("alerts.editEmpty"));
       return;
     }
     if (!isWithinEditWindow(entry.created_at)) {
-      window.alert(
-        "The edit window for this entry has closed. The original is preserved.",
-      );
+      window.alert(t("alerts.editWindowClosed"));
       cancelEditingEntry();
       await loadJournal();
       return;
@@ -627,7 +651,7 @@ export default function JournalPage() {
     if (error) {
       // eslint-disable-next-line no-console
       console.error("[journal] saveEditingEntry failed:", error);
-      window.alert("Couldn't save the edit. Try again in a moment.");
+      window.alert(t("alerts.editFailed"));
       return;
     }
     cancelEditingEntry();
@@ -713,7 +737,7 @@ export default function JournalPage() {
           <p
             className={`${serif.className} mt-8 text-2xl italic text-[var(--sh-text-secondary)]`}
           >
-            Opening your journal…
+            {t("loading")}
           </p>
         </div>
       </main>
@@ -738,8 +762,8 @@ export default function JournalPage() {
             ? "border-white/20 bg-white/[0.08] text-white hover:bg-white/[0.14]"
             : "border-white/40 bg-white/30 text-[var(--sh-text-primary)] hover:bg-white/45"
         }`}
-        aria-label={soundOn ? "Mute Nature Sounds" : "Play Nature Sounds"}
-        title={soundOn ? "Mute Nature Sounds" : "Play Nature Sounds"}
+        aria-label={soundOn ? t("soundMute") : t("soundPlay")}
+        title={soundOn ? t("soundMute") : t("soundPlay")}
       >
         {soundOn ? <SoundOn size={16} /> : <SoundOff size={16} />}
       </button>
@@ -761,45 +785,45 @@ export default function JournalPage() {
         >
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
-              {timeGreeting()}
+              {t(`timeGreeting.${timeGreetingKey()}`)}
             </p>
             <p
               className={`${serif.className} mt-2 text-2xl italic text-[#a9793d]`}
             >
-              Write what you cannot carry alone.
+              {t("greeting")}
             </p>
           </div>
           <div>
             <div className="flex items-center gap-2">
               <Flame size={14} className="text-[#a9793d]" />
               <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
-                Writing Streak
+                {t("streakLabel")}
               </p>
             </div>
             <p
               className={`${serif.className} mt-2 text-2xl italic text-[var(--sh-text-primary)]`}
             >
               {streak === 0
-                ? "Begin today."
+                ? t("streakBegin")
                 : streak === 1
-                  ? "Day 1."
-                  : `Day ${streak}.`}
+                  ? t("streakDayOne")
+                  : t("streakDayN", { count: streak })}
             </p>
             <p className="mt-1 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
               {lastEntryDays === null
-                ? "Your first entry is the heaviest. Then they get lighter."
+                ? t("lastNever")
                 : lastEntryDays === 0
-                  ? "You wrote today. Stay a little longer."
+                  ? t("lastToday")
                   : lastEntryDays === 1
-                    ? "You wrote yesterday. The harbor is open."
-                    : `Your last entry was ${lastEntryDays} days ago.`}
+                    ? t("lastYesterday")
+                    : t("lastDays", { count: lastEntryDays })}
             </p>
           </div>
           <div className="md:col-span-2">
             <div className="flex items-center gap-2">
               <Speech size={14} className="text-[#a9793d]" />
               <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
-                Today&apos;s Prompt
+                {t("promptLabel")}
               </p>
             </div>
             <p
@@ -808,7 +832,7 @@ export default function JournalPage() {
               &ldquo;{todaysPrompt()}&rdquo;
             </p>
             <p className="mt-2 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
-              Use it if it lands. Ignore it if it doesn&apos;t.
+              {t("promptHelp")}
             </p>
           </div>
         </motion.div>
@@ -827,16 +851,15 @@ export default function JournalPage() {
             }`}
           >
             <p className="mb-5 text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
-              Private Journal
+              {t("eyebrow")}
             </p>
             <h1
               className={`${serif.className} text-5xl font-medium leading-tight md:text-6xl`}
             >
-              One honest sentence is enough.
+              {t("title")}
             </h1>
             <p className="mt-5 text-base leading-relaxed text-[var(--sh-text-secondary)]">
-              Your journal is private. Encrypted. Yours alone. No one — not even
-              Stone Harbor staff — can read what you write here.
+              {t("privacy")}
             </p>
 
             {/* LINEAGE REFERENCE — surfaces after a save if the just-saved
@@ -874,7 +897,7 @@ export default function JournalPage() {
                       isDusk ? "text-[#c4934e]" : "text-[#a9793d]"
                     }`}
                   >
-                    A story to tell
+                    {t("storyHeader")}
                   </p>
                   <p
                     className={`${serif.className} text-lg italic leading-snug md:text-xl ${
@@ -887,13 +910,13 @@ export default function JournalPage() {
               ) : (
                 <>
                   <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
-                    Title
+                    {t("titleLabel")}
                   </label>
                   <VentInput
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     className="mb-6"
-                    placeholder="Optional title"
+                    placeholder={t("titlePlaceholder")}
                   />
                 </>
               )}
@@ -905,7 +928,7 @@ export default function JournalPage() {
               {!storyPrompt && (
                 <>
               <label className="mb-3 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
-                Mood
+                {t("moodLabel")}
               </label>
               <div className="mb-6 flex flex-wrap gap-2">
                 {moodOptions.map((option) => {
@@ -950,7 +973,7 @@ export default function JournalPage() {
                         strokeWidth={1.5}
                         style={{ color: option.color }}
                       />
-                      {option.label}
+                      {tMood(option.value)}
                     </button>
                   );
                 })}
@@ -977,7 +1000,7 @@ export default function JournalPage() {
 
               <div className="mb-2 flex items-baseline justify-between gap-3">
                 <label className="block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
-                  Reflection
+                  {t("reflectionLabel")}
                 </label>
                 {/* BODY-CHECK INVITATION — gated by FEATURE_THRESHOLDS.bodyCheck.
                     Appears in the man's experience around day 30 of his account.
@@ -995,10 +1018,10 @@ export default function JournalPage() {
                     className="text-[10px] italic tracking-wide text-[var(--sh-accent-gold)] transition hover:opacity-80"
                   >
                     {pendingBodySpots === null
-                      ? "Before you write — one breath in your body?"
+                      ? t("bodyCheckOffer")
                       : pendingBodySpots.length === 0
-                        ? "Body check complete · adjust"
-                        : `Noticed in: ${pendingBodySpots.join(", ")} · adjust`}
+                        ? t("bodyCheckComplete")
+                        : t("bodyCheckNoticed", { spots: pendingBodySpots.join(", ") })}
                   </button>
                 )}
               </div>
@@ -1032,7 +1055,7 @@ export default function JournalPage() {
                 rows={9}
                 className="mb-2"
                 placeholder={
-                  storyPrompt ? "Tell me…" : "What do you need to say today?"
+                  storyPrompt ? t("storyPlaceholder") : t("reflectionPlaceholder")
                 }
               />
               {/* "Start with one word" — appears only when the textarea
@@ -1042,18 +1065,18 @@ export default function JournalPage() {
                   types anything. */}
               {showStartNudge && content.length === 0 && (
                 <p className="mb-2 text-[11px] italic leading-relaxed text-[var(--sh-text-tertiary)]">
-                  Start with one word. Any word.
+                  {t("startNudge")}
                 </p>
               )}
               <div className="mb-8 flex items-center justify-between text-xs text-[var(--sh-text-tertiary)]">
                 <span>
                   {wordCount === 0
-                    ? "Start anywhere. Even half a sentence counts."
+                    ? t("wordsZero")
                     : wordCount === 1
-                      ? "1 word."
-                      : `${wordCount} words.`}
+                      ? t("wordsOne")
+                      : t("wordsMany", { count: wordCount })}
                 </span>
-                <span className="italic">No one reads this but you.</span>
+                <span className="italic">{t("privateLine")}</span>
               </div>
 
               {/* REFLECTION MOOD — only on Story responses. Optional.
@@ -1069,7 +1092,7 @@ export default function JournalPage() {
                       isDusk ? "text-stone-400" : "text-stone-600"
                     }`}
                   >
-                    How does this memory sit with you?
+                    {t("reflectionMoodLabel")}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {moodOptions.map((option) => {
@@ -1117,7 +1140,7 @@ export default function JournalPage() {
                             strokeWidth={1.5}
                             style={{ color: option.color }}
                           />
-                          {option.label}
+                          {tMood(option.value)}
                         </button>
                       );
                     })}
@@ -1127,7 +1150,7 @@ export default function JournalPage() {
                       isDusk ? "text-stone-500" : "text-stone-500"
                     }`}
                   >
-                    Optional. Skip if nothing fits.
+                    {t("reflectionMoodHelp")}
                   </p>
                 </div>
               )}
@@ -1139,7 +1162,7 @@ export default function JournalPage() {
               >
                 <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
                 <span className="relative z-10">
-                  {saving ? "Saving..." : "Save Reflection"}
+                  {saving ? t("savingDots") : t("save")}
                 </span>
               </button>
             </form>
@@ -1159,10 +1182,10 @@ export default function JournalPage() {
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="mb-3 text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
-                  Your Entries
+                  {t("entriesEyebrow")}
                 </p>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)]">
-                  Showing {filteredAndSortedEntries.length} of {entries.length}
+                  {t("showingCount", { shown: filteredAndSortedEntries.length, total: entries.length })}
                 </p>
               </div>
               <button
@@ -1177,24 +1200,24 @@ export default function JournalPage() {
                     : "border-[var(--sh-border-medium)] bg-white/60 text-[var(--sh-text-secondary)] hover:bg-white"
                 }`}
               >
-                Reset
+                {t("reset")}
               </button>
             </div>
 
             <div className="mb-6 grid gap-4 md:grid-cols-[1fr_0.55fr]">
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)]">
-                  Search Entries
+                  {t("searchLabel")}
                 </label>
                 <VentInput
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search title, mood, or content"
+                  placeholder={t("searchPlaceholder")}
                 />
               </div>
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)]">
-                  Sort By
+                  {t("sortLabel")}
                 </label>
                 <select
                   value={sortOption}
@@ -1205,10 +1228,10 @@ export default function JournalPage() {
                       : "border-[var(--sh-border-medium)] bg-[#f8f4ed] text-[var(--sh-text-primary)]"
                   }`}
                 >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="mood">Mood A-Z</option>
-                  <option value="title">Title A-Z</option>
+                  <option value="newest">{t("sortNewest")}</option>
+                  <option value="oldest">{t("sortOldest")}</option>
+                  <option value="mood">{t("sortMood")}</option>
+                  <option value="title">{t("sortTitle")}</option>
                 </select>
               </div>
             </div>
@@ -1224,11 +1247,10 @@ export default function JournalPage() {
                 <p
                   className={`${serif.className} text-3xl italic text-[var(--sh-text-secondary)]`}
                 >
-                  Your first entry is the heaviest.
+                  {t("emptyTitle")}
                 </p>
                 <p className="mt-3 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-                  Then they get lighter. Start with one honest sentence — no one
-                  is reading.
+                  {t("emptySub")}
                 </p>
               </div>
             ) : filteredAndSortedEntries.length === 0 ? (
@@ -1239,7 +1261,7 @@ export default function JournalPage() {
                     : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
                 }`}
               >
-                No entries match your search.
+                {t("emptySearch")}
               </div>
             ) : (
               <div className="max-h-[720px] space-y-5 overflow-y-auto pr-2">
@@ -1280,12 +1302,12 @@ export default function JournalPage() {
                                 style={{ backgroundColor: color }}
                               />
                             )}
-                            {moodLabel(entry.mood)}
+                            {moodLabel(entry.mood, tMood, t)}
                           </span>
                           <h2
                             className={`${serif.className} mt-3 text-3xl font-medium text-[var(--sh-text-primary)]`}
                           >
-                            {entry.title || "Untitled Entry"}
+                            {entry.title || t("untitled")}
                           </h2>
                           {(() => {
                             // Capture edited_at in a const so TypeScript's
@@ -1300,7 +1322,7 @@ export default function JournalPage() {
                                 {formatEntryDateTime(entry.created_at)}
                                 {editedAt && (
                                   <span className="ml-2 text-[10px] font-normal italic normal-case tracking-normal text-[var(--sh-text-muted)]">
-                                    · edited {formatEntryDateTime(editedAt)}
+                                    · {t("edited")} {formatEntryDateTime(editedAt)}
                                   </span>
                                 )}
                               </p>
@@ -1319,14 +1341,14 @@ export default function JournalPage() {
                                 onClick={() => beginEditingEntry(entry)}
                                 className="rounded-none border border-[var(--sh-border-medium)] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)] transition hover:border-[var(--sh-accent-gold)] hover:text-[var(--sh-accent-gold)]"
                               >
-                                Edit
+                                {t("editEntry")}
                               </button>
                             )}
                           <button
                             onClick={() => deleteEntry(entry.id)}
                             className="rounded-none border border-[var(--sh-border-medium)] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)] transition hover:border-red-300 hover:text-red-600"
                           >
-                            Delete
+                            {t("delete")}
                           </button>
                         </div>
                       </div>
@@ -1344,7 +1366,7 @@ export default function JournalPage() {
                                 ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-white/30 focus:border-[#c4934e]"
                                 : "border-stone-300 bg-[#f8f4ed] text-stone-800 placeholder:text-stone-400 focus:border-[#a9793d]"
                             }`}
-                            placeholder="Title (optional)"
+                            placeholder={t("editTitlePlaceholder")}
                             autoFocus
                           />
                           <textarea
@@ -1356,10 +1378,10 @@ export default function JournalPage() {
                                 ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-white/30 focus:border-[#c4934e]"
                                 : "border-stone-300 bg-[#f8f4ed] text-stone-800 placeholder:text-stone-400 focus:border-[#a9793d]"
                             }`}
-                            placeholder="Refine what you wrote…"
+                            placeholder={t("editBodyPlaceholder")}
                           />
                           <p className="text-xs italic text-[var(--sh-text-muted)]">
-                            Your first words (title and body) are preserved. This refines only the rendered version.
+                            {t("editHelp")}
                           </p>
                           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                             <button
@@ -1367,14 +1389,14 @@ export default function JournalPage() {
                               disabled={savingEdit}
                               className="rounded-none border border-[var(--sh-border-medium)] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)] transition hover:border-[var(--sh-text-secondary)] hover:text-[var(--sh-text-primary)] disabled:opacity-60"
                             >
-                              Cancel
+                              {t("cancel")}
                             </button>
                             <button
                               onClick={() => saveEditingEntry(entry)}
                               disabled={savingEdit || !editingDraft.trim()}
                               className="rounded-none border border-[var(--sh-accent-gold)] bg-[#a9793d] px-5 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:bg-[#8d6432] disabled:opacity-60"
                             >
-                              {savingEdit ? "Saving…" : "Save Edit"}
+                              {savingEdit ? t("savingEdit") : t("saveEdit")}
                             </button>
                           </div>
                         </div>
@@ -1407,17 +1429,15 @@ export default function JournalPage() {
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d]">
-                  Your Pattern
+                  {t("patternEyebrow")}
                 </p>
                 <h2
                   className={`${serif.className} mt-2 text-4xl font-medium text-[var(--sh-text-primary)] md:text-5xl`}
                 >
-                  The last thirty days.
+                  {t("patternTitle")}
                 </h2>
                 <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-                  Each square is a day. The color is the mood you named. The
-                  blanks are days you didn&apos;t write. No judgment — just
-                  data, looking back at you.
+                  {t("patternSub")}
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -1433,7 +1453,7 @@ export default function JournalPage() {
                         strokeWidth={1.5}
                         style={{ color: option.color }}
                       />
-                      {option.label}
+                      {tMood(option.value)}
                     </span>
                   );
                 })}
@@ -1446,7 +1466,9 @@ export default function JournalPage() {
                   <div
                     key={i}
                     title={`${day.date.toLocaleDateString()}${
-                      day.mood ? ` · ${moodLabel(day.mood)}` : " · No entry"
+                      day.mood
+                        ? ` · ${moodLabel(day.mood, tMood, t)}`
+                        : ` · ${t("noEntryTooltip")}`
                     }`}
                     className="aspect-square w-full transition hover:scale-110"
                     style={{
@@ -1478,7 +1500,7 @@ export default function JournalPage() {
         open={journalUnsaved.showModal}
         onStay={journalUnsaved.cancelNavigation}
         onLeave={journalUnsaved.confirmNavigation}
-        bodyLabel="your journal entry"
+        bodyLabel={t("unsavedBody")}
       />
     </main>
   );
