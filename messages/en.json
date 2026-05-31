@@ -305,6 +305,7 @@
     "entries": "{count} entries",
     "entry": "1 entry",
     "seeAll": "See all in {pillar} ({count}) →",
+    "seeAllShort": "See all in {pillar}",
     "collapse": "Collapse ↑",
     "openFullView": "Open full view →",
     "piece": "piece",
@@ -312,7 +313,16 @@
     "emptyTitle": "Nothing here yet.",
     "emptySub": "Try the other source, or come back soon.",
     "loadingLibrary": "Opening the library…",
-    "readAtSource": "Read at source →"
+    "readAtSource": "Read at source →",
+    "readAtSourceName": "Read at {source} →",
+    "readMore": "Read →",
+    "scrollBack": "Scroll {pillar} backward",
+    "scrollForward": "Scroll {pillar} forward",
+    "stripAria": "{pillar} articles strip",
+    "carouselAria": "{pillar} articles",
+    "slideAria": "{index} of {total}",
+    "seeAllAria": "See all {count} articles in {pillar}",
+    "closeReader": "Close ×"
   },
   "resources": {
     "eyebrow": "Curated",

@@ -305,6 +305,7 @@
     "entries": "{count} entradas",
     "entry": "1 entrada",
     "seeAll": "Ver todo en {pillar} ({count}) →",
+    "seeAllShort": "Ver todo en {pillar}",
     "collapse": "Cerrar ↑",
     "openFullView": "Abrir vista completa →",
     "piece": "pieza",
@@ -312,7 +313,16 @@
     "emptyTitle": "Aún no hay nada aquí.",
     "emptySub": "Prueba la otra fuente, o regresa pronto.",
     "loadingLibrary": "Abriendo la biblioteca…",
-    "readAtSource": "Leer en la fuente →"
+    "readAtSource": "Leer en la fuente →",
+    "readAtSourceName": "Leer en {source} →",
+    "readMore": "Leer →",
+    "scrollBack": "Desplazar {pillar} hacia atrás",
+    "scrollForward": "Desplazar {pillar} hacia adelante",
+    "stripAria": "Tira de artículos de {pillar}",
+    "carouselAria": "Artículos de {pillar}",
+    "slideAria": "{index} de {total}",
+    "seeAllAria": "Ver los {count} artículos de {pillar}",
+    "closeReader": "Cerrar ×"
   },
   "resources": {
     "eyebrow": "Curado",

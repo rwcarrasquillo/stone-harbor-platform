@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
@@ -217,7 +218,12 @@ function FeedCard({
   const isDusk = theme === "dusk";
   const meta = PILLAR_META[item.pillar];
   const isExternal = item.kind === "external";
-  const sourceBadge = isExternal ? item.source_name : "Stone Harbor Original";
+  const tCard = useTranslations("membersBlog");
+  const tPillar = useTranslations("pillar");
+  const pillarLabel = tPillar(item.pillar);
+  const sourceBadge = isExternal
+    ? item.source_name
+    : tCard("stoneHarborOriginal");
   const date = feedDate(item);
 
   const content = (
@@ -244,7 +250,7 @@ function FeedCard({
               strokeWidth={1.5}
               style={{ color: meta.accent }}
             />
-            {meta.label}
+            {pillarLabel}
           </span>
           <span
             className="border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em]"
@@ -297,7 +303,9 @@ function FeedCard({
             className="text-xs font-bold uppercase tracking-[0.22em]"
             style={{ color: meta.accent }}
           >
-            {isExternal ? `Read at ${item.source_name} →` : "Read →"}
+            {isExternal
+              ? tCard("readAtSourceName", { source: item.source_name })
+              : tCard("readMore")}
           </span>
         </div>
       </div>
@@ -346,7 +354,12 @@ function HeroCard({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
   const isDusk = theme === "dusk";
   const meta = PILLAR_META[item.pillar];
   const isExternal = item.kind === "external";
-  const sourceBadge = isExternal ? item.source_name : "Stone Harbor Original";
+  const tCard = useTranslations("membersBlog");
+  const tPillar = useTranslations("pillar");
+  const pillarLabel = tPillar(item.pillar);
+  const sourceBadge = isExternal
+    ? item.source_name
+    : tCard("stoneHarborOriginal");
   const date = feedDate(item);
 
   const inner = (
@@ -383,7 +396,7 @@ function HeroCard({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
               strokeWidth={1.5}
               style={{ color: meta.accent }}
             />
-            {meta.label}
+            {pillarLabel}
           </span>
           <span
             className="border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
@@ -410,7 +423,7 @@ function HeroCard({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
             {sourceBadge}
           </span>
           <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
-            Featured
+            {tCard("featured")}
           </span>
         </div>
         <h2
@@ -439,7 +452,9 @@ function HeroCard({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
             className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em]"
             style={{ color: meta.accent }}
           >
-            {isExternal ? `Read at ${item.source_name} →` : "Read this →"}
+            {isExternal
+              ? tCard("readAtSourceName", { source: item.source_name })
+              : tCard("readMore")}
           </span>
         </div>
       </div>
@@ -470,6 +485,8 @@ function HeroCard({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
    ────────────────────────────────────────────── */
 
 export default function NewMembersBlogPage() {
+  const t = useTranslations("membersBlog");
+  const tPillar = useTranslations("pillar");
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
 
@@ -711,7 +728,7 @@ export default function NewMembersBlogPage() {
           <p
             className={`${serif.className} mt-8 text-2xl italic text-[var(--sh-text-secondary)]`}
           >
-            Opening the library…
+            {t("loadingLibrary")}
           </p>
         </div>
       </main>
@@ -743,13 +760,13 @@ export default function NewMembersBlogPage() {
             <div className="flex items-center gap-2">
               <Book size={14} className="text-[#a9793d]" />
               <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d]">
-                Members Library
+                {t("eyebrow")}
               </p>
             </div>
             <h1
               className={`${serif.className} mt-2 text-4xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-5xl`}
             >
-              Read.
+              {t("title")}
             </h1>
           </div>
           <p
@@ -761,7 +778,7 @@ export default function NewMembersBlogPage() {
               strokeWidth={1.5}
               style={{ color: stageMeta.accent }}
             />
-            Your path: {stageMeta.label}
+            {t("yourPath", { pillar: tPillar(userStage) })}
           </p>
         </motion.div>
 
@@ -773,11 +790,11 @@ export default function NewMembersBlogPage() {
             mid-session and a permanent band added visual noise. */}
         <div className="mb-10 flex items-center gap-2">
           <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-text-muted)]">
-            Source
+            {t("sourceLabel")}
           </span>
           <div
             role="radiogroup"
-            aria-label="Filter by source"
+            aria-label={t("sourceLabel")}
             className={`inline-flex border ${
               isDusk
                 ? "border-white/12 bg-white/[0.03]"
@@ -786,9 +803,9 @@ export default function NewMembersBlogPage() {
           >
             {(
               [
-                { value: "all", label: "Both" },
-                { value: "internal", label: "Stone Harbor" },
-                { value: "external", label: "Trusted Sources" },
+                { value: "all", labelKey: "sourceBoth" },
+                { value: "internal", labelKey: "sourceInternal" },
+                { value: "external", labelKey: "sourceExternal" },
               ] as const
             ).map((opt) => {
               const isActive = sourceMode === opt.value;
@@ -813,7 +830,7 @@ export default function NewMembersBlogPage() {
                       : "transparent",
                   }}
                 >
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </button>
               );
             })}
@@ -830,10 +847,10 @@ export default function NewMembersBlogPage() {
             }`}
           >
             <p className={`${serif.className} text-3xl italic text-[var(--sh-text-secondary)]`}>
-              Nothing here yet.
+              {t("emptyTitle")}
             </p>
             <p className="mt-2 text-sm text-[var(--sh-text-tertiary)]">
-              Try the other source, or come back soon.
+              {t("emptySub")}
             </p>
           </div>
         )}
@@ -863,6 +880,10 @@ export default function NewMembersBlogPage() {
         {pillarSections.map((section) => {
           if (section.total === 0) return null;
           const meta = PILLAR_META[section.pillar];
+          // Use the shared pillar namespace for the label so chrome
+          // flips with the interface language; PILLAR_META.label stays
+          // as a structural fallback.
+          const pillarLabel = tPillar(section.pillar);
           const isYours = section.pillar === userStage;
           const isExpanded = expandedPillar === section.pillar;
           // Strip "slides" include all items in date order PLUS a
@@ -883,7 +904,7 @@ export default function NewMembersBlogPage() {
               transition={{ duration: 0.5 }}
               className="mb-14"
               aria-roledescription="carousel"
-              aria-label={`${meta.label} articles`}
+              aria-label={t("carouselAria", { pillar: pillarLabel })}
             >
               {/* Pillar header */}
               <div className="mb-5 flex items-end justify-between border-b border-[var(--sh-border-medium)] pb-3">
@@ -896,7 +917,7 @@ export default function NewMembersBlogPage() {
                   <h2
                     className={`${serif.className} text-3xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
                   >
-                    {meta.label}
+                    {pillarLabel}
                   </h2>
                   {isYours && (
                     <span
@@ -906,7 +927,7 @@ export default function NewMembersBlogPage() {
                         color: meta.accent,
                       }}
                     >
-                      Your Path
+                      {t("yourPathBadge")}
                     </span>
                   )}
                 </div>
@@ -925,7 +946,7 @@ export default function NewMembersBlogPage() {
                         type="button"
                         onClick={() => scrollStrip(section.pillar, "left")}
                         disabled={activeIdx === 0}
-                        aria-label={`Scroll ${meta.label} backward`}
+                        aria-label={t("scrollBack", { pillar: pillarLabel })}
                         className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
                           isDusk
                             ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
@@ -938,7 +959,7 @@ export default function NewMembersBlogPage() {
                         type="button"
                         onClick={() => scrollStrip(section.pillar, "right")}
                         disabled={activeIdx >= totalSlides - 1}
-                        aria-label={`Scroll ${meta.label} forward`}
+                        aria-label={t("scrollForward", { pillar: pillarLabel })}
                         className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
                           isDusk
                             ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
@@ -955,8 +976,8 @@ export default function NewMembersBlogPage() {
                     className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)] transition hover:text-[var(--sh-accent-gold)]"
                   >
                     {isExpanded
-                      ? "Collapse ↑"
-                      : `See all in ${meta.label} (${section.total}) →`}
+                      ? t("collapse")
+                      : t("seeAll", { pillar: pillarLabel, count: section.total })}
                   </button>
                 </div>
               </div>
@@ -974,7 +995,7 @@ export default function NewMembersBlogPage() {
                             className="text-[10px] font-bold uppercase tracking-[0.28em]"
                             style={{ color: meta.accent }}
                           >
-                            From Trusted Sources
+                            {t("fromTrustedSources")}
                           </span>
                           <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
                             · {section.external.length}
@@ -1000,7 +1021,7 @@ export default function NewMembersBlogPage() {
                             className="text-[10px] font-bold uppercase tracking-[0.28em]"
                             style={{ color: meta.accent }}
                           >
-                            Stone Harbor Original
+                            {t("stoneHarborOriginal")}
                           </span>
                           <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
                             · {section.internal.length}
@@ -1029,7 +1050,7 @@ export default function NewMembersBlogPage() {
                     }}
                     onScroll={handleStripScroll(section.pillar)}
                     role="region"
-                    aria-label={`${meta.label} articles strip`}
+                    aria-label={t("stripAria", { pillar: pillarLabel })}
                     tabIndex={0}
                     className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] md:-mx-0 md:px-0 [&::-webkit-scrollbar]:hidden"
                     style={{ scrollPaddingLeft: "1rem" }}
@@ -1039,7 +1060,7 @@ export default function NewMembersBlogPage() {
                         key={feedId(it)}
                         role="group"
                         aria-roledescription="slide"
-                        aria-label={`${idx + 1} of ${totalSlides}`}
+                        aria-label={t("slideAria", { index: idx + 1, total: totalSlides })}
                         className="w-[78%] shrink-0 snap-start sm:w-[46%] md:w-[32%] lg:w-[28%]"
                       >
                         <FeedCard
@@ -1054,7 +1075,7 @@ export default function NewMembersBlogPage() {
                     <button
                       type="button"
                       onClick={() => togglePillar(section.pillar)}
-                      aria-label={`See all ${section.total} articles in ${meta.label}`}
+                      aria-label={t("seeAllAria", { count: section.total, pillar: pillarLabel })}
                       className={`group flex w-[78%] shrink-0 snap-start flex-col items-center justify-center border border-dashed p-8 text-center transition sm:w-[46%] md:w-[32%] lg:w-[28%] ${
                         isDusk
                           ? "border-white/15 bg-white/[0.02] hover:border-[var(--sh-accent-gold)]/60 hover:bg-white/[0.05]"
@@ -1065,16 +1086,16 @@ export default function NewMembersBlogPage() {
                         className="text-[10px] font-bold uppercase tracking-[0.28em]"
                         style={{ color: meta.accent }}
                       >
-                        See all in {meta.label}
+                        {t("seeAllShort", { pillar: pillarLabel })}
                       </span>
                       <span
                         className={`${serif.className} mt-3 text-3xl italic text-[var(--sh-text-secondary)]`}
                       >
                         {section.total}{" "}
-                        {section.total === 1 ? "piece" : "pieces"}
+                        {section.total === 1 ? t("piece") : t("pieces")}
                       </span>
                       <span className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)] transition group-hover:text-[var(--sh-accent-gold)]">
-                        Open full view →
+                        {t("openFullView")}
                       </span>
                     </button>
                   </div>
@@ -1136,7 +1157,7 @@ export default function NewMembersBlogPage() {
                   : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-secondary)]"
               }`}
             >
-              Close ×
+              {t("closeReader")}
             </button>
             <VisualSlot
               pillar={openItem.pillar}
@@ -1155,7 +1176,7 @@ export default function NewMembersBlogPage() {
                       : "#ffffff",
                   }}
                 >
-                  {PILLAR_META[openItem.pillar].label}
+                  {tPillar(openItem.pillar)}
                 </span>
                 <span
                   className="border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
@@ -1167,7 +1188,7 @@ export default function NewMembersBlogPage() {
                       : "#fbf6ec",
                   }}
                 >
-                  Stone Harbor Original
+                  {t("stoneHarborOriginal")}
                 </span>
                 <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
                   {formatDate(feedDate(openItem))}
