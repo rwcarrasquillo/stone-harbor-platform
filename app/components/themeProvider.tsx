@@ -76,7 +76,20 @@ function writeCookie(theme: Theme) {
   // SameSite=Lax + path=/ so the cookie is sent on all same-origin
   // navigations. Not HttpOnly because we need to read it on the
   // client too. Theme preference isn't a security-sensitive value.
-  document.cookie = `${COOKIE_NAME}=${theme}; path=/; max-age=${COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
+  //
+  // Domain scoping: in production we set Domain=.stoneharbor.app so
+  // the cookie is shared across the apex (stoneharbor.app) and the
+  // www subdomain (www.stoneharbor.app). Without this, a theme set
+  // on one host wasn't sent to the other and the server defaulted
+  // back to Sunlit — the "theme reverts on first paint" bug
+  // reported 2026-05-31. In development we let the browser scope to
+  // the exact host (localhost / dev preview URLs) since those don't
+  // share a base domain.
+  const isProd =
+    typeof window !== "undefined" &&
+    window.location.hostname.endsWith("stoneharbor.app");
+  const domainClause = isProd ? "; domain=.stoneharbor.app" : "";
+  document.cookie = `${COOKIE_NAME}=${theme}; path=/; max-age=${COOKIE_MAX_AGE_SECONDS}; samesite=lax${domainClause}`;
 }
 
 function readCookie(): Theme | null {
@@ -131,7 +144,19 @@ export function ThemeProvider({
 
     const existingCookie = readCookie();
     if (existingCookie) {
-      // Cookie is the source of truth for this device. Stop here.
+      // Cookie is the source of truth for this device. If the value
+      // we read on the client differs from the initialTheme prop the
+      // server passed in (can happen when the cookie was set on a
+      // different host than the one this request came through, or
+      // when the server failed to read the cookie for any reason),
+      // bring the in-memory state into alignment with the cookie.
+      // Without this reconciliation, the page paints in the wrong
+      // theme until something else forces a fresh server render —
+      // the "Sunlit on first paint, Dusk after language flip" bug
+      // reported 2026-05-31.
+      if (existingCookie !== theme) {
+        setThemeState(existingCookie);
+      }
       setIsLoading(false);
       return;
     }
