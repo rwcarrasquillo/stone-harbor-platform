@@ -301,26 +301,29 @@
     "pieces": "pieces"
   },
   "roadmap": {
-    "eyebrow": "Your Path",
-    "title": "What's ahead.",
-    "subtitle": "Stone Harbor unfolds slowly. New doors open as you keep showing up. Here is the shape of the path.",
-    "now": "Now",
-    "soon": "Soon",
-    "later": "Later",
-    "day": "Day {n}",
-    "dayRange": "Day {a}–{b}",
-    "openNow": "Open now",
-    "locked": "Locked",
-    "unlocksIn": "Unlocks in {days} days",
-    "phases": {
-      "discovery": "Discovery",
-      "discoverySub": "The first days. Naming what happened.",
-      "ground": "Ground",
-      "groundSub": "Building the floor under you.",
-      "lineage": "Lineage",
-      "lineageSub": "The people who shaped you.",
-      "brotherhood": "Brotherhood",
-      "brotherhoodSub": "Quiet company for the way forward."
+    "eyebrow": "Recovery Roadmap",
+    "title": "Your path.",
+    "subtitle": "Three stages. Five steps each. Move at your pace. Mark what you've done.",
+    "yoursBadge": "Yours",
+    "stageBlurb": {
+      "clarity": "Name the storm. Trust your perception again.",
+      "calm": "Steady your nervous system. Reclaim your peace.",
+      "strength": "Rebuild structure, boundaries, identity."
+    },
+    "statsCountOf": "{completed} of {total}",
+    "emptyStage": "No steps in this stage yet.",
+    "completed": "✓ Completed",
+    "upNext": "Up Next",
+    "completedOn": "Completed {date}",
+    "undo": "Undo",
+    "undoing": "Undoing…",
+    "markComplete": "Mark Complete",
+    "marking": "Marking…",
+    "pathComplete": "The {stage} path is complete.",
+    "pathCompleteSub": "Sit with that for a moment. The work was yours.",
+    "toast": {
+      "markFailed": "Couldn't mark that step as complete. Try again.",
+      "undoFailed": "Couldn't undo that step. Try again."
     }
   },
   "welcome": {

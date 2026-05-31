@@ -301,26 +301,29 @@
     "pieces": "piezas"
   },
   "roadmap": {
-    "eyebrow": "Tu Camino",
-    "title": "Lo que viene.",
-    "subtitle": "Stone Harbor se abre lentamente. Nuevas puertas se abren mientras sigues llegando. Esta es la forma del camino.",
-    "now": "Ahora",
-    "soon": "Pronto",
-    "later": "Después",
-    "day": "Día {n}",
-    "dayRange": "Día {a}–{b}",
-    "openNow": "Abrir ahora",
-    "locked": "Bloqueado",
-    "unlocksIn": "Se desbloquea en {days} días",
-    "phases": {
-      "discovery": "Descubrimiento",
-      "discoverySub": "Los primeros días. Nombrar lo que pasó.",
-      "ground": "Tierra firme",
-      "groundSub": "Construir el piso bajo tus pies.",
-      "lineage": "Linaje",
-      "lineageSub": "Las personas que te formaron.",
-      "brotherhood": "Hermandad",
-      "brotherhoodSub": "Compañía silenciosa para seguir adelante."
+    "eyebrow": "Hoja De Recuperación",
+    "title": "Tu camino.",
+    "subtitle": "Tres etapas. Cinco pasos cada una. Avanza a tu ritmo. Marca lo que ya hiciste.",
+    "yoursBadge": "El Tuyo",
+    "stageBlurb": {
+      "clarity": "Nombra la tormenta. Vuelve a confiar en lo que percibes.",
+      "calm": "Asienta tu sistema nervioso. Recupera tu paz.",
+      "strength": "Reconstruye estructura, límites, identidad."
+    },
+    "statsCountOf": "{completed} de {total}",
+    "emptyStage": "Aún no hay pasos en esta etapa.",
+    "completed": "✓ Completado",
+    "upNext": "Sigue",
+    "completedOn": "Completado el {date}",
+    "undo": "Deshacer",
+    "undoing": "Deshaciendo…",
+    "markComplete": "Marcar Completado",
+    "marking": "Marcando…",
+    "pathComplete": "El camino de {stage} está completo.",
+    "pathCompleteSub": "Tómate un momento. El trabajo fue tuyo.",
+    "toast": {
+      "markFailed": "No pude marcar ese paso. Inténtalo de nuevo.",
+      "undoFailed": "No pude deshacer ese paso. Inténtalo de nuevo."
     }
   },
   "welcome": {

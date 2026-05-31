@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ComponentType } from "react";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
@@ -77,6 +78,8 @@ function formatDate(value: string) {
 }
 
 export default function RoadmapPage() {
+  const t = useTranslations("roadmap");
+  const tPillar = useTranslations("pillar");
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
 
@@ -278,17 +281,16 @@ export default function RoadmapPage() {
           <div className="flex items-center gap-2">
             <RoadmapIcon size={16} className="text-[#a9793d]" />
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d]">
-              Recovery Roadmap
+              {t("eyebrow")}
             </p>
           </div>
           <h1
             className={`${serif.className} mt-4 text-5xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-7xl`}
           >
-            Your path.
+            {t("title")}
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-[var(--sh-text-secondary)]">
-            Three stages. Five steps each. Move at your pace. Mark what
-            you&apos;ve done.
+            {t("subtitle")}
           </p>
         </motion.div>
 
@@ -299,7 +301,11 @@ export default function RoadmapPage() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="mb-8 grid gap-3 sm:grid-cols-3"
         >
-          {stages.map(({ value, label, accent, Icon }) => {
+          {stages.map(({ value, accent, Icon }) => {
+            // Use the shared pillar namespace so the chrome flips
+            // with the interface language; PILLAR_META.label stays
+            // as a structural fallback.
+            const label = tPillar(value);
             const stats = stageStats.get(value) ?? {
               total: 0,
               completed: 0,
@@ -325,7 +331,7 @@ export default function RoadmapPage() {
                     className="absolute -right-2 -top-2 z-10 border bg-[#f3efe7] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.22em]"
                     style={{ borderColor: accent, color: accent }}
                   >
-                    Yours
+                    {t("yoursBadge")}
                   </span>
                 )}
                 <div className="flex items-center gap-2">
@@ -345,7 +351,10 @@ export default function RoadmapPage() {
                     {stats.percent}%
                   </span>
                   <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
-                    {stats.completed} of {stats.total}
+                    {t("statsCountOf", {
+                      completed: stats.completed,
+                      total: stats.total,
+                    })}
                   </span>
                 </div>
                 <div className="mt-3 h-[3px] w-full bg-stone-200">
@@ -362,7 +371,7 @@ export default function RoadmapPage() {
           })}
         </motion.div>
 
-        {/* ACTIVE STAGE BLURB */}
+        {/* ACTIVE STAGE BLURB — localized via roadmap.stageBlurb.* */}
         {activeMeta && (
           <motion.p
             key={activeStage}
@@ -371,7 +380,10 @@ export default function RoadmapPage() {
             transition={{ duration: 0.4 }}
             className={`${serif.className} mb-8 text-xl italic text-[var(--sh-text-secondary)] md:text-2xl`}
           >
-            {activeMeta.blurb}
+            {t(`stageBlurb.${activeStage}` as
+              | "stageBlurb.clarity"
+              | "stageBlurb.calm"
+              | "stageBlurb.strength")}
           </motion.p>
         )}
 
@@ -384,7 +396,7 @@ export default function RoadmapPage() {
                 : "border-[var(--sh-border-subtle)] bg-white"
             }`}
           >
-            No steps in this stage yet.
+            {t("emptyStage")}
           </div>
         ) : (
           <div className="space-y-3">
@@ -422,14 +434,14 @@ export default function RoadmapPage() {
                             className="text-[10px] font-bold uppercase tracking-[0.22em]"
                             style={{ color: activeAccent }}
                           >
-                            ✓ Completed
+                            {t("completed")}
                           </span>
                         ) : isNext ? (
                           <span
                             className="text-[10px] font-bold uppercase tracking-[0.22em]"
                             style={{ color: activeAccent }}
                           >
-                            Up Next
+                            {t("upNext")}
                           </span>
                         ) : null}
                       </div>
@@ -445,7 +457,7 @@ export default function RoadmapPage() {
                       )}
                       {completedAt && (
                         <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
-                          Completed {formatDate(completedAt)}
+                          {t("completedOn", { date: formatDate(completedAt) })}
                         </p>
                       )}
                     </div>
@@ -457,7 +469,7 @@ export default function RoadmapPage() {
                           disabled={isBusy}
                           className="rounded-none border border-[var(--sh-border-medium)] px-5 py-3 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition hover:border-red-300 hover:text-red-600 disabled:opacity-60"
                         >
-                          {isBusy ? "Undoing…" : "Undo"}
+                          {isBusy ? t("undoing") : t("undo")}
                         </button>
                       ) : (
                         <button
@@ -471,7 +483,7 @@ export default function RoadmapPage() {
                           }}
                         >
                           <span className="relative z-10">
-                            {isBusy ? "Marking…" : "Mark Complete"}
+                            {isBusy ? t("marking") : t("markComplete")}
                           </span>
                           <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-white/60 transition-all duration-500 group-hover:w-full" />
                         </button>
@@ -502,10 +514,10 @@ export default function RoadmapPage() {
                 className={`${serif.className} text-3xl italic md:text-4xl`}
                 style={{ color: activeAccent }}
               >
-                The {activeStage} path is complete.
+                {t("pathComplete", { stage: tPillar(activeStage) })}
               </p>
               <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-                Sit with that for a moment. The work was yours.
+                {t("pathCompleteSub")}
               </p>
             </motion.div>
           )}
