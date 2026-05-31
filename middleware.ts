@@ -1,31 +1,72 @@
 import createMiddleware from "next-intl/middleware";
+import { NextRequest, NextResponse } from "next/server";
 import { routing } from "@/i18n/routing";
 
 /**
  * Stone Harbor — locale middleware.
  *
- * NOTE: Next.js 16 deprecated the `middleware` file convention in
- * favor of `proxy`. The same logic is duplicated in `proxy.ts`. As
- * soon as the host filesystem allows it, delete `proxy.ts` and live
- * with the deprecation warning until you can also delete this file,
- * OR delete this file and keep `proxy.ts` (preferred). The current
- * environment only allows one of those files to be present at a
- * time; until the conflict is resolved, this file is the source of
- * truth and the dev server emits a non-blocking deprecation warning.
+ * Stone Harbor uses a hybrid routing model:
+ *   - Phase 1 pages live under app/[locale]/* and carry an explicit
+ *     locale segment in the URL (e.g. /en/login, /es/map). next-intl
+ *     handles these.
+ *   - Phase 2 pages live at the root (/dashboard, /journal, etc.) and
+ *     resolve locale at request time from the NEXT_LOCALE cookie,
+ *     read in i18n/request.ts. No locale segment in the URL.
  *
- * Inspects each request and:
- *   • If the URL already carries a locale segment (`/es/...`), serves
- *     it as-is.
- *   • If the URL is unprefixed and matches an internationalized route,
- *     redirects to the default locale.
- *   • Sets a NEXT_LOCALE cookie so repeat visits respect the user's
- *     last viewed locale.
+ * Without this guard, a request to a Phase 2 path WITH a locale
+ * prefix — e.g. someone bookmarks or types /es/roadmap — flows
+ * through next-intl's middleware which tries to render
+ * app/[locale]/roadmap/page.tsx, which doesn't exist, and the user
+ * lands on the 404 ("Not part of the harbor") page.
  *
- * The matcher restricts middleware to the routes that participate in
- * internationalization. Everything outside that set — /dashboard,
- * /journal, /api, static assets — is untouched.
+ * Fix: detect /(en|es)/<phase-2-page> in the middleware and 308
+ * redirect to the unprefixed canonical path. Locale resolution still
+ * works (the NEXT_LOCALE cookie carries the user's preference) and
+ * the URL the member shares is always the canonical one.
+ *
+ * The list of Phase 2 pages is hand-maintained here. Adding a new
+ * authenticated page that lives outside [locale] means appending its
+ * top-level segment to PHASE_2_PAGES below.
  */
-export default createMiddleware(routing);
+const PHASE_2_PAGES = new Set([
+  "dashboard",
+  "journal",
+  "messages",
+  "members-blog",
+  "resources",
+  "roadmap",
+  "welcome",
+  "meditation",
+  "vent",
+  "founder",
+  "admin", // legacy admin redirect — keep until /admin is fully removed
+  "admins", // admin-group management lives at /admins
+  "audit-log",
+  "media",
+  "prompts",
+  "security",
+  "settings",
+  "tests",
+  "external",
+  "moderation",
+]);
+
+const intlMiddleware = createMiddleware(routing);
+
+export default function middleware(request: NextRequest): NextResponse {
+  const { pathname } = request.nextUrl;
+  const match = pathname.match(/^\/(en|es)\/([^/]+)/);
+  if (match && PHASE_2_PAGES.has(match[2])) {
+    // Strip the locale prefix and 308-redirect to the canonical URL.
+    // The NEXT_LOCALE cookie already carries the user's preference;
+    // the redirect doesn't lose locale state.
+    const stripped = pathname.replace(/^\/(en|es)/, "");
+    const url = request.nextUrl.clone();
+    url.pathname = stripped;
+    return NextResponse.redirect(url, 308);
+  }
+  return intlMiddleware(request);
+}
 
 export const config = {
   matcher: [
