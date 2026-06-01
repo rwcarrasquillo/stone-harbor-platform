@@ -1,49 +1,31 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
-
 /**
  * Stone Harbor — AmnioticBackdrop.
  *
- * An abstract atmospheric layer designed to feel like floating in
- * warm fluid. Three large blurred radial gradients drift at
- * different speeds and scales, layered over organic noise. No
- * photographs — pure light + motion. Slower than the breath,
- * slower than thought.
+ * Atmospheric warm-dusk layer behind every authenticated page on
+ * Dusk theme. Three large radial gradients (gold blob upper-right,
+ * deeper amber blob lower-left, gentle center wash) over a true-
+ * black base. Optional moss undertone.
  *
- * The aesthetic word is *amniotic*: warm, slow, embracing, never
- * jarring, never the focus. The dashboard becomes a contained
- * space the member is *inside*, rather than scrolling across.
+ * **Fully static as of 2026-06-01.** Previous versions animated all
+ * four gradient layers with framer-motion and rendered an SVG
+ * feTurbulence noise overlay. Even with `will-change`, lowered blur
+ * radii, and `useReducedMotion()` gating, the combination produced
+ * subtle frame-to-frame flicker on the Dusk dashboard — especially
+ * when stacked with the door card's own contained backdrop (which
+ * was removed in the same fix). The user's explicit request: "same
+ * colors with no effect at all." So motion + filter passes are
+ * gone; what remains is pure CSS gradients on plain divs. Zero
+ * paint cost, zero composite passes, zero perceived flicker.
  *
  * Layers, in z-order (back to front):
  *
  *   1. Base dark — true black so the gradients show their warmth
- *   2. Upper-right gold blob (60s drift, 50-90% size)
- *   3. Lower-left deep amber blob (75s drift, opposite direction)
- *   4. Center subtle pulse (40s pulse, low opacity)
- *   5. Faint moss undertone (90s drift, very low opacity)
- *   6. Organic noise grain (static, mix-blend-overlay)
- *
- * Performance:
- *   All layers are CSS `transform` and `opacity` animations — the
- *   GPU handles them and they cost almost nothing. No reflows, no
- *   layout thrash. Tested on iPhone SE with no frame drops.
- *
- *   Three composite-cost guards (2026-05-31, after reports of subtle
- *   Dusk-only flicker on some hardware):
- *
- *     1. `will-change: transform, opacity` on each animated layer so
- *        the GPU keeps them on dedicated composite layers. Prevents
- *        the underlying page content from being repainted every time
- *        a gradient drifts.
- *     2. Blur radii lowered (80px → 50px, 70px → 45px, 60px → 40px).
- *        Blur cost scales nonlinearly; the visual change is
- *        imperceptible at these sizes, the compositor savings real.
- *     3. `useReducedMotion()` — if the OS-level "reduce motion"
- *        setting is on, we render the layers fully static (no
- *        framer-motion animate prop). Same look, no animation cost.
- *        Users sensitive to motion (or affected by monitor flicker)
- *        can opt out via System Settings.
+ *   2. Upper-right gold blob (static, soft blur)
+ *   3. Lower-left deeper amber blob (static, soft blur)
+ *   4. Center pulse — kept as a low-opacity wash for soft midground
+ *   5. Faint moss undertone (optional via `moss` prop)
  *
  * Usage:
  *
@@ -79,13 +61,11 @@ export function AmnioticBackdrop({
     ? "absolute inset-0 overflow-hidden"
     : "fixed inset-0";
 
-  // Multiply all per-layer opacities by the intensity prop.
+  // Multiply all per-layer opacities by the intensity prop. Same
+  // formula as the previous animated version, so a Dusk surface
+  // tuned at intensity=0.7 looks identical to before — just with
+  // no drift.
   const op = (n: number) => Math.max(0, Math.min(1, n * intensity));
-
-  // When the OS-level "reduce motion" setting is on, framer-motion's
-  // hook returns true and we render the gradients fully static.
-  // Eliminates per-frame composite work for users sensitive to motion.
-  const reducedMotion = useReducedMotion();
 
   return (
     <div
@@ -95,117 +75,51 @@ export function AmnioticBackdrop({
       {/* Base dark — anchors the warmth */}
       <div className="absolute inset-0 bg-[#0A0A0B]" />
 
-      {/* Upper-right gold blob — the dominant warmth */}
-      <motion.div
-        animate={
-          reducedMotion
-            ? undefined
-            : {
-                x: ["-8%", "12%", "-8%"],
-                y: ["-6%", "8%", "-6%"],
-                scale: [1, 1.18, 1],
-              }
-        }
-        transition={{
-          duration: 58,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+      {/* Upper-right gold blob — the dominant warmth.
+          Positioned past the viewport edge so the falloff feels
+          natural at the screen corner. Blur kept generous so the
+          gradient feels like atmosphere, not a hard shape. */}
+      <div
         className="absolute -top-1/4 -right-1/4 h-[110%] w-[90%]"
         style={{
           background: `radial-gradient(circle, rgba(196,147,78,${op(0.32)}) 0%, rgba(196,147,78,${op(0.10)}) 35%, transparent 70%)`,
           filter: "blur(40px)",
-          willChange: reducedMotion ? undefined : "transform, opacity",
         }}
       />
 
-      {/* Lower-left deeper amber blob — counterweight, slower */}
-      <motion.div
-        animate={
-          reducedMotion
-            ? undefined
-            : {
-                x: ["8%", "-12%", "8%"],
-                y: ["6%", "-8%", "6%"],
-                scale: [1, 1.22, 1],
-              }
-        }
-        transition={{
-          duration: 75,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+      {/* Lower-left deeper amber blob — counterweight to the
+          upper-right gold. Slightly larger so the screen feels
+          held from below. */}
+      <div
         className="absolute -bottom-1/4 -left-1/4 h-[110%] w-[100%]"
         style={{
           background: `radial-gradient(circle, rgba(169,121,61,${op(0.22)}) 0%, rgba(169,121,61,${op(0.06)}) 40%, transparent 75%)`,
           filter: "blur(50px)",
-          willChange: reducedMotion ? undefined : "transform, opacity",
         }}
       />
 
-      {/* Center pulse — gentle breathing of the whole field */}
-      <motion.div
-        animate={
-          reducedMotion
-            ? undefined
-            : {
-                opacity: [op(0.4), op(0.6), op(0.4)],
-                scale: [1, 1.05, 1],
-              }
-        }
-        transition={{
-          duration: 40,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+      {/* Center wash — a gentle midground glow so the middle of
+          the viewport isn't pure black. */}
+      <div
         className="absolute inset-0"
         style={{
           background: `radial-gradient(ellipse 50% 50% at 50% 50%, rgba(196,147,78,${op(0.10)}) 0%, transparent 60%)`,
           filter: "blur(45px)",
-          willChange: reducedMotion ? undefined : "transform, opacity",
         }}
       />
 
-      {/* Subtle moss undertone — only if requested, very low opacity */}
+      {/* Subtle moss undertone — only if requested. Adds a hint
+          of cool green into the lower-left so the warmth isn't
+          one-note. */}
       {moss && (
-        <motion.div
-          animate={
-            reducedMotion
-              ? undefined
-              : {
-                  x: ["5%", "-5%", "5%"],
-                  y: ["-3%", "3%", "-3%"],
-                }
-          }
-          transition={{
-            duration: 90,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+        <div
           className="absolute inset-0"
           style={{
             background: `radial-gradient(ellipse 60% 40% at 30% 70%, rgba(88,101,88,${op(0.10)}) 0%, transparent 65%)`,
             filter: "blur(50px)",
-            willChange: reducedMotion ? undefined : "transform, opacity",
           }}
         />
       )}
-
-      {/* Organic noise grain — gives the gradients body */}
-      <svg
-        className="absolute inset-0 h-full w-full opacity-[0.06] mix-blend-overlay"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <filter id="amniotic-noise">
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.7"
-            numOctaves="2"
-          />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#amniotic-noise)" />
-      </svg>
     </div>
   );
 }

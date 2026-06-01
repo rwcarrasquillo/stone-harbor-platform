@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { resolveMediaUrls } from "@/lib/mediaResolver";
 
 /**
  * Stone Harbor — RotatingNatureBackdrop.
@@ -12,20 +13,31 @@ import { motion, AnimatePresence } from "framer-motion";
  * underneath text content as ambient depth, not as the dominant
  * visual.
  *
- * Why a reusable component:
- *   The pattern landed first on /start-here. Repeating the same
- *   AnimatePresence + interval + mist-plume markup inline at every
- *   call site would be brittle and noisy. Centralizing it here means
- *   future pages get the same brand-aligned motion in one prop call.
+ * The image set comes from one of two sources:
  *
- * Usage:
- *   <div className="relative ... your-card-styles ...">
- *     <RotatingNatureBackdrop
- *       images={["/calm-lake.png", "/mountain-dawn.png"]}
- *       opacity={0.12}
- *     />
- *     ... your card content (which sits above the backdrop) ...
- *   </div>
+ *   - If an `area` prop is provided, the component fetches active
+ *     media_assets rows where (kind='background', area=<area>) and
+ *     cycles those. Admins manage the rotation in the /media admin
+ *     page; changes show up on next page load. This is the Phase 2
+ *     resolver pattern.
+ *
+ *   - The `images` array prop acts as a fallback / legacy. If the
+ *     catalog returns empty (e.g., during development before a seed
+ *     migration runs, or if the resolver fails), the component uses
+ *     the hardcoded list instead. Pages that haven't been wired to
+ *     the catalog yet can just keep passing `images`.
+ *
+ * Usage with catalog binding:
+ *
+ *   <RotatingNatureBackdrop
+ *     area="dashboard"
+ *     images={FALLBACK}   // optional; used if catalog empty
+ *     opacity={0.12}
+ *   />
+ *
+ * Usage with explicit images only (legacy / not-yet-wired pages):
+ *
+ *   <RotatingNatureBackdrop images={["/calm-lake.png", ...]} />
  *
  * The component is absolutely positioned (`inset-0`) and
  * `pointer-events-none`, so it never interferes with clicks on the
@@ -39,7 +51,19 @@ import { motion, AnimatePresence } from "framer-motion";
  *   point, not the photographs themselves.
  */
 type Props = {
-  /** Image paths under /public. The component cycles through them in order. */
+  /**
+   * Optional area key for catalog-driven resolution. When set, the
+   * component fetches active media_assets rows in
+   * (kind='background', area=<this>) and uses them. If the catalog
+   * returns empty, falls back to `images`.
+   */
+  area?: string;
+  /**
+   * Image paths used directly (when `area` is not provided) OR as a
+   * fallback when the catalog returns empty. Must have at least one
+   * entry; the component will render nothing useful if both `area`
+   * resolution and this list are empty.
+   */
   images: string[];
   /** Opacity for the image layer. Default 0.14 (subtle ambient). */
   opacity?: number;
@@ -56,6 +80,7 @@ type Props = {
 };
 
 export function RotatingNatureBackdrop({
+  area,
   images,
   opacity = 0.14,
   rotationMs = 15000,
@@ -64,9 +89,41 @@ export function RotatingNatureBackdrop({
   className = "",
   imageFilter,
 }: Props) {
+  // `resolved` is the list the component actually cycles
+  // through. Starts as the fallback `images` so first paint
+  // is instant; if `area` is provided, an async fetch
+  // replaces it with the catalog's list once available. If
+  // the catalog returns empty (no active rows for that area),
+  // we keep the fallback — the page never goes blank.
+  const [resolved, setResolved] = useState<string[]>(images);
+
+  useEffect(() => {
+    if (!area) return;
+    let cancelled = false;
+    void (async () => {
+      const urls = await resolveMediaUrls("background", area);
+      if (cancelled) return;
+      // Only swap if the catalog had something. Empty result
+      // is "no rows yet, stick with the fallback" — same
+      // shape that lets unwired pages keep working before
+      // their seed migrations land.
+      if (urls.length > 0) setResolved(urls);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [area]);
+
   const [index, setIndex] = useState(0);
-  const count = images.length;
-  const activeImage = images[index] ?? images[0];
+  // Reset to first slot whenever the resolved list changes
+  // (e.g., the catalog fetch lands), so the rotation doesn't
+  // start in the middle of a list it's never seen.
+  useEffect(() => {
+    setIndex(0);
+  }, [resolved]);
+
+  const count = resolved.length;
+  const activeImage = resolved[index] ?? resolved[0];
 
   useEffect(() => {
     if (count <= 1) return;
@@ -83,7 +140,7 @@ export function RotatingNatureBackdrop({
     >
       {/* Preload all images so cross-fades have no gap */}
       <div className="hidden">
-        {images.map((src) => (
+        {resolved.map((src) => (
           <img key={src} src={src} alt="" />
         ))}
       </div>

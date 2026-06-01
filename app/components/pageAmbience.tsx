@@ -95,22 +95,13 @@ export function PageAmbience() {
         <rect width="100%" height="100%" fill="url(#page-contour)" />
       </svg>
 
-      {/* AMBIENT — paper grain across the whole page */}
-      <svg
-        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-[0.05] mix-blend-multiply"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-      >
-        <filter id="page-grain">
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.85"
-            numOctaves="2"
-          />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#page-grain)" />
-      </svg>
+      {/* Paper-grain `feTurbulence` SVG removed 2026-06-01.
+          The filter forces a fresh rasterization on every paint
+          pass and was the single most expensive composite-time
+          operation on Dusk pages — a meaningful contributor to
+          the dashboard flicker. Pure black-base + radial
+          gradient warmth from <AmnioticBackdrop /> reads as
+          atmosphere on its own without needing the noise. */}
 
       {/* AMBIENT — dawn glow in upper right, the "window of light" */}
       <div

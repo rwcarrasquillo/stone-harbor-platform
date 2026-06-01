@@ -30,7 +30,11 @@ import {
 import { tomorrowsTopic } from "@/lib/dailyPrompts";
 import { Toast, type ToastState } from "@/app/components/toast";
 import { RotatingNatureBackdrop } from "@/app/components/rotatingNatureBackdrop";
-import { AmnioticBackdrop } from "@/app/components/amnioticBackdrop";
+// AmnioticBackdrop intentionally not imported here — the
+// dashboard relies on the page-level instance rendered by
+// <PageAmbience />. See the long comment on the door-card
+// backdrop block for why stacking two caused composite
+// flicker.
 import { PageAmbience } from "@/app/components/pageAmbience";
 import {
   SmallThing,
@@ -1125,13 +1129,27 @@ export default function DashboardPage() {
                 : "border-stone-200 bg-gradient-to-br from-[#f8f4ed] via-[#f3efe7] to-[#efe8dc]"
             }`}
           >
-            {/* Card-level backdrop — contained. Dusk = amniotic warmth.
-                Sunlit = the original nature image rotation that fits
-                the cream gradient. */}
-            {isDusk ? (
-              <AmnioticBackdrop contained intensity={0.7} moss={false} />
-            ) : (
+            {/* Card-level backdrop. Sunlit renders the catalog-
+                driven nature rotation (the cream gradient needs
+                imagery to feel like a window). Dusk renders
+                NOTHING here — the card is `bg-black/35
+                backdrop-blur-xl`, and the page-level
+                AmnioticBackdrop from <PageAmbience /> shows
+                through that frosted glass naturally. A second
+                contained AmnioticBackdrop here used to stack on
+                top of the page-level one; the two layers'
+                animation cycles interpolated slightly out of
+                phase and produced subtle composite flicker
+                (the renewed-flicker fix on 2026-06-01, after
+                the will-change + blur-radius lowering on
+                2026-05-31 wasn't enough on its own). */}
+            {!isDusk && (
               <RotatingNatureBackdrop
+                // Phase 2 — `area` drives catalog lookup. The
+                // `images` prop stays as the fallback so first
+                // paint isn't blank and dev environments without
+                // the seed migration still render.
+                area="dashboard"
                 images={[
                   "/nature/alpine-lake-trees-mountains.jpg",
                   "/nature/sunrise-mountain-lake-icy-rocks.jpg",
