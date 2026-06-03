@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 const nextConfig = {
   // Internal workspace packages ship raw TypeScript source (consumed via their
   // `main`/`types` pointing at src/index.ts), so Next must transpile them.
-  transpilePackages: ["@stone-harbor/eidos"],
+  transpilePackages: ["@stone-harbor/eidos", "@stone-harbor/knowledge"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "fbqcmtcvgijlemfpncay.supabase.co", pathname: "/storage/v1/object/public/**" },

@@ -7,7 +7,7 @@ import {
   type SchwartzScores,
   type BpnsfsScores,
 } from "@stone-harbor/eidos";
-import { retrieveChunks, formatChunksForPrompt } from "@/lib/knowledge";
+import { retrieveChunks, formatChunksForPrompt } from "@stone-harbor/knowledge";
 
 /**
  * POST /api/map/generate-chapter
