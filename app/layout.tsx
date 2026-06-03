@@ -7,6 +7,7 @@ import { ServiceWorkerRegistrar } from "@/app/components/serviceWorkerRegistrar"
 import { MobileTabBar } from "@/app/components/mobileTabBar";
 import { PreviewDayBadge } from "@/app/components/previewDayBadge";
 import { MemberUsageTracker } from "@/app/components/memberUsageTracker";
+import { MarketingAnalytics } from "@/app/components/marketingAnalytics";
 import { GlobalCrisisFooter } from "@/app/components/globalCrisisFooter";
 import { ThemeProvider, type Theme } from "@/app/components/themeProvider";
 
@@ -196,6 +197,7 @@ export default async function RootLayout({
             <ServiceWorkerRegistrar />
             <PreviewDayBadge />
             <MemberUsageTracker />
+            <MarketingAnalytics />
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>
