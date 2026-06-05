@@ -50,6 +50,14 @@ const PHASE_2_PAGES = new Set([
   "tests",
   "external",
   "moderation",
+  // public root pages without [locale] counterparts — must redirect
+  // when locale-prefixed (otherwise /(en|es)/<page> falls through to
+  // next-intl and 404s on the missing app/[locale]/<page>/page.tsx)
+  "join",
+  "about",
+  "start-here",
+  "onboarding",
+  "suspended",
 ]);
 
 const intlMiddleware = createMiddleware(routing);
