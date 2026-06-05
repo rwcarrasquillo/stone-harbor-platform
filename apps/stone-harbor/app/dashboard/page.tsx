@@ -594,7 +594,7 @@ export default function DashboardPage() {
     const { data } = await supabase
       .from("profiles")
       .select(
-        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, onboarding_completed_at, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, acknowledgments_dismissed, suspended_at, created_at, lineage_door_seen_at",
+        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, onboarding_completed_at, settle_in_completed_at, settle_in_skipped_at, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, acknowledgments_dismissed, suspended_at, created_at, lineage_door_seen_at",
       )
       .eq("id", user.id)
       .single();
@@ -620,6 +620,21 @@ export default function DashboardPage() {
     // so this redirect won't loop after the first pass.
     if (data && !data.onboarding_completed_at) {
       window.location.href = "/onboarding";
+      return;
+    }
+
+    // Settle-in gate: once onboarding is done, route members through the
+    // one-time settle-in moment unless they've already completed or skipped
+    // it. Both timestamps NULL means they've done neither. Recording either
+    // settle_in_completed_at or settle_in_skipped_at clears this gate, so it
+    // won't loop after the first pass.
+    if (
+      data &&
+      data.onboarding_completed_at &&
+      !data.settle_in_completed_at &&
+      !data.settle_in_skipped_at
+    ) {
+      window.location.href = "/settle-in";
       return;
     }
 

@@ -52,6 +52,7 @@ const HIDDEN_PREFIXES = [
   "/start-here",
   "/join",
   "/onboarding",
+  "/settle-in",
   "/suspended",
   "/offline",
   "/meditation",

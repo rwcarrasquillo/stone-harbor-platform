@@ -163,6 +163,9 @@ export default function WelcomePage() {
   // `welcome.options.*` so the English value persisted to the DB stays
   // untouched while the rendered label flips locale.
   const t = useTranslations("welcome");
+  // The settle-in flow can be revisited from here; its label lives in
+  // its own namespace so the orientation copy stays in one place.
+  const tSettle = useTranslations("settleIn");
   // `currentLocale` drives the Interface Language pill row. Changing
   // it writes the NEXT_LOCALE cookie and triggers a full reload so
   // every authenticated page (Phase 2, cookie-driven) re-renders in
@@ -1379,6 +1382,19 @@ export default function WelcomePage() {
                   profiles.theme_preference on every toggle. */}
               <section className="mt-12 border-t border-[var(--sh-border-subtle)] pt-10">
                 <ThemeToggle />
+              </section>
+
+              {/* ────────── REVISIT SETTLE-IN ──────────
+                  The orientation flow is never one-and-done; a member can
+                  walk back through it any time. Revisiting does not touch
+                  settle_in_completed_at. */}
+              <section className="mt-16 border-t border-[var(--sh-border-subtle)] pt-10">
+                <Link
+                  href="/settle-in?step=1"
+                  className="text-sm font-semibold text-[var(--sh-accent-gold)] underline-offset-4 transition hover:underline"
+                >
+                  {tSettle("revisit")}
+                </Link>
               </section>
 
               {/* ────────── CLOSE ACCOUNT ──────────
