@@ -58,6 +58,13 @@ const PHASE_2_PAGES = new Set([
   "start-here",
   "onboarding",
   "suspended",
+  // public auth pages without [locale] counterparts — same fall-through
+  // 404 as above when locale-prefixed (no app/[locale]/<page>/page.tsx)
+  "register",
+  "forgot-password",
+  "reset-password",
+  "privacy",
+  "terms",
 ]);
 
 const intlMiddleware = createMiddleware(routing);
@@ -81,11 +88,16 @@ export const config = {
   matcher: [
     "/",
     "/(en|es)/:path*",
+    // /login keeps an explicit entry: it has a real app/[locale]/login
+    // page, so next-intl rendering /en/login is correct.
     "/login",
-    "/register",
-    "/forgot-password",
-    "/reset-password",
-    "/privacy",
-    "/terms",
+    // NOTE: register, forgot-password, reset-password, privacy and terms
+    // are deliberately NOT matched here. They only exist as root pages
+    // (app/<page>/page.tsx, no [locale] counterpart). With
+    // localePrefix:"always", matching the unprefixed path would make
+    // next-intl 307 it to /en/<page>, which the PHASE_2_PAGES guard then
+    // 308s back to /<page> — an infinite loop. Leaving them out of the
+    // matcher lets the canonical /<page> serve directly, while the
+    // /(en|es)/:path* entry still catches /en/<page> for the 308 strip.
   ],
 };
