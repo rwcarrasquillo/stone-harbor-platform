@@ -39,7 +39,10 @@
     "crisisLabel": "Si Estás En Crisis",
     "crisisLineStart": "Llama o envía mensaje al",
     "crisisLineEnd": "— 24/7. Gratis. Confidencial.",
-    "amplify": "Esta noche, más que la mayoría, no estás solo."
+    "amplify": "Esta noche, más que la mayoría, no estás solo.",
+    "privacy": "Privacidad",
+    "terms": "Términos",
+    "legalAria": "Enlaces legales"
   },
   "pillar": {
     "clarity": "Claridad",

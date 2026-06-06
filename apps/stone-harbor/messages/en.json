@@ -39,7 +39,10 @@
     "crisisLabel": "If You Are In Crisis",
     "crisisLineStart": "Call or text",
     "crisisLineEnd": "— 24/7. Free. Confidential.",
-    "amplify": "Tonight more than most nights, you are not alone."
+    "amplify": "Tonight more than most nights, you are not alone.",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "legalAria": "Legal links"
   },
   "pillar": {
     "clarity": "Clarity",

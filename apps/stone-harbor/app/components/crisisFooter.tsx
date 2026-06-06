@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { serif } from "@/lib/fonts";
@@ -139,12 +140,34 @@ export function CrisisFooter({ amplify988 = false }: Props) {
         </div>
       </div>
 
-      {/* Language picker — added 2026-05-31 so members on any
-          authenticated page can flip the interface language without
-          hunting for it. Lives below the main 3-column grid in its
-          own row so it doesn't crowd the 988 column. */}
-      <div className="mx-auto mt-4 flex max-w-7xl justify-center border-t border-[var(--sh-border-subtle)] pt-4 md:mt-6 md:pt-5">
+      {/* Language picker + legal links — quiet utility row below the
+          main 3-column grid. Privacy + Terms links added 2026-06-06
+          (SH-8) so the legal notices are reachable from every
+          authenticated surface, not only the /register checkbox.
+          Visually small, uppercase microcopy so they recede from the
+          988 messaging that owns the footer. */}
+      <div className="mx-auto mt-4 flex max-w-7xl flex-col items-center gap-3 border-t border-[var(--sh-border-subtle)] pt-4 md:mt-6 md:flex-row md:justify-between md:pt-5">
         <LanguagePicker />
+        <nav
+          aria-label={t("legalAria")}
+          className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]"
+        >
+          <Link
+            href="/privacy"
+            className="transition hover:text-[var(--sh-accent-gold)]"
+          >
+            {t("privacy")}
+          </Link>
+          <span aria-hidden="true" className="opacity-50">
+            ·
+          </span>
+          <Link
+            href="/terms"
+            className="transition hover:text-[var(--sh-accent-gold)]"
+          >
+            {t("terms")}
+          </Link>
+        </nav>
       </div>
     </footer>
   );

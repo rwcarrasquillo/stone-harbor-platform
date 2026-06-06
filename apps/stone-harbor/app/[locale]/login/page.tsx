@@ -372,10 +372,31 @@ export default function LoginPage() {
             </span>
           </p>
         </div>
-        {/* Language picker — quiet, footer-aligned. Switches between
-            EN and ES; the URL updates to /es/login or /login. */}
-        <div className="mx-auto mt-4 flex max-w-7xl justify-center md:mt-6">
+        {/* Language picker + legal links — quiet utility row. Privacy +
+            Terms added 2026-06-06 (SH-8) so the legal notices are
+            reachable from /login, not only from /register's checkbox. */}
+        <div className="mx-auto mt-4 flex max-w-7xl flex-col items-center gap-3 md:mt-6 md:flex-row md:justify-between">
           <LanguagePicker />
+          <nav
+            aria-label="Legal links"
+            className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white/55"
+          >
+            <Link
+              href="/privacy"
+              className="transition hover:text-[#c4934e]"
+            >
+              Privacy
+            </Link>
+            <span aria-hidden="true" className="opacity-50">
+              ·
+            </span>
+            <Link
+              href="/terms"
+              className="transition hover:text-[#c4934e]"
+            >
+              Terms
+            </Link>
+          </nav>
         </div>
       </footer>
     </main>

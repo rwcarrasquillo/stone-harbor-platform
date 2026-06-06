@@ -154,6 +154,48 @@ export default function JoinPage() {
           )}
         </form>
       </section>
+
+      {/* FOOTER — added 2026-06-06 (SH-8). The /join waitlist page
+          previously had no footer at all, so visitors had no path to
+          Privacy / Terms before submitting their email. Quiet, brand-
+          aligned, with the 988 line so the safety message is always
+          present on a public entry point. */}
+      <footer className="mx-auto mt-16 max-w-6xl border-t border-stone-200 pt-8 text-sm text-stone-600">
+        <div className="flex flex-col items-center gap-4 md:flex-row md:items-baseline md:justify-between">
+          <p className="text-center text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500 md:text-left">
+            Stone Harbor · Men&apos;s Mental Wellness
+          </p>
+          <nav
+            aria-label="Legal links"
+            className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500"
+          >
+            <Link
+              href="/privacy"
+              className="transition hover:text-[#a9793d]"
+            >
+              Privacy
+            </Link>
+            <span aria-hidden="true" className="opacity-50">
+              ·
+            </span>
+            <Link
+              href="/terms"
+              className="transition hover:text-[#a9793d]"
+            >
+              Terms
+            </Link>
+          </nav>
+        </div>
+        <p className="mt-4 text-center text-xs leading-relaxed text-stone-600 md:text-right">
+          <span className="block text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500">
+            If You Are In Crisis
+          </span>
+          <span className="mt-1 block">
+            Call or text <span className="font-bold text-[#a9793d]">988</span> —
+            24/7. Free. Confidential.
+          </span>
+        </p>
+      </footer>
     </main>
   );
 }
