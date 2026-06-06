@@ -38,10 +38,6 @@ export default function RegisterPage() {
   );
   const [waitlistEnabled, setWaitlistEnabled] = useState(true);
 
-  // Current terms/privacy versions for the acceptance record.
-  const [termsVersion, setTermsVersion] = useState<number>(1);
-  const [privacyVersion, setPrivacyVersion] = useState<number>(1);
-
   // Required attestations on the signup form.
   const [genderAttested, setGenderAttested] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -56,26 +52,25 @@ export default function RegisterPage() {
   useEffect(() => {
     let cancelled = false;
     async function loadSettings() {
+      // We only read the public gate + waitlist copy here. The current
+      // terms/privacy versions are now stamped server-side in
+      // /api/register so we don't need to fetch them on the client.
       const { data } = await supabase
         .from("app_settings")
         .select(
-          "registration_open, closed_headline, closed_message, waitlist_enabled, current_terms_version, current_privacy_version",
+          "registration_open, closed_headline, closed_message, waitlist_enabled",
         )
         .eq("id", 1)
         .single();
       if (cancelled) return;
       // Fail-open: if the read fails for any reason, allow registration.
-      // The server-side trigger remains the source of truth.
+      // The server-side gate in /api/register is the real source of truth.
       setRegistrationOpen(data?.registration_open ?? true);
       if (data?.closed_headline) setClosedHeadline(data.closed_headline);
       if (data?.closed_message) setClosedMessage(data.closed_message);
       if (typeof data?.waitlist_enabled === "boolean") {
         setWaitlistEnabled(data.waitlist_enabled);
       }
-      if (data?.current_terms_version)
-        setTermsVersion(data.current_terms_version);
-      if (data?.current_privacy_version)
-        setPrivacyVersion(data.current_privacy_version);
     }
     loadSettings();
     return () => {
@@ -151,56 +146,64 @@ export default function RegisterPage() {
     }
 
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-      },
-    });
 
-    if (error) {
-      setMessage(error.message);
+    // The full signup transaction (auth user + profile + terms
+    // acceptance) lives behind /api/register. That route runs server-
+    // side with the service-role key, which bypasses RLS — necessary
+    // because supabase.auth.signUp() doesn't establish a session when
+    // email confirmation is required, and the profile/terms RLS
+    // policies need auth.uid() to write.
+    let result: {
+      ok: boolean;
+      error?: string;
+      message?: string;
+    };
+    try {
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          fullName,
+          genderAttested,
+          termsAccepted,
+        }),
+      });
+      result = await response.json();
+      if (!response.ok || !result.ok) {
+        setMessage(
+          result.message ??
+            "We couldn't finish signing you up. Please try again.",
+        );
+        setIsError(true);
+        setLoading(false);
+        return;
+      }
+    } catch {
+      setMessage(
+        "We couldn't reach the harbor. Check your connection and try again.",
+      );
       setIsError(true);
       setLoading(false);
       return;
     }
 
-    if (data.user) {
-      await supabase.from("profiles").upsert({
-        id: data.user.id,
-        email,
-        full_name: fullName,
-        display_name: fullName,
-        healing_stage: "clarity",
-        privacy_level: "private",
-        updated_at: new Date().toISOString(),
-      });
-
-      // Record the terms acceptance as an immutable audit row.
-      // IP is left null here (server-side capture would require an edge
-      // function); user_agent and timestamp are sufficient for v1 audit.
-      await supabase.from("terms_acceptances").insert({
-        user_id: data.user.id,
-        terms_version: termsVersion,
-        privacy_version: privacyVersion,
-        gender_attestation: genderAttested,
-        user_agent:
-          typeof navigator !== "undefined" ? navigator.userAgent : null,
-      });
-    }
-
     // First-touch acquisition (utm + referrer). Fire-and-forget;
-    // the API is idempotent so re-entry on a retry is harmless.
+    // the API is idempotent so re-entry on a retry is harmless. Note
+    // that these tracking calls require a session, so they'll be
+    // no-ops until the member confirms their email and signs in —
+    // that's fine, the milestone tracker handles the "registered"
+    // event again on first authenticated session.
     trackAcquisition();
     trackMilestone("registered");
 
-    setMessage("Welcome to the harbor. Setting up your space…");
+    setMessage("Welcome to the harbor. Check your email to confirm.");
     setIsError(false);
     setLoading(false);
     setTimeout(() => {
       router.push("/settle-in");
-    }, 1000);
+    }, 1500);
   }
 
   return (

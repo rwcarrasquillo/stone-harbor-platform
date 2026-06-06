@@ -47,6 +47,11 @@ next-env.d.ts
 
 # Test artifacts
 .test-results/
+# Playwright screenshot artifacts (local dev / preview captures only)
+**/.settle-in-shots/
+
+# Claude Code local config (Cowork / Claude Code workspace settings)
+.claude/
 
 # Sentry Config File
 .env.sentry-build-plugin
