@@ -31,7 +31,7 @@ import { CrisisFooter } from "./crisisFooter";
  *
  * Visibility rules:
  *   - Public/auth/wizard surfaces (/, /login, /register, /forgot-*,
- *     /reset-*, /terms, /privacy, /about, /start-here, /join,
+ *     /reset-*, /terms, /privacy, /about, /start-here,
  *     /onboarding, /suspended, /offline) — NO footer; those pages
  *     have their own footer treatment (LanguagePicker, marketing
  *     wordmark, etc.) and don't need the 988 banner.
@@ -68,7 +68,6 @@ const HIDDEN_PREFIXES = [
   "/privacy",
   "/about",
   "/start-here",
-  "/join",
   "/onboarding",
   "/suspended",
   "/offline",

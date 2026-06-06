@@ -50,7 +50,6 @@ const HIDDEN_PREFIXES = [
   "/about",
   "/resources",
   "/start-here",
-  "/join",
   "/onboarding",
   "/settle-in",
   "/suspended",
