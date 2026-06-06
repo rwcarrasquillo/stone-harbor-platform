@@ -65,6 +65,13 @@ const PHASE_2_PAGES = new Set([
   "reset-password",
   "privacy",
   "terms",
+  // /auth/callback handles the Supabase confirmation redirect (SH-5).
+  // Supabase always sends the link to the canonical /auth/callback path,
+  // but if a locale-prefixed variant ever appears (mis-typed bookmark,
+  // proxy rewrite) we want to land on the canonical page rather than
+  // 404 inside next-intl. The regex only captures the first path
+  // segment, so listing "auth" covers /en/auth/callback → /auth/callback.
+  "auth",
 ]);
 
 const intlMiddleware = createMiddleware(routing);
