@@ -29,7 +29,6 @@ const SKIP_PREFIXES = [
   "/register",
   "/forgot-password",
   "/reset-password",
-  "/join",
   "/onboarding",
   "/suspended",
   "/privacy",
