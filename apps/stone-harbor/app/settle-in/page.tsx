@@ -311,11 +311,14 @@ function SettleInFlow() {
               >
                 {t("screen5.conditional")}
               </p>
-              <div className="mx-auto mb-6 max-w-md space-y-2 text-left">
+              {/* SH-20: center the crisis lines to match the rest of the
+                  centered flow. Each row now centers on its own midpoint
+                  instead of left-anchoring inside a centered block. */}
+              <div className="mx-auto mb-6 max-w-md space-y-2 text-center">
                 {crisis.map((c) => (
                   <p
                     key={c.number}
-                    className={`${sans.className} text-base leading-relaxed text-[var(--sh-text-secondary)]`}
+                    className={`${sans.className} text-balance text-base leading-relaxed text-[var(--sh-text-secondary)]`}
                   >
                     <span className="font-bold text-[var(--sh-accent-gold)]">{c.number}</span>
                     {c.rest}

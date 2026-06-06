@@ -866,7 +866,8 @@
     },
     "screen2": {
       "lines": [
-        "There are four doors. Take any one. Start where you want.",
+        "There are four doors. Take any one.",
+        "Start where you want.",
         "None comes first. None is more important. None will be the wrong one.",
         "Each gives you a different way. You'll find what you need."
       ],
