@@ -199,7 +199,7 @@ export default function RegisterPage() {
     setIsError(false);
     setLoading(false);
     setTimeout(() => {
-      router.push("/onboarding");
+      router.push("/settle-in");
     }, 1000);
   }
 
