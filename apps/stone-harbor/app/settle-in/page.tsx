@@ -173,31 +173,68 @@ function SettleInFlow() {
     [router],
   );
 
+  /**
+   * Server-side mark — `/api/settle-in/(complete|skip)` writes the
+   * timestamp using the service-role key. Same pattern as SH-4.
+   *
+   * Returns true on success, false on failure (so the caller can
+   * decide whether to navigate anyway). We currently navigate either
+   * way because trapping the member on /settle-in if the write fails
+   * is worse UX than letting them through — but the auth guard will
+   * loop them back, surfacing the failure naturally.
+   */
+  const markSettleIn = useCallback(
+    async (action: "complete" | "skip"): Promise<boolean> => {
+      if (!isFirstPass) return true;
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      if (!token) {
+        console.warn("[settle-in] No session token; skipping server write.");
+        return false;
+      }
+      try {
+        const res = await fetch(`/api/settle-in/${action}`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const body = (await res.json().catch(() => null)) as
+          | { ok?: boolean; error?: string; message?: string }
+          | null;
+        if (!res.ok || !body?.ok) {
+          console.error(`[settle-in] /api/settle-in/${action} failed`, {
+            status: res.status,
+            error: body?.error,
+            message: body?.message,
+          });
+          return false;
+        }
+        return true;
+      } catch (e) {
+        console.error(`[settle-in] /api/settle-in/${action} threw`, e);
+        return false;
+      }
+    },
+    [isFirstPass],
+  );
+
   const handleSkip = useCallback(async () => {
-    if (isFirstPass && userId) {
-      await supabase
-        .from("profiles")
-        .update({ settle_in_skipped_at: new Date().toISOString() })
-        .eq("id", userId);
-    }
+    await markSettleIn("skip");
     window.location.href = "/dashboard";
-  }, [isFirstPass, userId]);
+  }, [markSettleIn]);
 
   const handleEnter = useCallback(async () => {
     setLeaving(true);
-    if (isFirstPass && userId) {
-      await supabase
-        .from("profiles")
-        .update({ settle_in_completed_at: new Date().toISOString() })
-        .eq("id", userId);
-    }
+    await markSettleIn("complete");
     window.setTimeout(
       () => {
         window.location.href = "/dashboard";
       },
       reduced ? 0 : 1000,
     );
-  }, [isFirstPass, userId, reduced]);
+  }, [markSettleIn, reduced]);
 
   // text-balance distributes prose evenly across lines, killing the
   // single-word orphan on the last line of multi-line body copy.
