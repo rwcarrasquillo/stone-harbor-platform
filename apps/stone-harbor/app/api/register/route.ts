@@ -147,11 +147,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // emailRedirectTo tells Supabase where the confirmation-email link
+  // should send the user after the token is verified. Without this,
+  // Supabase falls back to the project's Site URL (the bare domain),
+  // so the link lands on `/` with hash tokens — bypassing the SH-5
+  // /auth/callback handler entirely. We build the URL off the request
+  // origin so previews redirect to themselves rather than to prod.
+  //
+  // NOTE: For this to actually take effect, the URL pattern must be
+  // present in the Supabase project's "Redirect URLs" allowlist
+  // (Auth → URL Configuration). Otherwise Supabase silently ignores
+  // emailRedirectTo and uses Site URL.
+  const emailRedirectTo = `${req.nextUrl.origin}/auth/callback`;
+
   const { data: signUpData, error: signUpErr } = await anon.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: fullName },
+      emailRedirectTo,
     },
   });
 
