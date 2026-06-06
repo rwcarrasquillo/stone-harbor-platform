@@ -866,7 +866,8 @@
     },
     "screen2": {
       "lines": [
-        "Hay cuatro puertas. Toma cualquiera. Empieza donde quieras.",
+        "Hay cuatro puertas. Toma cualquiera.",
+        "Empieza donde quieras.",
         "Ninguna va primero. Ninguna es más importante. Ninguna será la equivocada.",
         "Cada una te da un camino distinto. Encontrarás lo que necesitas."
       ],
