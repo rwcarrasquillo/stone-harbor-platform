@@ -615,22 +615,16 @@ export default function DashboardPage() {
       return;
     }
 
-    // Onboarding gate: send brand-new users through the wizard once.
-    // The wizard writes onboarding_completed_at when finished or skipped,
-    // so this redirect won't loop after the first pass.
-    if (data && !data.onboarding_completed_at) {
-      window.location.href = "/onboarding";
-      return;
-    }
-
-    // Settle-in gate: once onboarding is done, route members through the
+    // First-time gate (Option C): settle-in is the sole first-time member
+    // experience — /onboarding has been retired. Route members through the
     // one-time settle-in moment unless they've already completed or skipped
     // it. Both timestamps NULL means they've done neither. Recording either
     // settle_in_completed_at or settle_in_skipped_at clears this gate, so it
-    // won't loop after the first pass.
+    // won't loop after the first pass. Existing onboarded members were
+    // backfilled (settle_in_completed_at = onboarding_completed_at) so they
+    // are not re-bounced here.
     if (
       data &&
-      data.onboarding_completed_at &&
       !data.settle_in_completed_at &&
       !data.settle_in_skipped_at
     ) {

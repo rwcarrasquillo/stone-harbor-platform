@@ -4,12 +4,12 @@
  * Every authenticated page must redirect on three conditions:
  *   1. No session     → /login
  *   2. Suspended      → /suspended
- *   3. Not onboarded  → /onboarding (dashboard handles this for new accounts;
+ *   3. Not settled in → /settle-in (dashboard handles this for new accounts;
  *                       other surfaces redirect to dashboard which then routes)
  *
  * Call `requireActiveSession()` at the top of any page's load function.
  * Returns the authenticated user if the session is healthy + the account
- * is active + onboarding is complete. Returns null after triggering a
+ * is active + settle-in is complete. Returns null after triggering a
  * redirect — callers should `if (!user) return;` immediately.
  *
  * Why a function and not a hook: most existing pages use async `checkUser`
@@ -22,7 +22,7 @@ import { supabase } from "@/lib/supabaseClient";
 /**
  * A confirmed-active member session. Returned by
  * {@link requireActiveSession} when all three gates pass: signed in,
- * not suspended, and onboarding complete.
+ * not suspended, and settle-in complete.
  */
 export type ActiveSession = {
   /** Supabase auth.users.id (UUID). */
@@ -39,11 +39,12 @@ export type ActiveSession = {
  *      to `/login` with a hard navigation (to nuke any stale state).
  *   2. **Suspension** — `profiles.suspended_at` must be null, otherwise
  *      routes to `/suspended` so the member can see warnings + appeal.
- *   3. **Onboarding** — `profiles.onboarding_completed_at` must be set,
- *      otherwise routes to `/onboarding` for the wizard.
+ *   3. **Settle-in** — `profiles.settle_in_completed_at` (or
+ *      `settle_in_skipped_at`) must be set, otherwise routes to
+ *      `/settle-in` for the one-time first-run moment.
  *
  * The check order matters: a suspended new member must land at
- * `/suspended` rather than be forced through onboarding first.
+ * `/suspended` rather than be forced through settle-in first.
  *
  * @returns the {@link ActiveSession} if all three gates pass; `null`
  *   after triggering a redirect. Callers should immediately
@@ -76,19 +77,19 @@ export async function requireActiveSession(): Promise<ActiveSession | null> {
   // Pull only what we need to make routing decisions. Cheap query.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("suspended_at, onboarding_completed_at")
+    .select("suspended_at, settle_in_completed_at, settle_in_skipped_at")
     .eq("id", user.id)
     .single();
 
-  // Suspension takes priority — even an un-onboarded suspended user
-  // must land on /suspended, not /onboarding.
+  // Suspension takes priority — even a not-yet-settled suspended user
+  // must land on /suspended, not /settle-in.
   if (profile?.suspended_at) {
     if (typeof window !== "undefined") window.location.href = "/suspended";
     return null;
   }
 
-  if (!profile?.onboarding_completed_at) {
-    if (typeof window !== "undefined") window.location.href = "/onboarding";
+  if (!profile?.settle_in_completed_at && !profile?.settle_in_skipped_at) {
+    if (typeof window !== "undefined") window.location.href = "/settle-in";
     return null;
   }
 
