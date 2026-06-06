@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
@@ -16,7 +15,6 @@ const GOLD_DEEP = "#a9793d";
 const MOSS = "#586558";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,6 +22,10 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
+  // SH-5: after successful signup we swap the form for a "check your
+  // inbox" card and stop driving any navigation from this page. The
+  // user has no session until they click the confirmation link.
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
 
   // Registration gate — read from public.app_settings.
   // null = still loading, true = open, false = closed.
@@ -198,12 +200,14 @@ export default function RegisterPage() {
     trackAcquisition();
     trackMilestone("registered");
 
-    setMessage("Welcome to the harbor. Check your email to confirm.");
-    setIsError(false);
+    // Mark the page as "awaiting confirmation" — the form is replaced
+    // with a clear "check your inbox" state. We deliberately do NOT
+    // redirect anywhere; the user has no session until they click the
+    // confirmation link, which now routes through /auth/callback (SH-5)
+    // and lands on /settle-in. Any redirect from here bounces through
+    // /login because requireActiveSession() finds no user. (SH-5 fix)
+    setAwaitingConfirmation(true);
     setLoading(false);
-    setTimeout(() => {
-      router.push("/settle-in");
-    }, 1500);
   }
 
   return (
@@ -431,8 +435,17 @@ export default function RegisterPage() {
                 />
               )}
 
+              {/* AWAITING CONFIRMATION — signup succeeded, email sent.
+                  Show a calm "check your inbox" card and DO NOT
+                  navigate. The user has no session yet; clicking the
+                  email link routes through /auth/callback (SH-5) and
+                  lands on /settle-in. */}
+              {registrationOpen === true && awaitingConfirmation && (
+                <AwaitingConfirmationPanel email={email} />
+              )}
+
               {/* OPEN STATE — normal signup form. */}
-              {registrationOpen === true && (
+              {registrationOpen === true && !awaitingConfirmation && (
                 <>
                   <div className="mb-8 flex items-baseline justify-between">
                     <h2
@@ -634,6 +647,74 @@ export default function RegisterPage() {
         </div>
       </footer>
     </main>
+  );
+}
+
+/* ──────────────────────────────────────────────
+   AWAITING CONFIRMATION PANEL — Shown after a successful
+   signup. The user has NO session yet (email confirmation
+   required), so we do not navigate; we sit on /register with
+   clear next-step copy. Clicking the email link routes
+   through /auth/callback (SH-5) and lands on /settle-in.
+   ────────────────────────────────────────────── */
+
+function AwaitingConfirmationPanel({ email }: { email: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <div className="mb-8 flex items-baseline justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#c4934e]">
+          One More Step
+        </p>
+        <Link
+          href="/login"
+          className="group relative text-xs font-bold uppercase tracking-[0.22em] text-white/90 transition hover:text-[#c4934e]"
+        >
+          <span className="relative z-10">Login</span>
+          <span className="absolute bottom-[-4px] left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
+        </Link>
+      </div>
+
+      <h2
+        className={`${serif.className} text-5xl font-medium leading-[1.05] text-white md:text-6xl`}
+      >
+        Check your inbox.
+      </h2>
+
+      <p className="mt-6 text-base leading-relaxed text-white/80">
+        We sent a confirmation link to{" "}
+        <span className="font-semibold text-[#c4934e]">{email}</span>. Click it
+        to finish opening your account and step into the harbor.
+      </p>
+
+      <div className="mt-8 h-px w-16 bg-[#c4934e]" />
+
+      <div className="mt-8 space-y-3 text-sm leading-relaxed text-white/70">
+        <p>
+          The link expires in 24 hours. If you don&apos;t see the email, check
+          your spam folder.
+        </p>
+        <p>
+          Still nothing?{" "}
+          <Link
+            href="/login"
+            className="font-semibold text-[#c4934e] underline-offset-4 transition hover:text-white hover:underline"
+          >
+            Try signing in
+          </Link>{" "}
+          — your account is created either way.
+        </p>
+      </div>
+
+      <p
+        className={`${serif.className} mt-12 text-xl italic text-[#c4934e]/80`}
+      >
+        The harbor is patient.
+      </p>
+    </motion.div>
   );
 }
 
