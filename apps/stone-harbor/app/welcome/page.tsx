@@ -1035,15 +1035,23 @@ export default function WelcomePage() {
                   placeholder={t("placeholders.hometown")}
                 />
 
-                <SelectInput
-                  label={t("fields.healingStage")}
-                  value={formData.healing_stage}
-                  options={healingStageOptions}
-                  labelFor={(v) => t(`options.healingStage.${v}`)}
-                  onChange={(value) =>
-                    setFormData({ ...formData, healing_stage: value })
-                  }
-                />
+                <div>
+                  {/* Option C: pillar selection lives here now (deferred from
+                      the retired onboarding flow). Minimum-touch microcopy —
+                      no banner, no nudge; members who care will find it. */}
+                  <p className="mb-2 text-[11px] italic text-[var(--sh-text-tertiary)]">
+                    Where you&apos;re starting — change this anytime.
+                  </p>
+                  <SelectInput
+                    label={t("fields.healingStage")}
+                    value={formData.healing_stage}
+                    options={healingStageOptions}
+                    labelFor={(v) => t(`options.healingStage.${v}`)}
+                    onChange={(value) =>
+                      setFormData({ ...formData, healing_stage: value })
+                    }
+                  />
+                </div>
 
                 <SelectInput
                   label={t("fields.privacy")}
