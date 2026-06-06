@@ -37,7 +37,7 @@
  */
 
 import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
@@ -87,6 +87,53 @@ const ERROR_COPY: Record<
   },
 };
 
+// ---------- post-auth navigation ----------
+
+/**
+ * Hard-navigate to /dashboard after the Supabase session has been
+ * established. We do NOT use Next's `router.replace` here for a real
+ * reason that bit us during SH-5 verification:
+ *
+ * `supabase.auth.exchangeCodeForSession` writes the new session to
+ * localStorage and updates the in-memory state of the supabase client
+ * singleton that lives on the currently-mounted page. But when Next's
+ * client router transitions to /dashboard, the dashboard page imports
+ * `supabase` from the same singleton module — Next's RSC/SPA model
+ * keeps the page tree mounted and the singleton's in-memory session
+ * is what authGuards.ts reads via `supabase.auth.getUser()`. In some
+ * paths (Vercel preview, fresh PKCE exchange, hand-off timing) the
+ * dashboard's getUser() call hits the network with the OLD bearer
+ * token, gets nothing back, and treats the member as signed-out —
+ * bouncing them to /login. The DB rows show the auth.users session
+ * is valid; the client just hasn't propagated it yet.
+ *
+ * A `window.location.href` hard navigation tears the page tree all
+ * the way down. The dashboard mounts fresh, the supabase singleton
+ * is constructed from scratch, the constructor reads the just-written
+ * localStorage session, and getUser() returns the new user on the
+ * first try. The cost is a sub-second extra paint; the benefit is the
+ * member doesn't get asked to re-type a password they just used.
+ *
+ * Before navigating we also do a belt-and-suspenders `getSession()`
+ * call — if for any reason the session ISN'T actually persisted, we
+ * surface that as an `invalid` error rather than redirecting the
+ * member into a confusing /login state.
+ */
+async function redirectAfterAuth() {
+  if (typeof window === "undefined") return;
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) {
+    // Session somehow didn't persist. Land on /login rather than a
+    // dashboard that will immediately reject — better signal to the
+    // member that something needs another try.
+    window.location.href = "/login?reason=session_not_persisted";
+    return;
+  }
+  window.location.href = "/dashboard";
+}
+
 // ---------- error classification ----------
 
 /**
@@ -111,7 +158,6 @@ function classifyError(rawCode: string, rawDescription: string | null): ErrorKin
 // ---------- inner component (uses useSearchParams) ----------
 
 function CallbackInner() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [state, setState] = useState<CallbackState>({ phase: "exchanging" });
 
@@ -148,10 +194,17 @@ function CallbackInner() {
           return;
         }
         setState({ phase: "success" });
-        // The dashboard's auth guard will further route a new member
-        // onward to /settle-in. We just need to land them inside the
-        // gate — the guard does the rest.
-        router.replace("/dashboard");
+        // SH-5 fix-up: do NOT use router.replace here. The Supabase
+        // client writes the new session to localStorage during
+        // exchangeCodeForSession, but the Next.js client router keeps
+        // the in-memory Supabase singleton from the previous page —
+        // when the dashboard's authGuards.ts calls supabase.auth.getUser()
+        // it sees the OLD pre-exchange state and bounces the member
+        // to /login (forcing them to type their password despite a
+        // valid session). A hard navigation forces the dashboard page
+        // to mount fresh, instantiate a new Supabase client, and read
+        // the just-written localStorage session correctly.
+        await redirectAfterAuth();
         return;
       }
 
@@ -177,7 +230,8 @@ function CallbackInner() {
             return;
           }
           setState({ phase: "success" });
-          router.replace("/dashboard");
+          // Same hard-navigation reasoning as the PKCE branch above.
+          await redirectAfterAuth();
           return;
         }
         // Hash present but doesn't carry tokens — Supabase sometimes
@@ -204,7 +258,7 @@ function CallbackInner() {
     return () => {
       cancelled = true;
     };
-  }, [router, searchParams]);
+  }, [searchParams]);
 
   if (state.phase === "exchanging" || state.phase === "success") {
     return <LoadingPanel />;
