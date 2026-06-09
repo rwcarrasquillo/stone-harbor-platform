@@ -69,19 +69,104 @@ which enforces consumer + member identity checks at the API layer.
 
 ---
 
-## Host integration
+## Host integration — `POST /api/v1/events`
 
-Hosts push behavioral events to Eidos via an authenticated endpoint:
+Every host platform integrates with Eidos by pushing events to this single
+authenticated endpoint. The same shape serves Stone Harbor today, The Long
+Light next, and any future partner.
+
+### Request
 
 ```
 POST /api/v1/events
 Authorization: Bearer <consumer_token>
-Body: { events: [EidosEvent, ...] }
+Content-Type: application/json
+
+{
+  "events": [
+    {
+      "event_id": "evt_a1b2c3",
+      "user_id": "<host's opaque user id>",
+      "type": "journal.created",
+      "timestamp": "2026-06-08T22:00:00Z",
+      "payload": { "mood": "grounded", "length": 412 }
+    }
+  ]
+}
 ```
 
-**That endpoint is built in EID-19, not here.** EID-17 (this issue) only
-provisions the deployment. The consumer bearer token is minted separately and
-added to host env vars by hand when EID-19 lands.
+### Fields
+
+| Field | Rules |
+|---|---|
+| `event_id` | Host-provided unique id. Used for idempotency — re-pushing the same id is safe. Non-empty string ≤128 chars. |
+| `user_id` | Host's opaque user id. Eidos doesn't decode it. Non-empty string ≤128 chars. |
+| `type` | Lowercase dotted namespace, e.g. `journal.created`, `mood.selected`, `message.sent`. Must match `^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$`. ≤64 chars. |
+| `timestamp` | ISO 8601, UTC or with offset. |
+| `payload` | Arbitrary JSON object. Optional (defaults to `{}`). Cannot be an array or primitive. |
+
+Batch limit: **1000 events per request**.
+
+### Authentication
+
+`Authorization: Bearer <token>` where the token is a consumer-scoped secret
+issued by Eidos. The token is hashed with SHA-256 and compared against
+`eidos_consumer_tokens.token_hash`. Plaintext tokens are never persisted
+server-side after minting. Each token has a `scopes` array — this endpoint
+requires `events:write`.
+
+### Response
+
+**200** — success (including partial dedup):
+
+```json
+{ "accepted": 7, "deduped": 1 }
+```
+
+`accepted + deduped` always equals the number of events in the request.
+
+**401** — `{ "error": "unauthorized", "reason": "missing_token" | "malformed_header" | "unknown_token" }`
+
+**403** — `{ "error": "unauthorized", "reason": "revoked" | "expired" | "insufficient_scope" | "consumer_inactive" }`
+
+**400** — `{ "error": "invalid_json" }` or `{ "error": "validation_failed", "detail": "<reason>" }`
+
+**413** — batch exceeds 1000 events.
+
+**500** — `{ "error": "db_error" }`. Retry the request.
+
+### Idempotency
+
+Deduplication is by `(consumer_id, event_id)`. The same host can safely retry
+an event with the same `event_id` — the second attempt counts in `deduped`, not
+`accepted`. This is what makes the push-event pattern resilient to network
+failures and host crashes.
+
+### Observability
+
+Every request — success or failure — is logged to `eidos_ingest_log` with the
+consumer id, token prefix, HTTP status, event counts, and any error message.
+This is the forensic trail for debugging integration issues with hosts.
+
+### Quick integration test
+
+```bash
+TOKEN=<paste your consumer token>
+curl -i -X POST https://eidos.stoneharbor.app/api/v1/events \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "events": [{
+      "event_id": "smoke_test_1",
+      "user_id": "founder",
+      "type": "smoke.test",
+      "timestamp": "2026-06-08T22:00:00Z",
+      "payload": { "note": "integration verify" }
+    }]
+  }'
+```
+
+Expect `200 {"accepted":1,"deduped":0}` on first call, `200 {"accepted":0,"deduped":1}` on a re-run with the same `event_id`.
 
 ---
 
