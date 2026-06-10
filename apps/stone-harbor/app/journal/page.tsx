@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { trackMilestone } from "@/lib/memberUsage";
+import { emitMemberEvent, trackMilestone } from "@/lib/memberUsage";
 import {
   deriveTitleFromPrompt,
   fetchInvitationById,
@@ -503,6 +503,21 @@ export default function JournalPage() {
       trackMilestone("first_journal_entry");
       // If they used a sub-mood chip, that's its own milestone.
       if (moodSpecific) trackMilestone("first_sub_mood");
+
+      // Eidos behavioral signal — fire-and-forget. The journal entry
+      // is the canonical artifact and is already persisted; a missed
+      // event push only costs the engine one data point and is logged
+      // server-side. Reflection mood (Story Series only) rides as a
+      // separate payload field so Eidos can distinguish it from the
+      // daily mood signal.
+      emitMemberEvent("journal.created", {
+        mood: effectiveMood,
+        mood_specific: effectiveMoodSpecific,
+        length: trimmedContent.length,
+        word_count: trimmedContent.split(/\s+/).filter(Boolean).length,
+        reflection_mood: storyPrompt ? reflectionMood : null,
+        is_story_prompt: Boolean(storyPrompt),
+      });
 
       // Story Series — if this entry answers an invitation, mark it
       // answered, link the new journal entry, and persist the

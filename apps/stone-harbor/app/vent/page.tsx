@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { trackMilestone } from "@/lib/memberUsage";
+import { emitMemberEvent, trackMilestone } from "@/lib/memberUsage";
 import { serif, sans } from "@/lib/fonts";
 import { InactivityGate } from "@/app/components/inactivityGate";
 
@@ -147,6 +147,18 @@ export default function VentPage() {
       window.localStorage.removeItem(DRAFT_KEY);
     }
     trackMilestone("first_vent_post");
+
+    // Eidos behavioral signal — fire-and-forget. Vent is its own
+    // psychological act (rapid catharsis, often shorter, often more
+    // affect-charged than a journal entry) so Eidos sees it as a
+    // distinct event type, not a journal.created variant.
+    const trimmedBody = body.trim();
+    emitMemberEvent("vent.created", {
+      mood: mood ?? null,
+      length: trimmedBody.length,
+      word_count: trimmedBody.split(/\s+/).filter(Boolean).length,
+    });
+
     setBody("");
     setMood(null);
     setSavedMessage("Saved to your journal. The harbor heard you.");
