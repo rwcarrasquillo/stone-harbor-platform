@@ -112,6 +112,48 @@ export function trackMilestone(milestone: string): void {
 }
 
 /**
+ * Push a behavioral event to the Eidos engine via our server proxy.
+ *
+ * The Eidos consumer token never reaches the browser — `/api/events/emit`
+ * holds it, verifies the member's Supabase session, and forwards the
+ * event with the verified `user_id` attached. Clients cannot spoof
+ * events for other members.
+ *
+ * Client-allowed types today (mirrored on the server):
+ *   journal.created — a journal_entries INSERT (post-success)
+ *   vent.created    — a vent flow INSERT (post-success)
+ *
+ * Server-internal types (e.g. a future safety_classifier.triggered)
+ * are explicitly NOT pushable from here; the server route's allowlist
+ * blocks them.
+ *
+ * Fire-and-forget like the other trackers. Member flows must never
+ * wait on or surface this call's outcome.
+ */
+export function emitMemberEvent(
+  type: "journal.created" | "vent.created",
+  payload?: Record<string, unknown>,
+): void {
+  void (async () => {
+    try {
+      const authz = await authHeader();
+      if (!authz) return;
+      await fetch("/api/events/emit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authz,
+        },
+        body: JSON.stringify({ type, payload: payload ?? {} }),
+        keepalive: true,
+      });
+    } catch {
+      // Silent.
+    }
+  })();
+}
+
+/**
  * Record first-touch acquisition (utm + referrer + landed path).
  * Idempotent: server-side upsert keyed on member_id. Safe to call
  * from any post-auth code path; only the first successful call
