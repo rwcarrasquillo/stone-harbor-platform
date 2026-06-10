@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/eidos/compute-circadian",
+      "schedule": "0 6 * * 1"
+    },
+    {
+      "path": "/api/eidos/baseline-circadian",
+      "schedule": "0 6 1 * *"
+    }
+  ]
+}
