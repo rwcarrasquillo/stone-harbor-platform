@@ -1,17 +1,16 @@
 /**
- * Eidos Engine — admin login page (EID-21).
+ * Eidos Admin — login page.
  *
- * Single-field form. Token gets POSTed to /api/admin/login which
- * validates against EIDOS_ADMIN_TOKEN, sets an HttpOnly session cookie,
- * and redirects to either `next` (if provided) or `/admin/events`.
+ * Single-field form. Token gets POSTed to /api/auth/login which
+ * validates against EIDOS_ADMIN_PASSWORD, sets an HttpOnly session
+ * cookie, and redirects to either `next` (if provided) or `/`.
  *
- * Surfaces:
+ * Surfaces (via search params):
  *   ?error=invalid   — token was wrong on the previous attempt
  *   ?error=missing   — no token was sent
+ *   ?error=unconfigured — server missing EIDOS_ADMIN_PASSWORD
  *   ?logged_out=1    — user just signed out
  *   ?next=<path>     — preserved so post-login lands the user where they were going
- *
- * Plain inline styles, matching the rest of the Eidos admin chrome.
  */
 
 interface SearchParams {
@@ -84,14 +83,10 @@ export default async function LoginPage({
           </p>
         </header>
 
-        {loggedOut && (
-          <Banner tone="ok">Signed out.</Banner>
-        )}
-        {errorMessage && (
-          <Banner tone="err">{errorMessage}</Banner>
-        )}
+        {loggedOut && <Banner tone="ok">Signed out.</Banner>}
+        {errorMessage && <Banner tone="err">{errorMessage}</Banner>}
 
-        <form method="POST" action="/api/admin/login">
+        <form method="POST" action="/api/auth/login">
           <input type="hidden" name="next" value={nextPath} />
           <label
             htmlFor="token"
@@ -126,7 +121,6 @@ export default async function LoginPage({
               outline: "none",
             }}
           />
-
           <button
             type="submit"
             style={{
@@ -170,34 +164,47 @@ function pickErrorMessage(code: string | undefined): string | null {
     case "missing":
       return "Please enter a token.";
     case "unconfigured":
-      return "Server is missing EIDOS_ADMIN_TOKEN — admin sign-in is disabled.";
+      return "Server is missing EIDOS_ADMIN_PASSWORD — admin sign-in is disabled.";
     default:
       return null;
   }
 }
 
-/**
- * Only allow internal paths under /admin to be used as the post-login
- * redirect. Without this, an attacker could craft `?next=https://evil`
- * and use a phishing email + the login flow to land users on an
- * external site that looks legit because the URL bar shows our domain
- * first. Bake the check into the page rather than relying on the API
- * route alone.
- */
 function sanitizeNext(next: string | undefined): string {
-  if (!next) return "/admin/events";
-  if (!next.startsWith("/admin")) return "/admin/events";
-  if (next.startsWith("/admin/login")) return "/admin/events";
+  if (!next) return "/";
+  if (!next.startsWith("/")) return "/";
+  if (next.startsWith("/login")) return "/";
   return next;
 }
 
-/**
- * Compact horizon mark for the login card. ViewBox 540×180 is shaped
- * for the 380px-wide card; `vector-effect="non-scaling-stroke"` keeps
- * the ring and the line at a consistent visual weight at any display
- * size. Inner circle fill matches the card background (#0e1015) so
- * the ring's interior blends with the card.
- */
+function Banner({
+  tone,
+  children,
+}: {
+  tone: "ok" | "err";
+  children: React.ReactNode;
+}) {
+  const color = tone === "ok" ? "#4ade80" : "#ff8080";
+  const border = tone === "ok" ? "#1e3a2b" : "#5a2a2a";
+  const bg = tone === "ok" ? "#0f1a14" : "#1c0f0f";
+  return (
+    <p
+      style={{
+        marginTop: 0,
+        marginBottom: "1rem",
+        padding: "0.6rem 0.75rem",
+        border: `1px solid ${border}`,
+        background: bg,
+        color,
+        borderRadius: 4,
+        fontSize: "0.8rem",
+      }}
+    >
+      {children}
+    </p>
+  );
+}
+
 function EidosHorizonMark() {
   return (
     <svg
@@ -254,33 +261,5 @@ function EidosHorizonMark() {
         eidos
       </text>
     </svg>
-  );
-}
-
-function Banner({
-  tone,
-  children,
-}: {
-  tone: "ok" | "err";
-  children: React.ReactNode;
-}) {
-  const color = tone === "ok" ? "#4ade80" : "#ff8080";
-  const border = tone === "ok" ? "#1e3a2b" : "#5a2a2a";
-  const bg = tone === "ok" ? "#0f1a14" : "#1c0f0f";
-  return (
-    <p
-      style={{
-        marginTop: 0,
-        marginBottom: "1rem",
-        padding: "0.6rem 0.75rem",
-        border: `1px solid ${border}`,
-        background: bg,
-        color,
-        borderRadius: 4,
-        fontSize: "0.8rem",
-      }}
-    >
-      {children}
-    </p>
   );
 }

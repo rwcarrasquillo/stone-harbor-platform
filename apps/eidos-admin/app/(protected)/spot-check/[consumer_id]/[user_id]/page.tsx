@@ -1,21 +1,19 @@
 import Link from "next/link";
 
-import { getServiceClient } from "@/lib/supabase/server";
+import {
+  getMember,
+  type BaselineRow,
+  type EventRow,
+  type ObservationRow,
+} from "@/lib/engine";
 
 /**
- * Eidos Engine — per-member spot-check view (EID-21).
- *
- * Routes: /admin/spot-check/[consumer_id]/[user_id]
+ * Eidos Admin — per-member spot-check view.
  *
  * Renders raw events alongside the latest computed observation and the
  * baseline (if one exists yet) for a single (consumer, member) pair.
- * This is the validation gate: the math from EID-20 should "look
- * right" against the timestamps and the histogram before any
- * member-facing surface is allowed to render the inference.
- *
- * Server component. One Supabase round-trip per panel — three total.
- * Could be one with foreign-key joins later if we feel the latency,
- * but at 19 events the cost is invisible.
+ * Reads come from the engine's `GET /api/v1/members/[consumer]/[user]`
+ * endpoint — one round-trip, three panels of data in the response.
  */
 
 export const dynamic = "force-dynamic";
@@ -23,110 +21,45 @@ export const dynamic = "force-dynamic";
 const SURFACING_THRESHOLD = 0.7;
 const TZ_LABEL = "America/New_York";
 
-interface EventRow {
-  event_id: string;
-  type: string;
-  timestamp: string;
-  payload: Record<string, unknown>;
-}
-
-interface ObservationRow {
-  id: string;
-  window_start: string;
-  window_end: string;
-  sample_size: number;
-  unique_days: number;
-  centroid_hour: number | null;
-  regularity_entropy: number | null;
-  night_load_fraction: number | null;
-  social_jet_lag_hours: number | null;
-  confidence: number;
-  evidence: {
-    event_ids?: string[];
-    hour_histogram?: number[];
-    weekday_count?: number;
-    weekend_count?: number;
-  };
-  computed_at: string;
-}
-
-interface BaselineRow {
-  trait_centroid_hour: number | null;
-  trait_centroid_hour_stddev: number | null;
-  trait_regularity_entropy: number | null;
-  trait_regularity_entropy_stddev: number | null;
-  trait_night_load_fraction: number | null;
-  trait_night_load_fraction_stddev: number | null;
-  trait_social_jet_lag_hours: number | null;
-  sample_size: number;
-  window_days: number;
-  computed_at: string;
-}
-
 export default async function SpotCheckPage({
   params,
 }: {
   params: Promise<{ consumer_id: string; user_id: string }>;
 }) {
   const { consumer_id: consumerId, user_id: userId } = await params;
-  const supabase = getServiceClient();
 
-  // ── Events ──────────────────────────────────────────────────────
-  const { data: eventData, error: eventsError } = await supabase
-    .from("eidos_event_stream")
-    .select("event_id, type, timestamp, payload")
-    .eq("consumer_id", consumerId)
-    .eq("user_id", userId)
-    .order("timestamp", { ascending: false });
+  let detail;
+  let fetchError: string | null = null;
 
-  if (eventsError) {
-    return <ErrorPanel title="event_stream read failed" detail={eventsError.message} />;
+  try {
+    detail = await getMember(consumerId, userId);
+  } catch (err) {
+    fetchError = err instanceof Error ? err.message : String(err);
   }
 
-  const events = (eventData ?? []) as EventRow[];
+  if (fetchError || !detail) {
+    return (
+      <ErrorPanel
+        title="Failed to reach the Eidos engine"
+        detail={fetchError ?? "no payload"}
+      />
+    );
+  }
 
-  // ── Latest circadian observation ────────────────────────────────
-  const { data: obsData } = await supabase
-    .from("eidos_circadian_observations")
-    .select(
-      "id, window_start, window_end, sample_size, unique_days, centroid_hour, regularity_entropy, night_load_fraction, social_jet_lag_hours, confidence, evidence, computed_at",
-    )
-    .eq("consumer_id", consumerId)
-    .eq("member_id", userId)
-    .order("computed_at", { ascending: false })
-    .limit(1);
+  const events = detail.events;
+  const observation = detail.observation;
+  const baseline = detail.baseline;
 
-  const observation = (obsData?.[0] ?? null) as ObservationRow | null;
-
-  // ── Baseline ────────────────────────────────────────────────────
-  const { data: baselineData } = await supabase
-    .from("eidos_circadian_baselines")
-    .select(
-      "trait_centroid_hour, trait_centroid_hour_stddev, trait_regularity_entropy, trait_regularity_entropy_stddev, trait_night_load_fraction, trait_night_load_fraction_stddev, trait_social_jet_lag_hours, sample_size, window_days, computed_at",
-    )
-    .eq("consumer_id", consumerId)
-    .eq("member_id", userId)
-    .limit(1);
-
-  const baseline = (baselineData?.[0] ?? null) as BaselineRow | null;
-
-  // ── Histogram from the raw events (matches what compute would see) ──
   const histogram = buildLocalHourHistogram(events.map((e) => e.timestamp));
-
-  // ── Dates for header ─────────────────────────────────────────────
   const newest = events[0]?.timestamp;
   const oldest = events[events.length - 1]?.timestamp;
 
   return (
     <section style={{ display: "grid", gap: "2rem" }}>
-      <Link
-        href="/admin/events"
-        style={{ color: "#7aa2f7", fontSize: "0.8rem" }}
-      >
+      <Link href="/" style={{ color: "#7aa2f7", fontSize: "0.8rem" }}>
         ← back to events index
       </Link>
 
-      {/* Header strip */}
       <header
         style={{
           display: "grid",
@@ -147,21 +80,18 @@ export default async function SpotCheckPage({
         </Stat>
       </header>
 
-      {/* Hour histogram */}
       <Card title={`Hour-of-day histogram (${TZ_LABEL})`}>
         <HourHistogram histogram={histogram} />
       </Card>
 
-      {/* Observation overlay */}
       <Card title="Latest circadian observation (EID-20)">
         {observation ? (
           <ObservationView observation={observation} />
         ) : (
-          <EmptyState message="No circadian observation yet. Trigger /api/eidos/compute-circadian to write one." />
+          <EmptyState message="No circadian observation yet. Trigger /api/eidos/compute-circadian on the engine to write one." />
         )}
       </Card>
 
-      {/* Baseline overlay */}
       <Card title="Circadian baseline">
         {baseline ? (
           <BaselineView baseline={baseline} />
@@ -170,7 +100,6 @@ export default async function SpotCheckPage({
         )}
       </Card>
 
-      {/* Raw events */}
       <Card title={`Raw events (${events.length})`}>
         <RawEventsTable events={events} />
       </Card>
@@ -257,11 +186,8 @@ function HourHistogram({ histogram }: { histogram: number[] }) {
       {histogram.map((count, hour) => {
         const heightPct = (count / max) * 100;
         const isNight = hour >= 23 || hour < 4;
-        const color = count === 0
-          ? "#1f2128"
-          : isNight
-            ? "#d4a017" // late-night bars in amber
-            : "#7aa2f7"; // day bars in blue
+        const color =
+          count === 0 ? "#1f2128" : isNight ? "#d4a017" : "#7aa2f7";
         return (
           <div
             key={hour}
@@ -408,7 +334,9 @@ function RawEventsTable({ events }: { events: EventRow[] }) {
           {events.map((e) => (
             <tr key={e.event_id} style={{ borderTop: "1px solid #1f2128" }}>
               <Td>
-                <code style={{ fontSize: "0.7rem", opacity: 0.8 }}>{e.event_id.slice(0, 28)}…</code>
+                <code style={{ fontSize: "0.7rem", opacity: 0.8 }}>
+                  {e.event_id.slice(0, 28)}…
+                </code>
               </Td>
               <Td>{e.type}</Td>
               <Td>{fmtDate(e.timestamp)}</Td>
@@ -471,8 +399,6 @@ function fmtHour(value: number | null): string {
 }
 
 function fmtDate(iso: string): string {
-  // Drop subsecond + timezone for the display; full ts is in the
-  // payload preview / raw event row.
   return iso.replace(/\.\d+/, "").replace("+00", "Z").replace("T", " ");
 }
 
@@ -502,17 +428,13 @@ function previewPayload(payload: Record<string, unknown>): string {
     }
     const valueStr =
       typeof v === "string" ? `"${v}"` : v === null ? "null" : String(v);
-    parts.push(`${k}=${valueStr.length > 30 ? valueStr.slice(0, 27) + "…" : valueStr}`);
+    parts.push(
+      `${k}=${valueStr.length > 30 ? valueStr.slice(0, 27) + "…" : valueStr}`,
+    );
   }
   return `{ ${parts.join(", ")} }`;
 }
 
-/**
- * Build a local-hour histogram (24 bins) from a list of UTC ISO
- * timestamps. Independently computed from the events themselves so we
- * can compare against the histogram stored inside the observation's
- * `evidence` jsonb — if they ever diverge, that's a bug.
- */
 function buildLocalHourHistogram(timestamps: string[]): number[] {
   const histogram = new Array(24).fill(0) as number[];
   for (const ts of timestamps) {
@@ -544,7 +466,14 @@ function ErrorPanel({ title, detail }: { title: string; detail: string }) {
       }}
     >
       <strong style={{ color: "#ff8080" }}>{title}</strong>
-      <pre style={{ marginTop: "0.5rem", whiteSpace: "pre-wrap", fontSize: "0.8rem", opacity: 0.8 }}>
+      <pre
+        style={{
+          marginTop: "0.5rem",
+          whiteSpace: "pre-wrap",
+          fontSize: "0.8rem",
+          opacity: 0.8,
+        }}
+      >
         {detail}
       </pre>
     </section>

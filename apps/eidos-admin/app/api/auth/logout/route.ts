@@ -2,12 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Eidos Engine — admin logout POST (EID-21).
+ * Eidos Admin — logout POST.
  *
- * Clears the session cookie and bounces back to the login page with a
- * confirmation banner. Triggered by the "Sign out" link in the admin
- * layout header, which is wrapped in a small POST form (POST so a
- * preloader/spider can't accidentally log you out).
+ * Clears the session cookie and bounces to /login?logged_out=1.
+ * POST (not GET) so link-prefetchers can't accidentally log you out.
  */
 
 export const runtime = "nodejs";
@@ -17,7 +15,7 @@ const COOKIE_NAME = "eidos_admin_session";
 
 export async function POST(req: NextRequest) {
   const response = NextResponse.redirect(
-    new URL("/admin/login?logged_out=1", req.url),
+    new URL("/login?logged_out=1", req.url),
     { status: 303 },
   );
   response.cookies.set({

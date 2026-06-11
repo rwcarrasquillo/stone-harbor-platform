@@ -2,18 +2,17 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Eidos Engine — admin login POST (EID-21).
+ * Eidos Admin — login POST.
  *
- * Validates the submitted token against EIDOS_ADMIN_TOKEN. On match,
- * sets an HttpOnly cookie containing the token itself and redirects
- * to `next` (sanitised). On miss, redirects back to /admin/login with
- * an error flag.
+ * Validates the submitted token against EIDOS_ADMIN_PASSWORD. On
+ * match, sets an HttpOnly cookie containing the password itself and
+ * redirects to `next` (sanitised). On miss, redirects back to /login
+ * with an error flag.
  *
- * The cookie is the credential. Same security model as Basic Auth —
- * the browser holds the secret — but with proper login/logout UX.
- * HttpOnly means JavaScript can't read it (defeats XSS exfiltration);
- * Secure means it never goes over plain HTTP; SameSite=Lax means it
- * doesn't ride on cross-site requests.
+ * The cookie is the credential. HttpOnly + Secure + SameSite=Lax.
+ * Distinct from EIDOS_ADMIN_API_TOKEN — that one is held by the
+ * server, never reaches the browser. This one is held by the
+ * browser, never reaches the engine. Two-layer separation.
  */
 
 export const runtime = "nodejs";
@@ -23,9 +22,9 @@ const COOKIE_NAME = "eidos_admin_session";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 export async function POST(req: NextRequest) {
-  const adminToken = process.env.EIDOS_ADMIN_TOKEN;
-  if (!adminToken) {
-    return redirect(req, "/admin/login?error=unconfigured");
+  const adminPassword = process.env.EIDOS_ADMIN_PASSWORD;
+  if (!adminPassword) {
+    return redirect(req, "/login?error=unconfigured");
   }
 
   const form = await req.formData().catch(() => null);
@@ -36,21 +35,21 @@ export async function POST(req: NextRequest) {
   const nextRaw =
     form && typeof form.get("next") === "string"
       ? (form.get("next") as string)
-      : "/admin/events";
+      : "/";
 
   if (!submitted) {
-    return redirect(req, `/admin/login?error=missing&next=${encodeURIComponent(nextRaw)}`);
+    return redirect(req, `/login?error=missing&next=${encodeURIComponent(nextRaw)}`);
   }
 
-  if (submitted !== adminToken) {
-    return redirect(req, `/admin/login?error=invalid&next=${encodeURIComponent(nextRaw)}`);
+  if (submitted !== adminPassword) {
+    return redirect(req, `/login?error=invalid&next=${encodeURIComponent(nextRaw)}`);
   }
 
   const next = sanitizeNext(nextRaw);
   const response = redirect(req, next);
   response.cookies.set({
     name: COOKIE_NAME,
-    value: adminToken,
+    value: adminPassword,
     httpOnly: true,
     secure: true,
     sameSite: "lax",
@@ -65,7 +64,7 @@ function redirect(req: NextRequest, location: string): NextResponse {
 }
 
 function sanitizeNext(next: string): string {
-  if (!next.startsWith("/admin")) return "/admin/events";
-  if (next.startsWith("/admin/login")) return "/admin/events";
+  if (!next.startsWith("/")) return "/";
+  if (next.startsWith("/login")) return "/";
   return next;
 }

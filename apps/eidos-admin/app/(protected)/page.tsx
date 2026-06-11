@@ -1,77 +1,33 @@
 import Link from "next/link";
 
-import { getServiceClient } from "@/lib/supabase/server";
+import { listMembers } from "@/lib/engine";
 
 /**
- * Eidos Engine — admin events index (EID-21).
+ * Eidos Admin — events index (root protected page).
  *
- * Lists every distinct `(consumer_id, member_id)` tuple that has
- * produced events, with event count and last-event timestamp. The
- * landing page for the admin spot-check surface — pick a member, jump
- * to their per-member spot-check view.
- *
- * Server component: queries Supabase directly. JS-side aggregation
- * because the dataset is tiny (dozens of events today, hundreds of
- * members at the planning horizon). When this stops being tiny we'll
- * introduce a materialised view or RPC and keep the page shape.
+ * Renders the (consumer, member) list returned by the engine's
+ * `/api/v1/members` endpoint. Click into one to see the histogram and
+ * the latest circadian observation overlay.
  */
 
 export const dynamic = "force-dynamic";
 
-interface EventRow {
-  consumer_id: string;
-  user_id: string;
-  timestamp: string;
-}
-
-interface MemberRow {
-  consumer_id: string;
-  member_id: string;
-  event_count: number;
-  last_event: string;
-}
-
 export default async function EventsIndexPage() {
-  const supabase = getServiceClient();
+  let members: Awaited<ReturnType<typeof listMembers>>["members"] = [];
+  let fetchError: string | null = null;
 
-  const { data, error } = await supabase
-    .from("eidos_event_stream")
-    .select("consumer_id, user_id, timestamp")
-    .order("timestamp", { ascending: false });
+  try {
+    const result = await listMembers();
+    members = result.members;
+  } catch (err) {
+    fetchError = err instanceof Error ? err.message : String(err);
+  }
 
-  if (error) {
+  if (fetchError) {
     return (
-      <ErrorPanel
-        title="Failed to read eidos_event_stream"
-        detail={error.message}
-      />
+      <ErrorPanel title="Failed to reach the Eidos engine" detail={fetchError} />
     );
   }
-
-  const events = (data ?? []) as EventRow[];
-
-  // Aggregate (consumer_id, user_id) → { event_count, last_event }.
-  // Since we ordered DESC, the first occurrence we see is the most
-  // recent timestamp.
-  const byMember = new Map<string, MemberRow>();
-  for (const ev of events) {
-    const key = `${ev.consumer_id}::${ev.user_id}`;
-    const existing = byMember.get(key);
-    if (existing) {
-      existing.event_count += 1;
-    } else {
-      byMember.set(key, {
-        consumer_id: ev.consumer_id,
-        member_id: ev.user_id,
-        event_count: 1,
-        last_event: ev.timestamp,
-      });
-    }
-  }
-
-  const members = Array.from(byMember.values()).sort((a, b) =>
-    a.last_event < b.last_event ? 1 : -1,
-  );
 
   return (
     <section>
@@ -114,13 +70,11 @@ export default async function EventsIndexPage() {
                 </Td>
                 <Td align="right">{m.event_count}</Td>
                 <Td>
-                  <span style={{ opacity: 0.8 }}>
-                    {fmtIso(m.last_event)}
-                  </span>
+                  <span style={{ opacity: 0.8 }}>{fmtIso(m.last_event)}</span>
                 </Td>
                 <Td>
                   <Link
-                    href={`/admin/spot-check/${encodeURIComponent(
+                    href={`/spot-check/${encodeURIComponent(
                       m.consumer_id,
                     )}/${encodeURIComponent(m.member_id)}`}
                     style={{ color: "#7aa2f7" }}
@@ -171,8 +125,6 @@ function Td({
 }
 
 function fmtIso(ts: string): string {
-  // Trim trailing nanoseconds + timezone for readability. The full ts
-  // is one Inspect-Element away if anyone needs it.
   return ts.replace(/\.\d+/, "").replace("+00", "Z");
 }
 

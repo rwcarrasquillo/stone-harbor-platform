@@ -1,22 +1,13 @@
 import type { ReactNode } from "react";
 
 /**
- * Eidos Engine — protected-admin layout (EID-21).
+ * Eidos Admin — protected layout.
  *
- * Wraps every authed `/admin` page (everything except `/admin/login`).
- * Header strip with the Events index link and a Sign-out button. The
- * cookie-based session is invalidated by POSTing to /api/admin/logout,
- * which clears the cookie and bounces back to the login page.
- *
- * Sign-out uses a POST form rather than a GET link so link-prefetchers
- * (Next.js prefetch, antivirus extensions, etc.) can't accidentally
- * sign you out by following the URL.
+ * Header strip with the events index link and a Sign out button.
+ * Wraps every page except /login. The Sign-out control is a POST
+ * form so link-prefetchers can't accidentally sign you out.
  */
-export default function ProtectedAdminLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function ProtectedLayout({ children }: { children: ReactNode }) {
   return (
     <div style={{ minHeight: "100vh" }}>
       <header
@@ -33,13 +24,13 @@ export default function ProtectedAdminLayout({
           <EidosMarkSmall />
           <strong style={{ fontWeight: 600 }}>Eidos Admin</strong>
         </span>
-        <a href="/admin/events" style={{ color: "#7aa2f7" }}>
+        <a href="/" style={{ color: "#7aa2f7" }}>
           Events index
         </a>
         <span style={{ marginLeft: "auto", opacity: 0.6 }}>
-          internal · service surface
+          internal · validation surface
         </span>
-        <form method="POST" action="/api/admin/logout" style={{ margin: 0 }}>
+        <form method="POST" action="/api/auth/logout" style={{ margin: 0 }}>
           <button
             type="submit"
             style={{
@@ -64,11 +55,6 @@ export default function ProtectedAdminLayout({
   );
 }
 
-/**
- * Small square mark for the admin header strip. Same orb as the
- * favicon (app/icon.svg) but inlined so it renders without an extra
- * HTTP request and stays crisp at 20px.
- */
 function EidosMarkSmall() {
   return (
     <svg
