@@ -137,3 +137,120 @@ function randomId(): string {
     Math.random().toString(16).slice(2, 10),
   ).join("");
 }
+
+// ============================================================================
+// SH-40 — Read side: fetch own member's inferences for the Rhythm surface.
+// ============================================================================
+// Server-only counterpart to emitEidosEvent. Wraps
+// `GET /api/v1/consumers/me/members/[user_id]/inferences` on the Eidos
+// engine (built in EID-52). The route uses the same consumer token that
+// the push side does, with the `inferences:read` scope added in EID-52.
+//
+// Read failures are NOT silently swallowed: a missing observation is a
+// valid 200 response with `null` fields, but a network error or 5xx
+// is something the caller should handle visibly (because the member is
+// looking at the page expecting a rendered result, unlike the push
+// side where the call is fire-and-forget under an existing action).
+//
+// Auth model: server-only, same shape as the push helper. Never call
+// from a client component — the route at /api/eidos/inferences is the
+// only entry from the browser.
+
+const DEFAULT_INFERENCES_URL_TEMPLATE =
+  "https://eidos.stoneharbor.app/api/v1/consumers/me/members/{user_id}/inferences";
+
+export interface CircadianMetrics {
+  centroid_hour: number | null;
+  regularity_entropy: number | null;
+  night_load_fraction: number | null;
+  social_jet_lag_hours: number | null;
+}
+
+export interface CircadianObservationRead {
+  computed_at: string;
+  confidence: number;
+  window_start: string;
+  window_end: string;
+  sample_size: number;
+  unique_days: number;
+  metrics: CircadianMetrics;
+  evidence: {
+    event_ids?: string[];
+    hour_histogram?: number[];
+    weekday_count?: number;
+    weekend_count?: number;
+  };
+}
+
+export interface OwnInferencesResponse {
+  user_id: string;
+  observations: {
+    circadian: CircadianObservationRead | null;
+  };
+  baseline: {
+    circadian: unknown | null;
+  };
+}
+
+export type FetchOwnInferencesResult =
+  | { ok: true; data: OwnInferencesResponse }
+  | { ok: false; reason: "not_found" | "unauthorized" | "engine_error"; detail?: string };
+
+/**
+ * Server-only: fetch the current member's own Eidos inferences from
+ * the engine. Returns a discriminated union so the page can render the
+ * three meaningful states (have data, no events yet, engine
+ * unreachable) without throwing.
+ */
+export async function fetchOwnInferences(
+  userId: string,
+): Promise<FetchOwnInferencesResult> {
+  const token = process.env.EIDOS_CONSUMER_TOKEN;
+  if (!token) {
+    console.error(
+      "[eidos] EIDOS_CONSUMER_TOKEN is not set; cannot fetch inferences",
+    );
+    return {
+      ok: false,
+      reason: "engine_error",
+      detail: "EIDOS_CONSUMER_TOKEN is not configured",
+    };
+  }
+
+  const template =
+    process.env.EIDOS_INFERENCES_URL_TEMPLATE ?? DEFAULT_INFERENCES_URL_TEMPLATE;
+  const url = template.replace("{user_id}", encodeURIComponent(userId));
+
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (res.status === 404) {
+      return { ok: false, reason: "not_found" };
+    }
+    if (res.status === 401 || res.status === 403) {
+      const detail = await res.text().catch(() => "<unreadable>");
+      console.error("[eidos] fetchOwnInferences auth failed", {
+        status: res.status,
+        detail,
+      });
+      return { ok: false, reason: "unauthorized", detail };
+    }
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "<unreadable>");
+      console.error("[eidos] fetchOwnInferences non-2xx", {
+        status: res.status,
+        detail,
+      });
+      return { ok: false, reason: "engine_error", detail };
+    }
+    const data = (await res.json()) as OwnInferencesResponse;
+    return { ok: true, data };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[eidos] fetchOwnInferences threw", { detail });
+    return { ok: false, reason: "engine_error", detail };
+  }
+}

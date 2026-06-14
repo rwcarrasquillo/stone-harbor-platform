@@ -42,6 +42,7 @@ import {
 } from "@/app/components/smallThing";
 import { LineageDoorCard } from "@/app/components/lineageDoorCard";
 import { TheMapTile } from "@/app/components/theMapTile";
+import { RhythmTile } from "@/app/components/rhythmTile";
 import {
   FEATURE_THRESHOLDS,
   isFeatureUnlocked,
@@ -1267,6 +1268,12 @@ export default function DashboardPage() {
             doesn't need to know the member's Map status. Routes to
             the locale the member last selected (NEXT_LOCALE cookie). */}
         {userId && <TheMapTile />}
+
+        {/* RHYTHM DOOR — sibling of The Map. Eidos's descriptive mirror
+            of when the member tends to write. SH-40 v1: descriptive only,
+            confidence-gated at 0.7, empty-state copy for early members.
+            See SH-40 close in stone-harbor-docs CHANGELOG. */}
+        {userId && <RhythmTile />}
 
         {/* LINEAGE DOOR — once-shown announcement that the Lineage
             room exists in the profile. Renders only at day 90+ and
