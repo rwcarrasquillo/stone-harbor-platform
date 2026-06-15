@@ -7,13 +7,18 @@
  * provides the typography fallback so members never see Arial flash
  * before next/font loads.
  *
- * --font-cormorant and --font-inter are injected by lib/fonts.ts via
- * the className on <html> in app/layout.tsx.
+ * Type decision (2026-06-15): Source Serif 4 + Inter Tight from Google
+ * Fonts. See lib/fonts.ts header for the full rationale and
+ * stone-harbor-docs/stone-harbor/Stone_Harbor_Design_System_v1.md for
+ * the lab evaluation that led here.
+ *
+ * --font-source-serif and --font-inter-tight are injected by
+ * lib/fonts.ts via the className on <html> in app/layout.tsx.
  */
 
 @theme inline {
-  --font-sans: var(--font-inter);
-  --font-serif: var(--font-cormorant);
+  --font-sans: var(--font-inter-tight);
+  --font-serif: var(--font-source-serif);
 }
 
 /* ------------------------------------------------------------------
@@ -87,10 +92,11 @@ body {
 
 html,
 body {
-  /* Inter is the body face; Cormorant is applied per-component via
-     className={serif.className} on display headings + italic copy. */
+  /* Inter Tight is the body face; Source Serif 4 is applied
+     per-component via className={serif.className} on display
+     headings + italic copy. */
   font-family:
-    var(--font-inter),
+    var(--font-inter-tight),
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
