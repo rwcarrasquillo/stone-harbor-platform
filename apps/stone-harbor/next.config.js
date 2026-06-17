@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- next.config is CommonJS (Sentry wizard reassigns module.exports); ESM migration tracked separately
 const createNextIntlPlugin = require("next-intl/plugin");
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
@@ -24,6 +25,7 @@ module.exports = withNextIntl(nextConfig);
 
 // Injected content via Sentry wizard below
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- injected by Sentry wizard; CommonJS module.exports reassignment below
 const { withSentryConfig } = require("@sentry/nextjs");
 
 module.exports = withSentryConfig(module.exports, {

@@ -1,54 +1,71 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { emitMemberEvent, trackMilestone } from "@/lib/memberUsage";
 import { serif, sans } from "@/lib/fonts";
 import { InactivityGate } from "@/app/components/inactivityGate";
+import { AnchorMark } from "@/app/components/anchorMark";
+import { useTheme } from "@/app/components/themeProvider";
+import { UnsavedChangesModal } from "@/app/components/unsavedChangesModal";
+import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
 
 /**
- * Stone Harbor — Vent page.
+ * Stone Harbor — Vent route (production, centered design).
  *
- * The "I need a place to dump this right now" door. Designed to be
- * the lowest-friction writing surface in the product:
+ * The lowest-friction "I need to dump this right now" writing surface,
+ * wrapped in the harbor vocabulary shared with /journal and /dashboard:
+ * top brand header (anchor + "Stone Harbor · Vent"), anchor strip with
+ * the page's intention, centered writing surface, horizon mark + voice
+ * signature, crisis footer permanently visible.
  *
- *   - One tap from the dashboard lands a cursor in the textarea.
- *   - No prompts. No formatting. No privacy decision (defaults to
- *     private; everything written here is owner-only RLS).
- *   - Auto-saves on every keystroke (debounced) to localStorage as
- *     a draft so a man mid-spiral never loses what he was writing
- *     to a tab refresh, a battery die, or a panic close.
- *   - A small mood chip at the top tags the entry so future pattern-
- *     matching ("you tend to feel numb on Sunday nights") is possible
- *     when we build it.
- *   - Save button writes to the journal table with kind='vent' so
- *     it threads naturally into the rest of the member's journal,
- *     but visually marked as a vent so the member can find it later.
+ * Vent is the door a member reaches for when they can't face the full
+ * journal — open it, put it down, and the harbor keeps it without
+ * keeping score. The save path is identical to a journal entry; only
+ * the friction is lower.
  *
- * Why a dedicated route instead of just a button on /journal:
- *   - URL feels like a place. "I'm going to vent" → /vent. Bookmarkable.
- *   - The page itself is unstyled-feeling on purpose. Dark, quiet,
- *     no metadata pressure. /journal has filters, search, list views —
- *     too much chrome when a man needs to dump.
+ * Behaviour preserved from the original /vent:
+ *   - 4 mood chips (angry / scared / sad / numb) — Plutchik core +
+ *     dissociation; the most common "I can't articulate this" states.
+ *   - localStorage draft persistence at `stone-harbor:vent-draft` so
+ *     a tab refresh / battery die / panic close never loses content.
+ *   - Auto-save debounced 250ms on every keystroke or mood selection.
+ *   - Supabase insert into journal_entries with kind='vent',
+ *     privacy_level='private' on commit.
+ *   - trackMilestone('first_vent_post') + emitMemberEvent('vent.created').
+ *   - Redirects to /dashboard 1.5s after a successful save with a
+ *     brief "Saved." status message.
+ *   - InactivityGate mounted (30-min auto-logout with 5-min warning).
  *
- * Therapeutic note on mood chips:
- *   The four chips — Angry / Scared / Sad / Numb — cover the most
- *   common "I can't articulate this" states for men in distress.
- *   They're optional. Skipping the chip is allowed. Plutchik's
- *   four core emotions plus the dissociation state that many men
- *   in trauma describe as "numb."
+ * Composition (the centered harbor vocabulary):
+ *   - Top brand header — anchor + "Stone Harbor · Vent" on the left,
+ *     "Edit profile · Sign out" on the right (matches /dashboard).
+ *   - Anchor strip — "PRIVATE / Put it down here." instead of a bare
+ *     centered title block.
+ *   - Centered max-w-[720px] writing column matching journal's
+ *     compose surface — serif italic textarea, same typography family
+ *     so writing here looks like writing on /journal.
+ *   - Horizon mark + "The harbor is patient." voice signature below
+ *     the writing.
+ *   - Crisis footer always visible via h-full layout pattern.
+ *
+ * Voice note:
+ *   The horizon line stays "The harbor is patient." for visual
+ *   consistency with /journal and /dashboard. Even though Vent is
+ *   about release more than patience, the harbor's patience IS what
+ *   makes it safe to release — the harbor doesn't keep score because
+ *   it has the patience not to.
  */
 
 type Mood = "angry" | "scared" | "sad" | "numb";
 
-// Mood labels resolved at render via t() so they localize with the
-// interface language. Color stays fixed (brand palette is not
-// translated).
+// Same mood palette the existing /vent uses. Hex colors are brand-
+// fixed; mood LABELS resolve through useTranslations("vent") so they
+// localize with the interface language.
 const MOOD_OPTIONS: { value: Mood; color: string }[] = [
   { value: "angry", color: "#b14a3a" },
   { value: "scared", color: "#586558" },
@@ -58,17 +75,44 @@ const MOOD_OPTIONS: { value: Mood; color: string }[] = [
 
 const DRAFT_KEY = "stone-harbor:vent-draft";
 
-export default function VentPage() {
+export default function VentCenteredPage() {
   const t = useTranslations("vent");
   const router = useRouter();
+  const { theme } = useTheme();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const [mood, setMood] = useState<Mood | null>(null);
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Focus the textarea immediately on mount — frictionless dump entry.
+  // ───── Unsaved-changes guard ─────
+  //
+  // The member is "dirty" the moment they've typed any non-whitespace
+  // content into the vent textarea. Mood-only state doesn't count as
+  // dirty — selecting a mood without writing isn't work that would be
+  // lost. Once dirty, useUnsavedChangesWarning intercepts ALL in-app
+  // link clicks (Stone Harbor breadcrumb, mobile tab bar, anywhere
+  // a Link is) plus tab close / refresh / external nav, and surfaces
+  // showModal / cancel / confirm to the UnsavedChangesModal mounted
+  // at the bottom of this page.
+  const ventDirty = body.trim().length > 0;
+  const ventUnsaved = useUnsavedChangesWarning(ventDirty);
+
+  // Locale for the inline header/anchor copy (the rest of the page
+  // uses t() through next-intl). Reads NEXT_LOCALE cookie so members
+  // who switched to Spanish on a public surface get bilingual chrome
+  // here too.
+  const [locale, setLocale] = useState<"en" | "es">("en");
+  useEffect(() => {
+    const cookie = typeof document !== "undefined" ? document.cookie : "";
+    const m = /(?:^|;\s*)NEXT_LOCALE=([^;]+)/.exec(cookie);
+    setLocale(m?.[1] === "es" ? "es" : "en");
+  }, []);
+
+  // Focus the textarea immediately on mount — frictionless dump entry,
+  // same as the existing /vent.
   useEffect(() => {
     textareaRef.current?.focus();
   }, []);
@@ -79,7 +123,10 @@ export default function VentPage() {
     try {
       const raw = window.localStorage.getItem(DRAFT_KEY);
       if (!raw) return;
-      const draft = JSON.parse(raw) as { mood: Mood | null; body: string };
+      const draft = JSON.parse(raw) as {
+        mood: Mood | null;
+        body: string;
+      };
       if (draft.mood) setMood(draft.mood);
       if (draft.body) setBody(draft.body);
     } catch {
@@ -106,6 +153,9 @@ export default function VentPage() {
     };
   }, [mood, body]);
 
+  // Commit handler — identical insertion shape to /vent so the entry
+  // threads into journal_entries the same way and downstream consumers
+  // (Eidos events, milestone tracking) keep working unchanged.
   async function commitToJournal() {
     if (!body.trim()) return;
     setSaving(true);
@@ -121,10 +171,6 @@ export default function VentPage() {
       return;
     }
 
-    // Write as a journal entry tagged as a vent. The journal table
-    // stores body + mood + kind. If the table doesn't have a `kind`
-    // column we fall back to tagging in the body. (Defensive: read
-    // your schema and adjust if needed.)
     const { error } = await supabase.from("journal_entries").insert({
       user_id: user.id,
       body: body.trim(),
@@ -136,22 +182,15 @@ export default function VentPage() {
     setSaving(false);
 
     if (error) {
-      // If the table doesn't accept `kind` or `privacy_level`, we'll
-      // see the error and fall back gracefully on the next iteration.
       setSavedMessage(`Couldn't save right now: ${error.message}`);
       return;
     }
 
-    // Clear draft on successful save.
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(DRAFT_KEY);
     }
     trackMilestone("first_vent_post");
 
-    // Eidos behavioral signal — fire-and-forget. Vent is its own
-    // psychological act (rapid catharsis, often shorter, often more
-    // affect-charged than a journal entry) so Eidos sees it as a
-    // distinct event type, not a journal.created variant.
     const trimmedBody = body.trim();
     emitMemberEvent("vent.created", {
       mood: mood ?? null,
@@ -161,132 +200,463 @@ export default function VentPage() {
 
     setBody("");
     setMood(null);
-    setSavedMessage("Saved to your journal. The harbor heard you.");
-    // Give the success message a beat, then route back.
+    setSavedMessage(t("statusSaved"));
     setTimeout(() => router.push("/dashboard"), 1500);
   }
 
   return (
-    <main
-      className={`${sans.className} relative flex min-h-screen flex-col overflow-hidden bg-[#0A0A0B] text-white`}
+    <>
+    <div
+      // Transparent wrapper — body's globals.css backdrop paints
+      // through. h-full so crisis footer is permanently visible at
+      // the bottom of the viewport.
+      className={`${sans.variable} ${serif.variable} h-full w-full overflow-hidden text-[var(--sh-text-primary)]`}
     >
       <InactivityGate />
-
-      {/* Quiet dark backdrop — no rotating imagery here. The page
-          should feel like a private room, not an inspirational scene. */}
-      <div className="fixed inset-0 z-0 bg-[#0A0A0B]" />
-      <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 70% 55% at 50% 40%, rgba(196,147,78,0.10) 0%, rgba(196,147,78,0.03) 50%, transparent 80%)",
-        }}
-      />
-
-      <header className="relative z-20 flex items-center justify-between px-4 py-3 md:px-10 md:py-5">
-        <Link
-          href="/dashboard"
-          aria-label={t("aria.back")}
-          title={t("aria.back")}
-          className="flex items-center gap-2 text-[#c4934e] transition hover:text-white"
-        >
-          <ArrowLeft size={18} aria-hidden="true" />
-          <span className="hidden text-xs font-bold uppercase tracking-[0.22em] md:inline">
-            {t("back")}
-          </span>
-        </Link>
-        <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-white/55">
-          {t("statusBadge")}
-        </p>
-      </header>
-
-      <section className="relative z-20 mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 pb-8 md:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-5"
-        >
-          <h1
-            className={`${serif.className} text-2xl italic leading-snug text-white md:text-3xl`}
+      <div className="mx-auto flex h-full w-full max-w-[1440px] flex-col">
+        {/* ===== Top brand header ===== */}
+        <header className="flex flex-shrink-0 items-center justify-between border-b border-[var(--sh-border-subtle)] px-10 py-6">
+          {/* Brand cluster → /dashboard. Standard harbor-vocabulary
+              pattern: "Stone Harbor" reads as the breadcrumb root and
+              always points at /dashboard, the room hub. Unsaved-work
+              protection sits at the DOM-click layer via
+              useUnsavedChangesWarning + UnsavedChangesModal below — if
+              the member has body content typed, the modal intercepts
+              the click before navigation. */}
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-3"
+            aria-label="Stone Harbor — Dashboard"
           >
-            {t("title")}
-          </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/65 md:text-base">
-            {t("subtitle")}
-          </p>
-        </motion.div>
-
-        {/* Mood chips — optional. */}
-        <div
-          className="mb-4 flex flex-wrap gap-2"
-          role="radiogroup"
-          aria-label={t("moodGroupLabel")}
-        >
-          {MOOD_OPTIONS.map((opt) => {
-            const active = mood === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() => setMood(active ? null : opt.value)}
-                className={`rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] transition ${
-                  active
-                    ? "text-white"
-                    : "border-white/25 text-white/70 hover:border-white/55"
-                }`}
-                style={
-                  active
-                    ? {
-                        borderColor: opt.color,
-                        backgroundColor: opt.color + "33",
-                      }
-                    : undefined
-                }
-              >
-                {t(`moods.${opt.value}`)}
-              </button>
-            );
-          })}
-        </div>
-
-        <textarea
-          ref={textareaRef}
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          placeholder={t("placeholder")}
-          rows={10}
-          className="flex-1 w-full resize-none border border-white/15 bg-white/[0.04] p-5 text-base leading-relaxed text-white outline-none transition placeholder:text-white/30 focus:border-[#c4934e]/60 focus:bg-white/[0.06] md:text-lg"
-        />
-
-        <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p
-            className="text-[11px] text-white/45"
-            aria-live="polite"
-          >
-            {savedMessage ||
-              (body.trim() ? t("statusAutosaving") : t("statusNothing"))}
-          </p>
-          <div className="flex gap-3">
-            <Link
-              href="/dashboard"
-              className="rounded-none border border-white/20 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-white/75 transition hover:border-white/40 hover:text-white"
+            <AnchorMark size={32} />
+            <span
+              className={`${serif.className} text-[20px] italic tracking-[-0.012em] text-[var(--sh-text-primary)]`}
             >
-              {t("leaveDraft")}
+              Stone Harbor
+            </span>
+            <span className="text-[16px] text-[var(--sh-text-muted)]">·</span>
+            <span
+              className={`${serif.className} text-[20px] italic tracking-[-0.012em] text-[var(--sh-text-secondary)]`}
+            >
+              {locale === "es" ? "Desahogo" : "Vent"}
+            </span>
+          </Link>
+
+          <nav className="flex items-center gap-6">
+            <Link
+              href="/welcome"
+              className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--sh-text-tertiary)] transition-colors hover:text-[var(--sh-accent-gold)]`}
+            >
+              {locale === "es" ? "Editar perfil" : "Edit profile"}
             </Link>
             <button
               type="button"
-              onClick={commitToJournal}
-              disabled={!body.trim() || saving}
-              className="group relative overflow-hidden rounded-none border border-[#c4934e] bg-[#a9793d] px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] disabled:opacity-50"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = "/login";
+              }}
+              style={{ outline: "none", outlineOffset: 0 }}
+              className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--sh-text-tertiary)] transition-colors hover:text-[var(--sh-accent-gold)]`}
             >
-              {saving ? t("saving") : t("saveToJournal")}
+              {locale === "es" ? "Cerrar sesión" : "Sign out"}
             </button>
+          </nav>
+        </header>
+
+        {/* ===== Anchor strip — page intention ===== */}
+        <section className="flex flex-shrink-0 flex-col items-center border-b border-[var(--sh-border-subtle)] px-10 py-5">
+          <p
+            className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]`}
+          >
+            {locale === "es" ? "Privado" : "Private"}
+          </p>
+          <p
+            className={`${serif.className} mt-1.5 text-[20px] italic font-medium tracking-[-0.01em]`}
+          >
+            {t("title")}
+          </p>
+        </section>
+
+        {/* ===== Main writing area ===== */}
+        <main className="flex flex-1 flex-col overflow-y-auto">
+          <div className="mx-auto flex w-full max-w-[720px] flex-1 flex-col px-10 pt-8">
+            {/* Actions row — Save · Leave Draft, top-right.
+                Matches journal compose's actions row exactly so the
+                two writing surfaces feel like the same room. */}
+            <div className="flex flex-shrink-0 justify-end gap-6">
+              <button
+                type="button"
+                onClick={commitToJournal}
+                disabled={saving || body.trim().length === 0}
+                style={{ outline: "none", outlineOffset: 0 }}
+                className={`${sans.className} text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--sh-accent-gold)] transition-colors hover:text-[var(--sh-accent-gold-bright)] disabled:opacity-50`}
+              >
+                {saving
+                  ? t("saving")
+                  : (locale === "es"
+                      ? "Guardar en el diario"
+                      : "Save to journal")}
+              </button>
+              <Link
+                href="/dashboard"
+                style={{ outline: "none", outlineOffset: 0 }}
+                className={`${sans.className} text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition-colors hover:text-[var(--sh-text-primary)]`}
+              >
+                {locale === "es" ? "Salir" : "Leave"}
+              </Link>
+            </div>
+
+            {/* Mood chip row — same vocabulary as journal compose mood
+                row. 4 chips for the vent's release moods (angry,
+                scared, sad, numb) — Plutchik core + dissociation.
+                Centered with serif eyebrow. */}
+            <div className="mt-6 flex flex-shrink-0 flex-col items-center gap-3">
+              <p
+                className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]`}
+              >
+                {t("moodGroupLabel")}
+              </p>
+              <div
+                role="radiogroup"
+                aria-label={t("moodGroupLabel")}
+                className="flex flex-wrap justify-center gap-x-3.5 gap-y-2"
+              >
+                {MOOD_OPTIONS.map((opt) => {
+                  const isSelected = mood === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      onClick={() =>
+                        setMood(isSelected ? null : opt.value)
+                      }
+                      style={{ outline: "none", outlineOffset: 0 }}
+                      className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors ${
+                        isSelected
+                          ? "bg-[rgba(196,147,78,0.08)]"
+                          : "hover:bg-white/[0.02]"
+                      }`}
+                    >
+                      <span
+                        className="inline-block h-1.5 w-1.5 rounded-full"
+                        style={{ backgroundColor: opt.color }}
+                      />
+                      <span
+                        className={`${sans.className} text-[9px] font-semibold uppercase tracking-[0.22em]`}
+                        style={{
+                          color: isSelected
+                            ? opt.color
+                            : "var(--sh-text-tertiary)",
+                        }}
+                      >
+                        {t(`moods.${opt.value}`)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ───── Slate writing panel ─────
+                The textarea sits inside a "slate panel" that gives the
+                writing surface a different material feel from the
+                journal's paper. The page chrome (header, anchor strip,
+                horizon mark, mood chips, voice signature) all stay
+                in the harbor vocabulary — only the writing zone shifts
+                material.
+                Composition:
+                  - Theme-aware bg tint (cool slate on dusk, warm
+                    slate-green on sunlit) sits over the body's
+                    backdrop. The body's warm gradient + grain still
+                    paint through; the panel just darkens/cools that
+                    rectangle of the page.
+                  - SVG noise overlay (chalk dust on dusk, graphite on
+                    sunlit) — applied via a mask so the dust is denser
+                    at the bottom of the panel, like chalk that has
+                    settled.
+                  - Inset shadow at the edges so the panel reads as
+                    recessed into the page rather than floating on top.
+                  - Faint hairlines at top + bottom — analog to the
+                    engraved-gold hairlines on journal cards, but in
+                    the slate's tonal language (cool-white on dusk,
+                    graphite-grey on sunlit).
+                Typography unchanged — serif italic 18px stays for
+                consistency with journal compose. The page's literary
+                voice doesn't change between rooms; only the material
+                under the writing does. */}
+            <div
+              className="group relative mt-7 flex flex-1 flex-col overflow-hidden"
+              style={{
+                // Panel bg tuned: subtle enough that the slate is felt
+                // rather than seen, but darker than fully subtle so it
+                // reads as a distinct material from the page. The
+                // light effects (noise, inset shadow, inner highlight,
+                // gold hairlines on focus/hover) sit on top intact.
+                backgroundColor:
+                  theme === "dusk"
+                    ? "rgba(20, 24, 32, 0.40)"
+                    : "rgba(70, 85, 78, 0.040)",
+                // Inset shadow tuned to match the slightly darker bg.
+                // The 1px inner highlight (the "light effect" at the
+                // panel edges) is kept at its original strength so the
+                // panel still reads as having dimensional depth.
+                boxShadow:
+                  theme === "dusk"
+                    ? "inset 0 0 40px rgba(0, 0, 0, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.04)"
+                    : "inset 0 0 40px rgba(60, 50, 35, 0.08), inset 0 0 0 1px rgba(60, 50, 35, 0.07)",
+              }}
+            >
+              {/* Noise overlay — chalk dust / graphite grain.
+                  mask-image makes the texture denser at the bottom
+                  of the panel (like chalk that has settled) and
+                  fainter at the top. */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage:
+                    theme === "dusk"
+                      ? "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.92  0 0 0 0 0.92  0 0 0 0 0.92  0 0 0 0.18 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>\")"
+                      : "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.30  0 0 0 0 0.27  0 0 0 0 0.22  0 0 0 0.20 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>\")",
+                  backgroundSize: "240px 240px",
+                  backgroundRepeat: "repeat",
+                  WebkitMaskImage:
+                    "linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,1) 100%)",
+                  maskImage:
+                    "linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,1) 100%)",
+                }}
+              />
+
+              {/* Engraved-gold lens hairlines — active-state signal.
+                  Identical shape and theme treatment to the journal's
+                  EntryStripCard hairlines. Fade in when the cursor
+                  hovers the panel (group-hover) OR when the textarea
+                  has focus (group-focus-within, fires while the
+                  member is typing). 300ms opacity transition matches
+                  the cards' hairlines timing.
+                  Slate hairlines (cool-white/graphite) were removed —
+                  having two sets of horizontal lines at the same
+                  edges would compete. The panel's bg + inset shadow
+                  marks the boundary always; gold hairlines mark
+                  active only. */}
+              <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100">
+                <VentPanelHairline position="top" theme={theme} />
+                <VentPanelHairline position="bottom" theme={theme} />
+              </div>
+
+              {/* Body textarea — same typography as journal compose
+                  body. Padded inside the panel so the text doesn't
+                  touch the slate's edges. Transparent bg, no border. */}
+              <textarea
+                ref={textareaRef}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder={t("placeholder")}
+                rows={12}
+                style={{
+                  outline: "none",
+                  outlineOffset: 0,
+                  padding: "20px 24px",
+                }}
+                className={`${serif.className} relative z-10 min-h-[260px] w-full flex-1 resize-none bg-transparent text-[18px] italic leading-[1.65] text-[var(--sh-text-secondary)] placeholder:text-[var(--sh-text-muted)]`}
+              />
+            </div>
+
+            {/* Status / autosave indicator — quiet text at the bottom
+                of the writing surface, above the horizon mark.
+                mt-7 matches the mt-7 spacing above the slate panel
+                (between mood chips and panel top edge), so the panel
+                sits with equal breathing room above and below. */}
+            <div className="mt-7 flex flex-shrink-0 justify-center pb-3">
+              <p
+                className={`${sans.className} text-[10px] uppercase tracking-[0.22em] text-[var(--sh-text-muted)]`}
+              >
+                {savedMessage ??
+                  (body.trim()
+                    ? t("statusAutosaving")
+                    : t("statusNothing"))}
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
-    </main>
+
+          {/* ───── Horizon mark — visual close ───── */}
+          <CenteredHorizonMark />
+        </main>
+      </div>
+    </div>
+
+    {/* Unsaved-changes guard — intercepts ALL in-app link clicks
+        (Stone Harbor breadcrumb, mobile tab bar, anywhere a Link is)
+        when the member has typed body content. The hook also handles
+        tab close / refresh / external nav via beforeunload. Mounted
+        but only renders when ventDirty triggers a click interception. */}
+    <UnsavedChangesModal
+      open={ventUnsaved.showModal}
+      onStay={ventUnsaved.cancelNavigation}
+      onLeave={ventUnsaved.confirmNavigation}
+      bodyLabel="what you wrote"
+    />
+    </>
+  );
+}
+
+// ============================================================================
+// VentPanelHairline — engraved-gold lens hairlines on the slate panel.
+// Identical to the journal EntryStripCard's HairlineLens. Inlined here
+// for now; once the journal version is extracted into a shared
+// component, both can import from one source.
+// ============================================================================
+
+function VentPanelHairline({
+  position,
+  theme,
+}: {
+  position: "top" | "bottom";
+  theme: "sunlit" | "dusk";
+}) {
+  const reactId = useId();
+  const gradId = `vent-hairline-${reactId.replace(/[^a-zA-Z0-9]/g, "")}`;
+  const rgb = theme === "sunlit" ? "169,121,61" : "196,147,78";
+  const filter =
+    theme === "sunlit"
+      ? "drop-shadow(0 0.5px 0 rgba(60,40,15,0.18))"
+      : "drop-shadow(0 0 3px rgba(196,147,78,0.45)) drop-shadow(0 0 8px rgba(196,147,78,0.20))";
+
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 100 6"
+      preserveAspectRatio="none"
+      className={`pointer-events-none absolute left-1/2 h-1 w-[88%] -translate-x-1/2 ${
+        position === "top" ? "top-0" : "bottom-0"
+      }`}
+      style={{ filter }}
+    >
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="100%" y2="0">
+          <stop offset="0%" stopColor={`rgba(${rgb},0)`} />
+          <stop offset="22%" stopColor={`rgba(${rgb},0.38)`} />
+          <stop offset="50%" stopColor={`rgba(${rgb},0.95)`} />
+          <stop offset="78%" stopColor={`rgba(${rgb},0.38)`} />
+          <stop offset="100%" stopColor={`rgba(${rgb},0)`} />
+        </linearGradient>
+      </defs>
+      <path
+        d="M 0 3 Q 50 0.4 100 3 Q 50 5.6 0 3 Z"
+        fill={`url(#${gradId})`}
+      />
+    </svg>
+  );
+}
+
+// ============================================================================
+// Centered horizon mark — same component used on /journal + /dashboard.
+// Once we have a shared component file, all three should import from it.
+// ============================================================================
+
+function CenteredHorizonMark() {
+  const { theme } = useTheme();
+  const goldRgb = theme === "sunlit" ? "169,121,61" : "196,147,78";
+  const goldHex = theme === "sunlit" ? "#a9793d" : "#c4934e";
+  const filterShadow =
+    theme === "sunlit"
+      ? "drop-shadow(0 0.5px 0 rgba(60,40,15,0.18))"
+      : "drop-shadow(0 0 3px rgba(196,147,78,0.35)) drop-shadow(0 0 6px rgba(196,147,78,0.18))";
+  const lineAlphaInner = theme === "sunlit" ? 0.95 : 0.85;
+  const lineAlphaMid = theme === "sunlit" ? 0.5 : 0.4;
+
+  return (
+    <div className="flex flex-shrink-0 flex-col items-center justify-center pb-6 pt-6">
+      <motion.div
+        animate={{ opacity: [0.78, 1, 0.78] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        className="flex w-3/4 max-w-[640px] items-center justify-center gap-3"
+      >
+        <HorizonSegment
+          direction="left"
+          goldRgb={goldRgb}
+          lineAlphaInner={lineAlphaInner}
+          lineAlphaMid={lineAlphaMid}
+          filter={filterShadow}
+        />
+        <motion.div
+          animate={{ scale: [1, 1.04, 1] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          style={{ transformOrigin: "center" }}
+        >
+          <AnchorMark size={20} shaftHeight={42} fill={goldHex} />
+        </motion.div>
+        <HorizonSegment
+          direction="right"
+          goldRgb={goldRgb}
+          lineAlphaInner={lineAlphaInner}
+          lineAlphaMid={lineAlphaMid}
+          filter={filterShadow}
+        />
+      </motion.div>
+      <p
+        className={`${serif.className} mt-3 text-[14px] italic text-[var(--sh-text-tertiary)]`}
+      >
+        The harbor is patient.
+      </p>
+    </div>
+  );
+}
+
+function HorizonSegment({
+  direction,
+  goldRgb,
+  lineAlphaInner,
+  lineAlphaMid,
+  filter,
+}: {
+  direction: "left" | "right";
+  goldRgb: string;
+  lineAlphaInner: number;
+  lineAlphaMid: number;
+  filter: string;
+}) {
+  const reactId = useId();
+  const gradId = `horizon-${reactId.replace(/[^a-zA-Z0-9]/g, "")}`;
+
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 100 6"
+      preserveAspectRatio="none"
+      className="h-1.5 flex-1"
+      style={{
+        filter,
+        transform: direction === "right" ? "scaleX(-1)" : undefined,
+      }}
+    >
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="100%" y2="0">
+          <stop offset="0%" stopColor={`rgba(${goldRgb},0)`} />
+          <stop
+            offset="22%"
+            stopColor={`rgba(${goldRgb},${lineAlphaMid * 0.6})`}
+          />
+          <stop
+            offset="55%"
+            stopColor={`rgba(${goldRgb},${lineAlphaMid})`}
+          />
+          <stop
+            offset="88%"
+            stopColor={`rgba(${goldRgb},${lineAlphaInner})`}
+          />
+          <stop
+            offset="100%"
+            stopColor={`rgba(${goldRgb},${lineAlphaInner})`}
+          />
+        </linearGradient>
+      </defs>
+      <path
+        d="M 0 3 Q 30 0.6 100 1.4 L 100 4.6 Q 30 5.4 0 3 Z"
+        fill={`url(#${gradId})`}
+      />
+    </svg>
   );
 }

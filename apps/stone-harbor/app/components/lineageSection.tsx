@@ -75,7 +75,13 @@ export function LineageSection({
 
   return (
     <section
-      className={`mt-12 border-t pt-10 ${
+      // id="lineage" — deep-link anchor so the dashboard Lineage room
+      // can route to /welcome#lineage and the browser scrolls past
+      // the profile-editing chrome straight to this section. The
+      // docstring above describes this contract; the id was missing
+      // until now (rooms surface fix, 2026-06-17).
+      id="lineage"
+      className={`mt-12 scroll-mt-8 border-t pt-10 ${
         isDusk ? "border-white/10" : "border-[var(--sh-border-subtle)]"
       }`}
     >

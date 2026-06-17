@@ -31,6 +31,7 @@ import { routing } from "@/i18n/routing";
 const PHASE_2_PAGES = new Set([
   "dashboard",
   "journal",
+  "lineage",
   "messages",
   "members-blog",
   "resources",
