@@ -523,7 +523,25 @@
       "afternoon": "Buenas tardes",
       "evening": "Buenas noches",
       "tonight": "Esta noche"
+    },
+    "newEntry": "Nueva entrada",
+    "allEntries": "Todas las entradas",
+    "archive": {
+      "eyebrow": "Archivo",
+      "title": "Lo que has dejado aquí.",
+      "voiceSignature": "El puerto recuerda.",
+      "back": "Volver al diario",
+      "empty": "Nada aquí todavía. Tu archivo crecerá a medida que escribas.",
+      "loading": "Reuniendo todo lo que has escrito…"
     }
+  },
+  "lineage": {
+    "eyebrow": "Linaje",
+    "title": "Los que cruzaron.",
+    "subtitle": "Opcional. Nada de lo que aquí escribas se muestra en otro lugar.",
+    "voiceSignature": "El puerto sabe dónde empezaste.",
+    "back": "Volver al panel",
+    "loading": "Abriendo el cuarto…"
   },
   "messages": {
     "loading": "Abriendo tus conversaciones…",
@@ -851,7 +869,8 @@
     "back": "Puerto",
     "aria": {
       "back": "Volver al panel"
-    }
+    },
+    "statusSaved": "Guardado en tu diario. El puerto te escuchó."
   },
   "settleIn": {
     "skip": "Saltar esta introducción",

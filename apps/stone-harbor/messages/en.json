@@ -523,7 +523,25 @@
       "afternoon": "Good afternoon",
       "evening": "Good evening",
       "tonight": "Tonight"
+    },
+    "newEntry": "New entry",
+    "allEntries": "All entries",
+    "archive": {
+      "eyebrow": "Archive",
+      "title": "What you've put down here.",
+      "voiceSignature": "The harbor remembers.",
+      "back": "Back to journal",
+      "empty": "Nothing here yet. Your archive grows as you write.",
+      "loading": "Gathering everything you've written…"
     }
+  },
+  "lineage": {
+    "eyebrow": "Lineage",
+    "title": "Those who crossed.",
+    "subtitle": "Optional. Nothing here is displayed anywhere else.",
+    "voiceSignature": "The harbor knows where you began.",
+    "back": "Back to dashboard",
+    "loading": "Opening the room…"
   },
   "messages": {
     "loading": "Opening your conversations…",
@@ -851,7 +869,8 @@
     "back": "Harbor",
     "aria": {
       "back": "Back to dashboard"
-    }
+    },
+    "statusSaved": "Saved to your journal. The harbor heard you."
   },
   "settleIn": {
     "skip": "Skip settle-in",

@@ -7,13 +7,18 @@
  * provides the typography fallback so members never see Arial flash
  * before next/font loads.
  *
- * --font-cormorant and --font-inter are injected by lib/fonts.ts via
- * the className on <html> in app/layout.tsx.
+ * Type decision (2026-06-15): Source Serif 4 + Inter Tight from Google
+ * Fonts. See lib/fonts.ts header for the full rationale and
+ * stone-harbor-docs/stone-harbor/Stone_Harbor_Design_System_v1.md for
+ * the lab evaluation that led here.
+ *
+ * --font-source-serif and --font-inter-tight are injected by
+ * lib/fonts.ts via the className on <html> in app/layout.tsx.
  */
 
 @theme inline {
-  --font-sans: var(--font-inter);
-  --font-serif: var(--font-cormorant);
+  --font-sans: var(--font-inter-tight);
+  --font-serif: var(--font-source-serif);
 }
 
 /* ------------------------------------------------------------------
@@ -51,8 +56,16 @@
   --sh-text-tertiary: #78716c;  /* stone-500 */
   --sh-text-muted: #a8a29e;     /* stone-400 */
 
-  --sh-border-subtle: #e7e5e4;  /* stone-200 */
-  --sh-border-medium: #d6d3d1;  /* stone-300 */
+  /* Sunlit borders bumped one stone-step darker (June 2026 sunlit
+     calibration pass). Cream bg #f3efe7 is so pale that the original
+     stone-200 (#e7e5e4) borders had only ~3% luminance contrast and
+     read as invisible — the top-header, anchor-strip and sidebar
+     dividers all disappeared. Stepping subtle → stone-300 and medium
+     → stone-400 gives the structure visible bones without making the
+     borders feel heavy. Dusk uses rgba whites and doesn't need this
+     adjustment. */
+  --sh-border-subtle: #d6d3d1;  /* stone-300 */
+  --sh-border-medium: #bfb9b1;  /* stone-400-ish */
 
   --sh-accent-gold: #a9793d;    /* gold-deep, reads on light */
   --sh-accent-gold-bright: #c4934e;
@@ -85,12 +98,108 @@ body {
   color: var(--sh-text-primary);
 }
 
+/* ------------------------------------------------------------------
+ * Sunlit body — warm gradient + paper grain.
+ *
+ * Flat #f3efe7 across the entire viewport reads as "paper-colored
+ * CSS" — the eye registers it as a background-color, not as material.
+ * To make sunlit feel like a premium hardback book or a letterpress
+ * journal (instead of a styled web page on cream), layer three things
+ * over the base bg-page color:
+ *
+ *   1. A subtle warm radial gradient at the top — a hint of warmer
+ *      cream pulled in from the upper edge, like light entering from
+ *      a window above. The eye reads "lit interior space," not "flat
+ *      paint."
+ *
+ *   2. A subtle amber radial at the bottom — a deeper warmth at the
+ *      lower edge, giving the page vertical dimensionality. Together
+ *      with (1), the page has a sense of being IN a room, not just
+ *      on a screen.
+ *
+ *   3. A fixed-position paper-grain noise tile (240x240, ~6% alpha,
+ *      warm brown tint via feColorMatrix). The grain is what
+ *      separates premium cream UIs (Substack, Readwise, Apple Books)
+ *      from flat-feeling ones. background-attachment: fixed so the
+ *      grain doesn't scroll — paper material doesn't move with text.
+ *
+ * The noise SVG is inlined as a data URL so there's no asset round-
+ * trip and no flash of bare cream before texture loads. The %23 is
+ * url-encoded "#" for the filter id reference, and %25 is "%" for
+ * the 100% width/height.
+ *
+ * Dusk uses the flat near-black bg unchanged — the cinematic mode
+ * doesn't benefit from grain or warmth gradients, and adding them
+ * would muddy the depth.
+ * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------
+ * Dusk body — subtle gold ambient.
+ *
+ * Two very-low-alpha radial gradients layered over the near-black
+ * base color give dusk some atmospheric warmth without changing
+ * its cinematic mood:
+ *   - A warmer radial at the bottom (4.5% alpha gold-bright) reads
+ *     as distant harbor lights at the horizon — the page literally
+ *     has a horizon glow under the entries strip.
+ *   - An even subtler radial at the top (2.5% alpha) reads as a
+ *     lamp's warmth above the writing — like sitting at a desk
+ *     under a soft amber lamp.
+ *
+ * Both are background-attachment: fixed so they stay anchored to
+ * the viewport edges, not scrolling with content. Combined with the
+ * existing flat near-black bg-color underneath, the page reads as
+ * a room lit by warm light at two edges, not a flat dark CSS
+ * canvas. The effect is the kind of ambience that disappears once
+ * removed — you feel it without registering it.
+ * ------------------------------------------------------------------ */
+[data-theme="dusk"] body {
+  background-image:
+    radial-gradient(
+      ellipse 85% 55% at 50% 100%,
+      rgba(196, 147, 78, 0.045),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 65% 45% at 50% 0%,
+      rgba(196, 147, 78, 0.025),
+      transparent 65%
+    );
+  background-repeat: no-repeat, no-repeat;
+  background-size:
+    100% 100%,
+    100% 100%;
+  background-attachment: fixed, fixed;
+}
+
+[data-theme="sunlit"] body,
+:root:not([data-theme]) body {
+  background-image:
+    radial-gradient(
+      ellipse 110% 70% at 50% 0%,
+      rgba(255, 244, 220, 0.45),
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 90% 60% at 50% 100%,
+      rgba(196, 147, 78, 0.07),
+      transparent 70%
+    ),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.42  0 0 0 0 0.33  0 0 0 0 0.22  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-size:
+    100% 100%,
+    100% 100%,
+    240px 240px;
+  background-attachment: fixed, fixed, fixed;
+}
+
 html,
 body {
-  /* Inter is the body face; Cormorant is applied per-component via
-     className={serif.className} on display headings + italic copy. */
+  /* Inter Tight is the body face; Source Serif 4 is applied
+     per-component via className={serif.className} on display
+     headings + italic copy. */
   font-family:
-    var(--font-inter),
+    var(--font-inter-tight),
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",

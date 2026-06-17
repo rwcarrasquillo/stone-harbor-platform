@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { serif } from "@/lib/fonts";
 import { useTheme } from "@/app/components/themeProvider";
@@ -10,31 +9,31 @@ import { LanguagePicker } from "@/app/components/languagePicker";
 /**
  * Stone Harbor — CrisisFooter.
  *
- * The canonical "If you are in crisis" banner that sits at the bottom
- * of every authenticated page. Theme-aware (Sunlit cream vs. Dusk
- * dark-glass).
+ * The canonical "If you are in crisis · 988" band that sits at the
+ * bottom of every authenticated page. Theme-aware (Sunlit cream vs.
+ * Dusk dark-glass).
  *
- * Three columns at desktop, stacked on mobile:
- *   1. Anchor glyph + Stone Harbor wordmark (left)
- *   2. "The harbor is patient." (centered, serif italic)
- *   3. "If You Are In Crisis" + 988 (right)
+ * What the footer carries now — and what moved out:
  *
- * Anchor — integrated:
- *   The brand anchor used to be a floating watermark in the bottom-
- *   right corner of every authenticated page. That mechanical dance
- *   (with an IntersectionObserver dodging this footer when it scrolled
- *   into view) is gone. The anchor now lives INSIDE the footer —
- *   paired with the wordmark on the left — so the brand mark is
- *   permanently anchored to the band that anchors the page.
+ *   Stage 1 (early): Brand anchor + wordmark + tagline on the left,
+ *   "The harbor is patient." line in the center, 988 on the right.
+ *   Three columns of identity + voice + safety.
  *
- *   A slow 4-second breathing animation (scale 1 → 1.06, opacity
- *   0.82 → 1) matches the box-breath rhythm members practice on
- *   /meditation. The page itself is now breathing.
+ *   Stage 2 (mid): Brand wordmark removed — the top header carries
+ *   identity on every authenticated route, so the footer didn't need
+ *   to duplicate it. The breathing anchor and patience line stayed.
  *
- *   The animation uses framer-motion's `animate` prop rather than
- *   styled-jsx — styled-jsx in Next 16 + Turbopack App Router has
- *   compile-time quirks that caused this whole module to fall back
- *   to a stale build during dev.
+ *   Stage 3 (current): Breathing anchor and "The harbor is patient."
+ *   moved INTO the journal reader's fleuron tailpiece, where the
+ *   harbor mark + voice live at the place the writing was held. The
+ *   footer now does one job — surface the crisis line — and gets out
+ *   of the way. The brand voice signature lives at the entry's close;
+ *   the safety line lives at the page's close. They no longer compete
+ *   with each other in the same band.
+ *
+ * Layout: single centered column with the "If You Are In Crisis · 988"
+ * block on top, and a quieter language picker + legal links row below.
+ * No grid, no left/center fill — just the band and its utility row.
  *
  * Optional: pass `amplify988` to render the Stone-Harbor-voice
  * follow-on line ("Tonight more than most nights, you are not alone.")
@@ -50,7 +49,6 @@ export function CrisisFooter({ amplify988 = false }: Props) {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
   const t = useTranslations("crisisFooter");
-  const tCommon = useTranslations("common");
 
   return (
     <footer
@@ -58,95 +56,49 @@ export function CrisisFooter({ amplify988 = false }: Props) {
       // Mounted at body level (see globalCrisisFooter.tsx + layout.tsx),
       // so the footer is a direct child of <body> and naturally spans
       // the full 100vw.
-      className={`relative z-10 w-full border-t px-4 py-5 backdrop-blur-sm md:px-6 md:py-10 ${
+      //
+      // Padding tightened (py-4 md:py-6 → py-3 md:py-4) now that the
+      // band carries only the 988 line + utility row. The previous
+      // padding sized the band to hold three columns of content; with
+      // a single centered column it would feel oversize.
+      className={`relative z-10 w-full border-t px-4 py-3 backdrop-blur-sm md:px-6 md:py-4 ${
         isDusk
           ? "border-white/10 bg-black/60"
           : "border-stone-200 bg-[#efe8dc]/70"
       }`}
     >
-      <div className="mx-auto grid max-w-7xl gap-3 md:grid-cols-3 md:items-center md:gap-6">
-        {/* LEFT — anchor glyph + wordmark */}
-        <div className="flex items-center gap-3 md:gap-4">
-          <motion.span
-            aria-hidden="true"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center md:h-12 md:w-12"
-            animate={{
-              scale: [1, 1.06, 1],
-              opacity: [0.82, 1, 0.82],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            style={{ transformOrigin: "center" }}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#c4934e"
-              strokeWidth="1.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-full w-full"
-            >
-              {/* Stylized anchor — same glyph the floating watermark used.
-                  Slightly heavier stroke (1.2 vs 0.8) for legibility at
-                  the smaller footer size. */}
-              <circle cx="12" cy="5" r="1.5" />
-              <path d="M12 22V8" />
-              <path d="M5 12a7 7 0 0 0 14 0" />
-              <path d="M8 8h8" />
-            </svg>
-          </motion.span>
-          <div>
-            <p className="text-base font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold)]">
-              {tCommon("brand")}
-            </p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--sh-accent-gold)]/70">
-              {tCommon("tagline")}
-            </p>
-          </div>
-        </div>
-
-        {/* CENTER — patience line */}
-        <div className="text-center">
+      {/* Crisis line — single centered column. The 988 number itself
+          stays untranslated (US Suicide & Crisis Lifeline, brand-fixed);
+          the surrounding copy localizes. max-w-xl caps the readable
+          measure so the line doesn't sprawl across very wide viewports. */}
+      <div className="mx-auto max-w-xl text-center">
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
+          {t("crisisLabel")}
+        </p>
+        <p className="mt-1.5 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
+          {t("crisisLineStart")}{" "}
+          <span className="font-bold text-[var(--sh-accent-gold)]">988</span>{" "}
+          {t("crisisLineEnd")}
+        </p>
+        {amplify988 && (
           <p
-            className={`${serif.className} text-base italic text-[var(--sh-text-secondary)]`}
+            className={`${serif.className} mt-2 text-base italic leading-snug text-[#a9793d]`}
           >
-            {t("patience")}
+            {t("amplify")}
           </p>
-        </div>
-
-        {/* RIGHT — 988 crisis line. The 988 number itself stays
-            untranslated — it's the US Suicide & Crisis Lifeline and
-            is brand-fixed. The surrounding copy localizes. */}
-        <div className="text-right">
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
-            {t("crisisLabel")}
-          </p>
-          <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-            {t("crisisLineStart")}{" "}
-            <span className="font-bold text-[var(--sh-accent-gold)]">988</span>{" "}
-            {t("crisisLineEnd")}
-          </p>
-          {amplify988 && (
-            <p
-              className={`${serif.className} mt-3 text-base italic leading-snug text-[#a9793d]`}
-            >
-              {t("amplify")}
-            </p>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Language picker + legal links — quiet utility row below the
-          main 3-column grid. Privacy + Terms links added 2026-06-06
-          (SH-8) so the legal notices are reachable from every
-          authenticated surface, not only the /register checkbox.
-          Visually small, uppercase microcopy so they recede from the
-          988 messaging that owns the footer. */}
-      <div className="mx-auto mt-4 flex max-w-7xl flex-col items-center gap-3 border-t border-[var(--sh-border-subtle)] pt-4 md:mt-6 md:flex-row md:justify-between md:pt-5">
+          crisis line. Privacy + Terms links added 2026-06-06 (SH-8)
+          so the legal notices are reachable from every authenticated
+          surface, not only the /register checkbox. Small uppercase
+          microcopy so they recede from the 988 messaging that owns
+          the band.
+
+          Spacing tightened (mt-3 pt-3 md:mt-4 → mt-2.5 pt-2.5 md:mt-3)
+          to match the band's slimmer overall height. */}
+      <div className="mx-auto mt-2.5 flex max-w-7xl flex-col items-center gap-3 border-t border-[var(--sh-border-subtle)] pt-2.5 md:mt-3 md:flex-row md:justify-between md:pt-3">
         <LanguagePicker />
         <nav
           aria-label={t("legalAria")}
