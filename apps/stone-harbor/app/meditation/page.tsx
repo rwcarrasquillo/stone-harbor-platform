@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX } from "lucide-react";
 import { serif, sans } from "@/lib/fonts";
 import { supabase } from "@/lib/supabaseClient";
+import { AnchorMark } from "@/app/components/anchorMark";
 import { RotatingNatureBackdrop } from "@/app/components/rotatingNatureBackdrop";
 import {
   BREATH_PATTERNS,
@@ -19,14 +20,14 @@ import {
 } from "@/lib/userProgress";
 
 /**
- * Stone Harbor — Meditation page.
+ * Stone Harbor — Meditation route (production, harbor vocabulary Path C).
  *
- * A separate, full-screen sanctuary the member can step into from the
- * dashboard "Daily Breath" tile. Dark cinematic backdrop with rotating
+ * A full-screen sanctuary the member can step into from the dashboard
+ * "Sit with the breath" room. Dark cinematic backdrop with rotating
  * nature imagery (the same RotatingNatureBackdrop component used on
- * the home / login / dashboard surfaces), a continuous 4s/4s box-breath
- * cycle on a central circle, and the same shimmering breeze ambient
- * audio loop used on /start-here.
+ * /, /login, /dashboard), a continuous box-breath cycle on a central
+ * circle, and the same shimmering breeze ambient audio loop used on
+ * /start-here.
  *
  * Why a dedicated page rather than a modal:
  *   - Members on phones (especially in the PWA) appreciate full-screen
@@ -36,18 +37,71 @@ import {
  *   - The route URL also means they can bookmark or pin it to home
  *     screen as its own icon — "Stone Harbor: Breath."
  *
- * Therapeutic design notes:
+ * Therapeutic design notes (UNCHANGED from the pre-vocabulary version):
  *   - Audio defaults OFF. Members in a coffee shop or office should
  *     never get blasted on tab open. Single tap to start.
  *   - No "completion" state, no celebration, no timer. The 60-second
  *     ring on the home page was for first-time visitors; here the
  *     member chose to enter, so we trust them to leave when ready.
- *   - Back arrow at the top-left returns to /dashboard. ESC also exits
- *     for keyboard users.
+ *   - No session log written to the database. The act of meditating
+ *     belongs to the man, not to a tracking system.
+ *
+ * Harbor vocabulary applied (Path C — "hybrid"):
+ *   /meditation is the one authenticated surface where full harbor
+ *   vocabulary (sunlit/dusk theming, max-w-[720px] reading column,
+ *   horizon mark, sessions strip, crisis footer flush at the bottom)
+ *   would actively damage what makes the page therapeutic. The
+ *   cinematic dark backdrop + rotating nature + central breath circle
+ *   + no-tracking-no-completion philosophy stay EXACTLY as they are.
+ *   Only the EDGES of the page change to match the harbor breadcrumb
+ *   pattern other surfaces use:
+ *
+ *     1. Top-left: brand crumb (anchor + "Stone Harbor · Breath" →
+ *        /dashboard) replacing the bare back arrow. Same shape as
+ *        journal/vent/lineage headers, restyled for the dark
+ *        cinematic backdrop (white serif + gold anchor, not
+ *        theme-aware sunlit/dusk variables).
+ *     2. Eyebrow above the breath circle: tightened from "Daily
+ *        Breath" to a single imperative word "BREATHE" so it matches
+ *        the rhythm of other harbor-vocabulary eyebrows
+ *        ("ARCHIVE", "PRIVATE", "LINEAGE"). The original
+ *        meditation.eyebrow string is preserved in i18n for any
+ *        other surface that uses it (dashboard tile, etc.).
+ *     3. Below the practice text: a quiet italic serif voice
+ *        signature ("The harbor breathes with you") — same role as
+ *        "The harbor is patient." on /journal, with a present-tense
+ *        verb that matches the act being performed here.
+ *     4. NO inline crisis line. The body-level GlobalCrisisFooter
+ *        is already mounted on every authenticated route. Because
+ *        this page uses min-h-screen (not h-full), the global
+ *        footer sits just below the viewport fold — the cinematic
+ *        sanctuary fills the screen and the 988 band is accessible
+ *        via scroll. This is the deliberate behavior /meditation
+ *        has had since before harbor vocabulary; meditation is
+ *        treated as the documented exception to the "crisis footer
+ *        always visible" rule used on text-based surfaces.
+ *
+ * What's INTENTIONALLY NOT here (and why):
+ *   - No anchor strip with eyebrow/title at the very top of the page.
+ *     The existing centered eyebrow + serif title above the breath
+ *     circle already plays that role — moving them to the top would
+ *     put text ABOVE the cinematic stage they're framing.
+ *   - No horizon mark. It would visually compete with the breath
+ *     circle.
+ *   - No "Your sessions" strip. The existing design explicitly
+ *     rejects session tracking ("members chose to enter, we trust
+ *     them to leave"). Adding a sessions strip would require DB
+ *     writes + a completion state — both contradict the therapeutic
+ *     design.
+ *   - No sunlit/dusk theme awareness. /meditation deliberately
+ *     breaks theming because the rotating nature photography needs
+ *     a dark stage.
+ *
+ * Tracked under SH-47 (Meditation harbor vocabulary port).
  */
 
 const BREATH_IMAGES = [
-  // New curated Unsplash photographs — populated by
+  // Curated Unsplash photographs — populated by
   // scripts/fetch-unsplash-nature.mjs. Themes weave dawn lakes,
   // misty forest, and coastal calm for the longest possible viewing.
   "/nature/misty-forest-sunrise-soft-light.jpg",
@@ -156,17 +210,35 @@ export default function MeditationPage() {
         }}
       />
 
-      {/* TOP BAR — back to dashboard + sound toggle */}
+      {/* ===== Top header =====
+          Brand crumb on the left (replaces the bare back arrow from the
+          pre-vocabulary design). Sound toggle on the right (unchanged).
+          The crumb uses the same anchor + "Stone Harbor · Breath" pattern
+          as journal/vent/lineage, restyled for the dark cinematic
+          backdrop:
+            - White serif text on the brand name
+            - Gold accent only on the anchor itself
+            - Hover lifts white → white-bright (no theme-variable lookups)
+          This is the ONLY way a member moving from /dashboard rooms into
+          meditation experiences the brand continuity, since the rest of
+          the page deliberately stays cinematic. */}
       <header className="relative z-20 flex items-center justify-between px-4 py-4 md:px-10 md:py-6">
         <Link
           href="/dashboard"
-          aria-label={t("aria.back")}
-          title={t("aria.back")}
-          className="group flex items-center gap-2 text-[#c4934e] transition hover:text-white"
+          className="flex items-center gap-3"
+          aria-label="Stone Harbor — Dashboard"
         >
-          <ArrowLeft size={18} aria-hidden="true" />
-          <span className="hidden text-xs font-bold uppercase tracking-[0.22em] md:inline">
-            {t("back")}
+          <AnchorMark size={28} fill="#c4934e" />
+          <span
+            className={`${serif.className} text-[18px] italic tracking-[-0.012em] text-white transition-colors hover:text-white/85 md:text-[20px]`}
+          >
+            Stone Harbor
+          </span>
+          <span className="text-[14px] text-white/40 md:text-[16px]">·</span>
+          <span
+            className={`${serif.className} text-[18px] italic tracking-[-0.012em] text-white/70 transition-colors hover:text-white/90 md:text-[20px]`}
+          >
+            {t("brandCrumb")}
           </span>
         </Link>
 
@@ -184,10 +256,18 @@ export default function MeditationPage() {
         </button>
       </header>
 
-      {/* CENTER — breath circle */}
+      {/* ===== CENTER — breath circle =====
+          Centered eyebrow + serif title + breath circle + (gated)
+          pattern toggle + guidance text + voice signature. Geometry
+          preserved from the pre-vocabulary version; the eyebrow text
+          was tightened to a single word ("BREATHE") so it matches the
+          rhythm of other harbor-vocabulary eyebrows ("ARCHIVE",
+          "PRIVATE", "LINEAGE"). The original "Daily Breath" string
+          lives at meditation.eyebrow still — left untouched for any
+          other surface that uses it (dashboard tile, etc.). */}
       <section className="relative z-20 flex flex-1 flex-col items-center justify-center px-6 pb-16 text-center">
-        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.4em] text-white/65 md:mb-6 md:text-xs">
-          {t("eyebrow")}
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#c4934e] md:mb-6 md:text-[11px]">
+          {t("centeredEyebrow")}
         </p>
         <p
           className={`${serif.className} mb-10 text-2xl italic leading-snug text-white md:mb-16 md:text-4xl`}
@@ -252,7 +332,35 @@ export default function MeditationPage() {
               ? t("guidance.withSound")
               : t("guidance.silence")}
         </p>
+
+        {/* Voice signature — quiet italic serif beneath the practice
+            text. Same role as "The harbor is patient." on /journal:
+            a single line that tells the member where they are in the
+            harbor vocabulary, in Harbor Voice. The present-tense verb
+            ("breathes with you") matches the act being performed,
+            distinguishing this from journal's patience or archive's
+            memory. */}
+        <p
+          className={`${serif.className} mt-10 text-[13px] italic text-white/55 md:mt-14 md:text-[14px]`}
+        >
+          {t("voiceSignature")}
+        </p>
       </section>
+
+      {/*
+        Crisis routing is honored by the body-level GlobalCrisisFooter,
+        which is mounted in app/layout.tsx and present on every
+        authenticated route. Because this <main> uses min-h-screen
+        (not h-full), the global footer sits JUST BELOW the viewport
+        fold on the typical desktop — so the cinematic sanctuary fills
+        the screen while the 988 band remains accessible via scroll.
+        An earlier revision in the centered preview added a duplicate
+        inline crisis line at this position and was removed when
+        stacked-crisis-footers were caught on smoke test — a useful
+        reminder that the harbor vocabulary's "crisis footer always
+        visible" rule was set for text-based surfaces (journal/vent/
+        lineage) and meditation is the deliberate exception.
+      */}
     </main>
   );
 }
