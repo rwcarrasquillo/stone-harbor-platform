@@ -597,6 +597,8 @@
     },
     "thread": {
       "eyebrow": "Conversation",
+      "newMessageEyebrow": "New message",
+      "newMessageInvitation": "Say the first thing to {name}.",
       "noMessagesTitle": "No messages yet.",
       "noMessagesSub": "One honest sentence is enough.",
       "composeLabel": "Message",

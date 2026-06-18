@@ -171,12 +171,24 @@ export default function VentCenteredPage() {
       return;
     }
 
+    // Insert shape matches /journal's compose insert. journal_entries
+    // has `content` (NOT NULL) and `original_content` (NOT NULL, the
+    // immutable-original used by the 6-hour edit window). NO `body`,
+    // `kind`, or `privacy_level` columns exist on the schema; vent
+    // entries are distinguished from journal entries by title=null
+    // (which they always are — vent has no title field). Same insert
+    // shape as journal but without the title fields.
+    //
+    // Earlier revisions of this code wrote to `body`/`kind`/`privacy_level`
+    // columns that don't exist — caused production save failures
+    // ("could not find 'body' column of 'journal_entries' in schema
+    // cache"). Verified against production schema 2026-06-18.
+    const trimmedContent = body.trim();
     const { error } = await supabase.from("journal_entries").insert({
       user_id: user.id,
-      body: body.trim(),
+      content: trimmedContent,
+      original_content: trimmedContent,
       mood: mood ?? null,
-      kind: "vent",
-      privacy_level: "private",
     });
 
     setSaving(false);

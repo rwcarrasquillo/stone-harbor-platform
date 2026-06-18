@@ -196,7 +196,45 @@ export default function MessagesPage() {
   // Resets memberSearch when closed so reopening starts fresh.
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // ───── Deferred conversation creation ─────
+  //
+  // When a member is selected from the search results, we DO NOT
+  // immediately create a conversation row in the database. Instead,
+  // we set `pendingRecipient` and render a "new message" view in the
+  // right panel. The conversation is only created via the
+  // create_direct_conversation RPC when the user actually sends the
+  // first message.
+  //
+  // Why deferred: SH-64. Previous behavior created empty conversation
+  // rows in `conversations` and `conversation_members` on every click
+  // of a search result. Those empty conversations persisted forever
+  // in both members' inboxes if the user navigated away without
+  // sending — visible as "No messages yet" entries that cluttered
+  // the strip and polluted the database. Standard messaging-app
+  // pattern (iMessage, Signal, Telegram) is to defer creation until
+  // commitment is real.
+  //
+  // Cleared when:
+  //   - User sends a message (transitions to active conversation)
+  //   - User clicks an existing conversation in the strip
+  //   - User reopens search and picks a different member
+  //   - User navigates away (component unmount)
+  const [pendingRecipient, setPendingRecipient] = useState<Profile | null>(
+    null,
+  );
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Tracks whether we've already auto-selected the first conversation
+  // on this mount. Ref (not state) because we want the check to be
+  // synchronous and not trigger a re-render. Set to true the moment
+  // loadConversations auto-selects its first conversation on initial
+  // load; checked thereafter so the auto-select never re-fires from
+  // a real-time subscription handler invoking loadConversations
+  // again. Prevents the "page jumps to incoming conversation" bug
+  // caught on 2026-06-18 smoke.
+  const hasAutoSelectedRef = useRef(false);
+
 
   const activeConversation = useMemo(() => {
     return conversations.find((item) => item.id === activeConversationId);
@@ -381,7 +419,28 @@ export default function MessagesPage() {
         };
       }) ?? [];
     setConversations(list);
-    if (!activeConversationId && list.length > 0) {
+
+    // Auto-select the most recently updated conversation on INITIAL
+    // load only. Guarded by hasAutoSelectedRef so this only fires
+    // once per mount, regardless of how many times loadConversations
+    // is invoked thereafter.
+    //
+    // Without this guard, real-time subscription handlers
+    // (inbox-wide messages INSERT, active-conversation
+    // conversation_members UPDATE) re-invoke loadConversations on
+    // every incoming change. Those handlers close over a stale
+    // `activeConversationId` from subscription-setup time, so the
+    // previous `if (!activeConversationId)` check evaluates with the
+    // OLD value (often null) and the auto-select re-fires —
+    // causing the page to "jump" to the most recently updated
+    // conversation on every received message. Real production bug,
+    // caught on 2026-06-18 smoke.
+    //
+    // Ref-based check is synchronous and survives re-renders without
+    // triggering one, so it works correctly even when called from
+    // within a stale closure.
+    if (!hasAutoSelectedRef.current && list.length > 0) {
+      hasAutoSelectedRef.current = true;
       setActiveConversationId(list[0].id);
       await loadMessages(list[0].id, true);
     }
@@ -449,39 +508,98 @@ export default function MessagesPage() {
   }
 
   async function startConversation(otherUserId: string) {
-    const { data, error } = await supabase.rpc("create_direct_conversation", {
-      other_user_id: otherUserId,
-    });
-    if (error) {
-      fail(error.message);
+    // Deferred-creation pattern (SH-64): selecting a member from the
+    // search results does NOT create a conversation row anymore. We
+    // just stash the recipient and let the right panel render a
+    // "new message" compose view. The conversation only gets created
+    // when sendMessage fires for the first time (see sendMessage
+    // below for the create_direct_conversation call).
+    //
+    // This prevents the "empty conversation" entries that used to
+    // pollute both members' inboxes whenever a search-result click
+    // was accidental or abandoned.
+    const recipient = memberResults.find((m) => m.id === otherUserId);
+    if (!recipient) {
+      // Defensive: shouldn't happen (we only call startConversation
+      // from search-result onClicks where the member is in scope),
+      // but if memberResults has been cleared mid-click we'd rather
+      // bail than crash.
       return;
     }
-    const conversationId = data as string;
+    setPendingRecipient(recipient);
+    // Important: clear activeConversationId so the right panel
+    // renders the "new message" view instead of an old thread.
+    setActiveConversationId(null);
     setMemberSearch("");
     setMemberResults([]);
     setSearchOpen(false);
-    setActiveConversationId(conversationId);
-    if (userId) {
-      await loadConversations(userId);
-    }
-    await loadMessages(conversationId, true);
   }
 
   async function sendMessage(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!activeConversationId || !messageBody.trim()) return;
+    if (!messageBody.trim()) return;
+
     setSending(true);
-    const { error } = await supabase.rpc("send_message", {
-      conversation_uuid: activeConversationId,
-      message_body: messageBody,
-    });
-    if (error) {
-      fail(error.message);
+
+    // Resolve the conversation we're sending into. Two paths:
+    //
+    //   1. EXISTING conversation — activeConversationId is set, just
+    //      use it.
+    //
+    //   2. NEW conversation via deferred-creation (SH-64) —
+    //      pendingRecipient is set, activeConversationId is null. We
+    //      call create_direct_conversation NOW (not at search-click
+    //      time) and use the returned id for the send. This is the
+    //      moment the conversation actually comes into being; if the
+    //      send fails afterward we have a real-but-empty conversation
+    //      that the next message will populate (acceptable). If RPC
+    //      returns an existing conversation for this recipient pair
+    //      (idempotent on the server side), that's fine too — we just
+    //      land in the existing thread.
+    let conversationId = activeConversationId;
+
+    if (!conversationId && pendingRecipient) {
+      const { data: createdId, error: createError } = await supabase.rpc(
+        "create_direct_conversation",
+        { other_user_id: pendingRecipient.id },
+      );
+      if (createError) {
+        fail(createError.message);
+        setSending(false);
+        return;
+      }
+      conversationId = createdId as string;
+    }
+
+    if (!conversationId) {
+      // No active conversation and no pending recipient — nothing to
+      // send into. Shouldn't happen because the composer is only
+      // rendered when one of those is true, but defensive.
       setSending(false);
       return;
     }
+
+    const { error: sendError } = await supabase.rpc("send_message", {
+      conversation_uuid: conversationId,
+      message_body: messageBody,
+    });
+    if (sendError) {
+      fail(sendError.message);
+      setSending(false);
+      return;
+    }
+
     setMessageBody("");
-    await loadMessages(activeConversationId, true);
+
+    // If this was a deferred-creation flow, transition from pending
+    // into the active conversation. After this the thread reads as a
+    // normal active thread; the "new message" view goes away.
+    if (pendingRecipient) {
+      setPendingRecipient(null);
+      setActiveConversationId(conversationId);
+    }
+
+    await loadMessages(conversationId, true);
     if (userId) {
       await loadConversations(userId);
     }
@@ -879,6 +997,12 @@ export default function MessagesPage() {
                       key={convo.id}
                       type="button"
                       onClick={() => {
+                        // Clear any pending recipient (SH-64) — if the
+                        // member was composing a brand-new message via
+                        // the deferred-creation flow and clicked an
+                        // existing conversation instead, we abandon the
+                        // new-message draft. No DB write ever happened.
+                        setPendingRecipient(null);
                         setActiveConversationId(convo.id);
                         // Optimistic: zero unread immediately in local
                         // state so the gold ring + count disappear on
@@ -1193,6 +1317,111 @@ export default function MessagesPage() {
                             className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--sh-accent-gold)] transition-colors hover:text-[var(--sh-accent-gold-bright)] disabled:opacity-50`}
                           >
                             {sending ? t("thread.sending") : `${t("thread.send")} →`}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </form>
+                </>
+              ) : pendingRecipient ? (
+                /* New message view — deferred-creation (SH-64).
+                   Member picked a recipient from search but no
+                   conversation row exists yet. We render:
+                     - Thread header with recipient's avatar + name
+                       and a "NEW MESSAGE" eyebrow (distinct from the
+                       "CONVERSATION" eyebrow on existing threads)
+                     - An empty body area with a quiet invitation to
+                       write the first message
+                     - The standard composer
+                   The conversation only gets created when sendMessage
+                   fires (see sendMessage's create_direct_conversation
+                   branch). If the user clicks an existing conversation
+                   or another search result, pendingRecipient clears
+                   and no DB write ever happened. */
+                <>
+                  <div className="flex items-center gap-4 border-b border-[var(--sh-border-subtle)] pb-4">
+                    <Avatar profile={pendingRecipient} />
+                    <div className="flex flex-col gap-1">
+                      <p
+                        className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--sh-accent-gold)]`}
+                      >
+                        {t("thread.newMessageEyebrow")}
+                      </p>
+                      <h2
+                        className={`${serif.className} text-[26px] italic font-medium leading-tight text-[var(--sh-text-primary)] md:text-[30px]`}
+                      >
+                        {pendingRecipient.display_name ||
+                          pendingRecipient.username ||
+                          pendingRecipient.email ||
+                          t("inbox.memberFallback")}
+                      </h2>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-1 flex-col items-center justify-center p-10 text-center">
+                    <p
+                      className={`${serif.className} max-w-md text-[18px] italic leading-relaxed text-[var(--sh-text-tertiary)]`}
+                    >
+                      {t("thread.newMessageInvitation", {
+                        name:
+                          pendingRecipient.display_name ||
+                          pendingRecipient.username ||
+                          t("inbox.memberFallback"),
+                      })}
+                    </p>
+                  </div>
+
+                  {/* Composer — same shape as the active thread's
+                      composer. sendMessage handles the
+                      pendingRecipient → create_direct_conversation
+                      transition transparently. */}
+                  <form
+                    onSubmit={sendMessage}
+                    className="border-t border-[var(--sh-border-subtle)] pt-6"
+                  >
+                    <div className="mx-auto w-full max-w-[720px]">
+                      <textarea
+                        value={messageBody}
+                        onChange={(e) => {
+                          setMessageBody(e.target.value);
+                          const ta = e.currentTarget;
+                          ta.style.height = "auto";
+                          ta.style.height = `${Math.min(ta.scrollHeight, 200)}px`;
+                        }}
+                        placeholder={t("thread.composePlaceholder")}
+                        rows={1}
+                        className={`${serif.className} w-full resize-none bg-transparent text-[15px] italic leading-[1.65] text-[var(--sh-text-primary)] placeholder:italic placeholder:text-[var(--sh-text-muted)]`}
+                        style={{
+                          outline: "none",
+                          outlineOffset: 0,
+                          minHeight: "26px",
+                        }}
+                      />
+                      {messageBody.trim().length > 0 && (
+                        <div className="mt-4 flex items-center justify-end gap-3">
+                          {sending && (
+                            <motion.span
+                              animate={{
+                                scale: [1, 1.3, 1],
+                                opacity: [0.5, 1, 0.5],
+                              }}
+                              transition={{
+                                duration: 1.6,
+                                repeat: Infinity,
+                                ease: "easeInOut",
+                              }}
+                              className="h-1.5 w-1.5 rounded-full bg-[var(--sh-accent-gold)]"
+                            />
+                          )}
+                          <button
+                            type="submit"
+                            disabled={sending}
+                            style={{ outline: "none", outlineOffset: 0 }}
+                            className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--sh-accent-gold)] transition-colors hover:text-[var(--sh-accent-gold-bright)] disabled:opacity-50`}
+                          >
+                            {sending
+                              ? t("thread.sending")
+                              : `${t("thread.send")} →`}
                           </button>
                         </div>
                       )}
