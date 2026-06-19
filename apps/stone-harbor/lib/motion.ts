@@ -65,3 +65,79 @@ export const TRANSITION = {
   settle: { duration: DURATION.calm, ease: EASE.settle },
   breath: { duration: DURATION.breath, ease: EASE.patient },
 } as const;
+
+/* =============================================================
+ * Page-entrance cascade — the harbor's house style for reveals
+ * =============================================================
+ *
+ * Every member-facing page reveals itself top-to-bottom in a
+ * coordinated cascade: the header strip is structural and renders
+ * static, then each major section below fades up softly, one beat
+ * after the next. The pacing is deliberate enough that the page
+ * reads as "unfolding" rather than "snapping into place," but not
+ * so slow that an impatient member is waiting on the UI.
+ *
+ * Timing:
+ *   - Each section fades for CASCADE_DURATION (0.7s — midway
+ *     between DURATION.calm and DURATION.patient).
+ *   - Sections start 300ms apart, so a 4-element page lands
+ *     fully at ~2.2s, a 5-element page at ~2.5s.
+ *   - The first section starts at delay 0.6s — leaves space for
+ *     a top "anchor strip" or PersonalizedGreeting to occupy
+ *     attention while the rest fades in.
+ *   - EASE.settle (ease-out-expo) is used everywhere so the
+ *     elements drift into place rather than punching in.
+ *
+ * Usage:
+ *
+ *   import { cascadeFadeUp, cascadeTransition } from "@/lib/motion";
+ *
+ *   <motion.div {...cascadeFadeUp} transition={cascadeTransition(0)}>
+ *     first section
+ *   </motion.div>
+ *   <motion.div {...cascadeFadeUp} transition={cascadeTransition(1)}>
+ *     second section
+ *   </motion.div>
+ *
+ * `cascadeTransition(stepIndex)` returns the right transition for
+ * the Nth element in the cascade (0-indexed). For pages with custom
+ * timing needs, the underlying constants are also exported so the
+ * page can compute a bespoke delay.
+ *
+ * Designed 2026-06-19 on /dashboard, lifted into shared vocabulary
+ * the same day so /journal and every other member surface can wear
+ * the same entrance. */
+
+/** Per-element fade duration for the cascade. */
+export const CASCADE_DURATION = 0.7;
+
+/** Time the first cascade element waits before fading in. Leaves
+ *  room for a top strip (greeting, daily prompt) to land first. */
+export const CASCADE_BASE_DELAY = 0.6;
+
+/** Gap between successive cascade elements. */
+export const CASCADE_STEP = 0.3;
+
+/** Initial/animate prop pair for the cascade fade-up. Soft 12px
+ *  lift + opacity ramp. Pass this in as `{...cascadeFadeUp}`. */
+export const cascadeFadeUp = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+} as const;
+
+/**
+ * Returns the right framer-motion `transition` for the Nth element
+ * in a page's entrance cascade (0-indexed). Step 0 = first to fade
+ * in, step 1 = second, etc.
+ *
+ * Example: a 4-section page calls cascadeTransition(0..3) on its
+ * four motion.div wrappers, and the cascade lands roughly together
+ * at delay 0.6 + 3·0.3 + 0.7 = 2.2s.
+ */
+export function cascadeTransition(stepIndex: number) {
+  return {
+    duration: CASCADE_DURATION,
+    ease: EASE.settle,
+    delay: CASCADE_BASE_DELAY + stepIndex * CASCADE_STEP,
+  };
+}
