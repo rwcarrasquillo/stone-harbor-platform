@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { serif, sans } from "@/lib/fonts";
-import { EASE } from "@/lib/motion";
+import { EASE, cascadeFadeUp, cascadeTransition } from "@/lib/motion";
 import { AnchorMark } from "@/app/components/anchorMark";
+import { HairlineLens } from "@/app/components/hairlineLens";
+import { HorizonSegment } from "@/app/components/horizonSegment";
 import { useTheme } from "@/app/components/themeProvider";
 import { UnsavedChangesModal } from "@/app/components/unsavedChangesModal";
 import { supabase } from "@/lib/supabaseClient";
@@ -778,8 +780,16 @@ export default function JournalPage() {
         {/* ===== Today's Anchor strip =====
             The daily prompt line. For now this is the same constant
             phrase used in the preview; future work can wire it to the
-            existing daily-prompt source the compose page uses. */}
-        <section className="flex flex-shrink-0 flex-col items-center border-b border-[var(--sh-border-subtle)] px-10 py-5">
+            existing daily-prompt source the compose page uses.
+            Wrapped in a cascade motion.div so this is the first
+            section to fade up after the static header on page mount —
+            matches the harbor's house entrance pattern (lib/motion.ts
+            cascadeFadeUp + cascadeTransition). */}
+        <motion.section
+          {...cascadeFadeUp}
+          transition={cascadeTransition(0)}
+          className="flex flex-shrink-0 flex-col items-center border-b border-[var(--sh-border-subtle)] px-10 py-5"
+        >
           <p
             className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]`}
           >
@@ -790,7 +800,7 @@ export default function JournalPage() {
           >
             {ANCHOR_PHRASE}
           </p>
-        </section>
+        </motion.section>
 
         {/* ===== CENTERED LAYOUT =====
             Vertical stack instead of the asymmetric two-pane:
@@ -825,7 +835,15 @@ export default function JournalPage() {
               whatever space remains after the actions row + static
               header; longer titles just leave less reading space and
               the body scrolls earlier. */}
-          <section
+          {/* Wrapped in cascade motion.section so the reader pane fades
+              up as the second beat of the page entrance. The inner
+              AnimatePresence cross-fades on activeIdx change are
+              independent and continue to drive entry-to-entry swaps
+              after the page has fully landed — mount cascade + state-
+              driven cross-fade are layered cleanly. */}
+          <motion.section
+            {...cascadeFadeUp}
+            transition={cascadeTransition(1)}
             className="flex flex-shrink-0 flex-col items-center px-10 pt-8"
             style={{ height: "48vh" }}
           >
@@ -1198,7 +1216,7 @@ export default function JournalPage() {
               </AnimatePresence>
             </div>
 
-          </section>
+          </motion.section>
 
           {/* ───── Compact horizon — section close ─────
               Same horizon mark (engraved rule + breathing anchor +
@@ -1206,8 +1224,16 @@ export default function JournalPage() {
               no tall void above, no minHeight. Sits as a flex-shrink-0
               divider between the writing zone and the entries archive
               below. Functions both as the writing's editorial close AND
-              as the visual boundary between "now" and "before." */}
-          <CenteredHorizonMark />
+              as the visual boundary between "now" and "before."
+              Wrapped in cascade motion.div (step 2) so it joins the
+              page-mount choreography between the reader pane and the
+              entries strip. */}
+          <motion.div
+            {...cascadeFadeUp}
+            transition={cascadeTransition(2)}
+          >
+            <CenteredHorizonMark />
+          </motion.div>
 
           {/* ───── Entries strip — horizontal archive ─────
               The "Your Entries" eyebrow on the left + "+ New entry" link
@@ -1217,8 +1243,15 @@ export default function JournalPage() {
 
               On viewports narrower than ~1280px the cards may overflow
               horizontally — overflow-x-auto enables drag-scroll there.
-              On wider viewports all 7 cards fit comfortably. */}
-          <section className="flex flex-shrink-0 flex-col items-center border-t border-[var(--sh-border-subtle)] px-10 pb-4 pt-3">
+              On wider viewports all 7 cards fit comfortably.
+              Wrapped in cascade motion.section (step 3) — the last
+              beat of the journal entrance, landing after the horizon
+              mark. */}
+          <motion.section
+            {...cascadeFadeUp}
+            transition={cascadeTransition(3)}
+            className="flex flex-shrink-0 flex-col items-center border-t border-[var(--sh-border-subtle)] px-10 pb-4 pt-3"
+          >
             <div className="mb-2 flex w-full max-w-[1200px] items-center justify-between">
               <p
                 className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]`}
@@ -1323,7 +1356,7 @@ export default function JournalPage() {
                 </button>
               ))}
             </div>
-          </section>
+          </motion.section>
         </main>
       </div>
     </div>
@@ -1418,108 +1451,11 @@ function CenteredHorizonMark() {
   );
 }
 
-/**
- * One half of the horizon mark — an SVG asymmetric lens that's
- * POINTED at the outer (page-edge) end and BLUNT at the inner end
- * where the segment meets the anchor.
- *
- * Why asymmetric:
- *   The previous symmetric lens (pointed at both ends, like the
- *   EntryCard hairlines) held its inner tip at full alpha, so the
- *   sharp geometric point was visible against the anchor — reading
- *   as a pixelated corner artifact. Real engraved gold leaf meeting
- *   another mark on a printed page terminates at a clean edge, not
- *   a tip almost-touching. Switching the inner end to a blunt
- *   terminal cap (a vertical edge at full thickness) gives a
- *   pen-stroke meets pen-stroke join with no aliasing tip.
- *
- *   The outer end keeps the pointed taper because that's where the
- *   line lifts off the page into nothing — pointed + transparent
- *   fade = an organic engraved finish.
- *
- * Direction:
- *   The path is authored for the LEFT segment (point at left, blunt
- *   at right). For the RIGHT segment, we apply CSS scaleX(-1) to
- *   mirror it. Both path and gradient flip together so the visual
- *   reads correctly — outer-faded, inner-confident — regardless of
- *   side.
- */
-function HorizonSegment({
-  direction,
-  goldRgb,
-  lineAlphaInner,
-  lineAlphaMid,
-  filter,
-}: {
-  direction: "left" | "right";
-  goldRgb: string;
-  lineAlphaInner: number;
-  lineAlphaMid: number;
-  filter: string;
-}) {
-  const reactId = useId();
-  const gradId = `horizon-${reactId.replace(/[^a-zA-Z0-9]/g, "")}`;
-
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 100 6"
-      preserveAspectRatio="none"
-      className="h-1.5 flex-1"
-      style={{
-        filter,
-        // Mirror the path horizontally for the right segment so the
-        // same authored geometry (point at left, blunt at right) reads
-        // as (point at right, blunt at left) on the other side of the
-        // anchor. The gradient mirrors along with it.
-        transform: direction === "right" ? "scaleX(-1)" : undefined,
-      }}
-    >
-      <defs>
-        {/* Gradient stops go LEFT (outer, transparent) → RIGHT (inner,
-            confident). With the right segment's scaleX(-1) transform,
-            the gradient's right end ends up at the inner edge there too. */}
-        <linearGradient id={gradId} x1="0" y1="0" x2="100%" y2="0">
-          <stop offset="0%" stopColor={`rgba(${goldRgb},0)`} />
-          <stop
-            offset="22%"
-            stopColor={`rgba(${goldRgb},${lineAlphaMid * 0.6})`}
-          />
-          <stop
-            offset="55%"
-            stopColor={`rgba(${goldRgb},${lineAlphaMid})`}
-          />
-          <stop
-            offset="88%"
-            stopColor={`rgba(${goldRgb},${lineAlphaInner})`}
-          />
-          <stop
-            offset="100%"
-            stopColor={`rgba(${goldRgb},${lineAlphaInner})`}
-          />
-        </linearGradient>
-      </defs>
-      {/* Asymmetric lens path — pointed at left (x=0), blunt at right
-          (x=100):
-            M 0 3      — start at the left point (mid-height)
-            Q 30 0.6 100 1.4   — top curve up and over to the top-right
-                                 corner (full thickness reached at right)
-            L 100 4.6  — vertical line down across the right edge
-                          (3.2 units of thickness)
-            Q 30 5.4 0 3       — bottom curve back to the left point
-            Z          — close
-
-          Visual: a slim leaf that's a fine point at the outer end,
-          curving outward to its full body, then terminating at a
-          clean vertical edge where it meets the anchor. The vertical
-          edge has no sharp tip to alias against the pixel grid. */}
-      <path
-        d="M 0 3 Q 30 0.6 100 1.4 L 100 4.6 Q 30 5.4 0 3 Z"
-        fill={`url(#${gradId})`}
-      />
-    </svg>
-  );
-}
+// HorizonSegment moved to `app/components/horizonSegment.tsx` as part
+// of the 2026-06-18 sweep to convert every harbor hairline to CSS.
+// The local SVG asymmetric-lens implementation pixelated on wider
+// viewports — same root cause as the HairlineLens issue. Imported
+// at the top of this file.
 
 /**
  * Compact entry card for the horizontal strip below the horizon.
@@ -1544,22 +1480,47 @@ function EntryStripCard({
   untitledLabel: string;
   moodTranslator: (key: string) => string;
 }) {
-  const activeBg =
-    active && theme === "sunlit" ? "bg-[rgba(196,147,78,0.045)]" : "";
-  const hoverBg = !active ? "hover:bg-white/[0.02]" : "";
   const titleText = entry.title?.trim() || untitledLabel;
 
   return (
+    // Active-state visual treatment ported from dashboard RoomCard
+    // (the rooms-carousel "farol" pattern): a radial-gradient beam of
+    // light falling from top-center, paired with a single top
+    // HairlineLens (the "lintel"). Replaces the previous flat gold-
+    // tint bg + top-and-bottom hairline frame so the journal entries
+    // strip and the dashboard rooms strip speak in one visual
+    // language. The bottom hairline (which previously read as a
+    // contained-moment frame) is removed in favor of the lintel-only
+    // reading, matching the dashboard's door semantic.
+    //
+    // Cursor-follow behavior is identical on both surfaces (driven by
+    // `highlightedStripIdx = hoveredStripIdx ?? activeIdx` at the
+    // parent level), so the only difference between this strip and
+    // dashboard rooms is the card content — the lighting language is
+    // shared.
     <div
-      className={`relative flex flex-col gap-1 px-3 py-2.5 transition-colors ${activeBg} ${hoverBg}`}
-      style={{ width: "160px", height: "94px" }}
+      className="relative flex flex-col gap-1 px-3 py-2.5 transition-[background] duration-300"
+      style={
+        active
+          ? {
+              width: "160px",
+              height: "94px",
+              background:
+                "radial-gradient(ellipse 50% 140% at 50% 0%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.015) 55%, transparent 95%)",
+            }
+          : { width: "160px", height: "94px" }
+      }
     >
-      {active && (
-        <>
-          <HairlineLens position="top" theme={theme} />
-          <HairlineLens position="bottom" theme={theme} />
-        </>
-      )}
+      {/* Engraved-gold hairline — top only. Always mounted, opacity-
+          toggled so the highlight fades from card to card on cursor-
+          follow rather than popping. Matches dashboard RoomCard. */}
+      <div
+        className={`pointer-events-none absolute inset-0 transition-opacity duration-300 ${
+          active ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <HairlineLens position="top" theme={theme} />
+      </div>
       <div className="flex items-center gap-1.5">
         <span
           className="inline-block h-1.5 w-1.5 rounded-full"
@@ -1617,26 +1578,32 @@ function NewEntryStripCard({
   /** Localized "New entry" string from useTranslations("journal"). */
   label: string;
 }) {
-  // Active-state warm bg only on sunlit, matching EntryStripCard. Dusk
-  // gets no active-bg tint — the luminous hairlines on near-black
-  // already produce the spotlight reading.
-  const activeBg =
-    active && theme === "sunlit" ? "bg-[rgba(196,147,78,0.045)]" : "";
-  // Faint neutral hover bg when inactive — same as EntryStripCard so
-  // pre-hover affordance feedback is consistent across the strip.
-  const hoverBg = !active ? "hover:bg-white/[0.02]" : "";
-
   return (
+    // Same farol + top-only-hairline treatment as EntryStripCard
+    // above so the entire strip — new-entry tile + past entries —
+    // reads as one row of doors in shared lighting. See the comment
+    // block on EntryStripCard for the rationale around the visual
+    // language unification with dashboard rooms.
     <div
-      className={`relative flex flex-col items-center justify-center gap-1 px-3 py-2.5 transition-colors ${activeBg} ${hoverBg}`}
-      style={{ width: "160px", height: "94px" }}
+      className="relative flex flex-col items-center justify-center gap-1 px-3 py-2.5 transition-[background] duration-300"
+      style={
+        active
+          ? {
+              width: "160px",
+              height: "94px",
+              background:
+                "radial-gradient(ellipse 50% 140% at 50% 0%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.015) 55%, transparent 95%)",
+            }
+          : { width: "160px", height: "94px" }
+      }
     >
-      {active && (
-        <>
-          <HairlineLens position="top" theme={theme} />
-          <HairlineLens position="bottom" theme={theme} />
-        </>
-      )}
+      <div
+        className={`pointer-events-none absolute inset-0 transition-opacity duration-300 ${
+          active ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <HairlineLens position="top" theme={theme} />
+      </div>
       <span
         className={`${serif.className} text-[26px] italic leading-none text-[var(--sh-accent-gold)]`}
       >
@@ -1651,76 +1618,11 @@ function NewEntryStripCard({
   );
 }
 
-/**
- * Active-state hairline — rendered as an SVG lens shape (pointed-oval)
- * for true geometric taper. The curves meet at points on the left and
- * right ends and bulge in the middle, so the line is genuinely thinner
- * at the ends, not just opacity-faded. A linear gradient on the fill
- * adds gold-fade-to-transparent so the visual is doubly tapered:
- * geometric AND tonal.
- *
- * Theme-aware optical metaphor:
- *   - Dusk → luminous. Gold-bright (#c4934e) core with two stacked
- *     drop-shadow halos (tight + diffuse) so the lens reads as a
- *     focused beam against the near-black backdrop. Dark surroundings
- *     let low-alpha gold spread outward as actual light.
- *   - Sunlit → engraved. Gold-deep (#a9793d) core with a single tight
- *     dark drop-shadow underneath (1px offset, low alpha) so the lens
- *     reads as gold leaf pressed into cream paper, not a glow. Cream
- *     can't receive a halo — it's already bright — so the depth cue
- *     has to come from a subtle ink-impression instead of a light bleed.
- *
- * The silhouette (lens curve, gradient stops by alpha) is identical in
- * both themes. Only the color and shadow change.
- */
-function HairlineLens({
-  position,
-  theme,
-}: {
-  position: "top" | "bottom";
-  theme: "sunlit" | "dusk";
-}) {
-  const reactId = useId();
-  const gradId = `sh-hairline-${reactId.replace(/[^a-zA-Z0-9]/g, "")}`;
-
-  // Gold core in r,g,b form so the gradient stops can mix alpha cleanly.
-  // sunlit: gold-deep #a9793d → 169,121,61
-  // dusk:   gold-bright #c4934e → 196,147,78
-  const rgb = theme === "sunlit" ? "169,121,61" : "196,147,78";
-
-  // Shadow model differs by theme:
-  //   dusk → outward glow (two stacked, tight + diffuse)
-  //   sunlit → tight downward ink impression (single dark, 1px offset)
-  const filter =
-    theme === "sunlit"
-      ? "drop-shadow(0 0.5px 0 rgba(60,40,15,0.18))"
-      : "drop-shadow(0 0 3px rgba(196,147,78,0.45)) drop-shadow(0 0 8px rgba(196,147,78,0.20))";
-
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 100 6"
-      preserveAspectRatio="none"
-      className={`pointer-events-none absolute left-1/2 h-1 w-[88%] -translate-x-1/2 ${
-        position === "top" ? "top-0" : "bottom-0"
-      }`}
-      style={{ filter }}
-    >
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="100%" y2="0">
-          <stop offset="0%" stopColor={`rgba(${rgb},0)`} />
-          <stop offset="22%" stopColor={`rgba(${rgb},0.38)`} />
-          <stop offset="50%" stopColor={`rgba(${rgb},0.95)`} />
-          <stop offset="78%" stopColor={`rgba(${rgb},0.38)`} />
-          <stop offset="100%" stopColor={`rgba(${rgb},0)`} />
-        </linearGradient>
-      </defs>
-      {/* Lens path: two quadratic Beziers meeting at sharp points on
-          each end, bulging to ~3 units of thickness in the middle. */}
-      <path d="M 0 3 Q 50 0.4 100 3 Q 50 5.6 0 3 Z" fill={`url(#${gradId})`} />
-    </svg>
-  );
-}
+// HairlineLens moved to `app/components/hairlineLens.tsx` as part of
+// the 2026-06-18 sweep to convert every harbor hairline to CSS.
+// The local SVG lens implementation pixelated on taller cards (the
+// /messages issue); the CSS gradient bar is crisp at any size. Imported
+// at the top of this file.
 
 /**
  * EntryTailpiece — the small fleuron at the end of each entry's body.
