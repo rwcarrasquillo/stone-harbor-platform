@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { serif } from "@/lib/fonts";
+import { useTheme } from "@/app/components/themeProvider";
 
 /**
  * Stone Harbor — Inactivity Gate.
@@ -51,6 +52,8 @@ const ACTIVITY_EVENTS = [
 ] as const;
 
 export function InactivityGate() {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
   const [warningShown, setWarningShown] = useState(false);
   // Lazy-init to 0; the real baseline is captured in the useEffect.
   // Initializing with Date.now() inline would call an impure function
@@ -126,23 +129,48 @@ export function InactivityGate() {
           aria-modal="true"
           aria-labelledby="inactivity-title"
         >
+          {/* Theme-aware modal — picks dusk (dark) or sunlit (cream)
+              palette so the warning doesn't feel like a foreign
+              element pasted into the member's chosen environment.
+              Same shape and copy, only colors change.
+              Sunlit:
+                bg cream (#f8f4ed), gold-deep accents (#a9793d),
+                dark text. Reads as gold leaf on cream paper.
+              Dusk:
+                bg near-black (#0f0c0a), gold-bright accents
+                (#c4934e), light text. Reads as warm lamp on a dark
+                desk. */}
           <motion.div
             initial={{ y: 16, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 16, opacity: 0 }}
             transition={{ duration: 0.35 }}
-            className="w-full max-w-md border-l-[3px] border-[#a9793d] bg-[#f8f4ed] px-6 py-6 shadow-2xl"
+            className={`w-full max-w-md border-l-[3px] px-6 py-6 shadow-2xl ${
+              isDusk
+                ? "border-[#c4934e] bg-[#0f0c0a]"
+                : "border-[#a9793d] bg-[#f8f4ed]"
+            }`}
           >
-            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[#a9793d]">
+            <p
+              className={`text-[10px] font-bold uppercase tracking-[0.32em] ${
+                isDusk ? "text-[#c4934e]" : "text-[#a9793d]"
+              }`}
+            >
               Are You Still Here?
             </p>
             <h2
               id="inactivity-title"
-              className={`${serif.className} mt-3 text-2xl italic leading-snug text-stone-900 md:text-3xl`}
+              className={`${serif.className} mt-3 text-2xl italic leading-snug md:text-3xl ${
+                isDusk ? "text-white" : "text-stone-900"
+              }`}
             >
               The harbor will pause your session shortly.
             </h2>
-            <p className="mt-4 text-sm leading-relaxed text-stone-700">
+            <p
+              className={`mt-4 text-sm leading-relaxed ${
+                isDusk ? "text-stone-300" : "text-stone-700"
+              }`}
+            >
               For your privacy, we sign you out after thirty minutes of
               stillness. Move your cursor or tap anywhere to stay — or sign
               out now.
@@ -151,14 +179,22 @@ export function InactivityGate() {
               <button
                 type="button"
                 onClick={dismissWarning}
-                className="bg-[#a9793d] px-6 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432]"
+                className={`px-6 py-3 text-[11px] font-bold uppercase tracking-[0.22em] transition ${
+                  isDusk
+                    ? "bg-[#c4934e] text-stone-900 hover:bg-[#d4a974]"
+                    : "bg-[#a9793d] text-white hover:bg-[#8d6432]"
+                }`}
               >
                 Stay Here
               </button>
               <button
                 type="button"
                 onClick={signOutNow}
-                className="border border-stone-300 bg-white px-6 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d]"
+                className={`border bg-transparent px-6 py-3 text-[11px] font-bold uppercase tracking-[0.22em] transition ${
+                  isDusk
+                    ? "border-white/20 text-stone-200 hover:border-[#c4934e]"
+                    : "border-stone-300 bg-white text-stone-700 hover:border-[#a9793d]"
+                }`}
               >
                 Sign Out
               </button>

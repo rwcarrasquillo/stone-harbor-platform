@@ -228,12 +228,42 @@ body {
 
 /* 1. Reserve space for the mobile tab bar. The bar is hidden via
  *    pathname gating on public/auth pages, but we always reserve
- *    the padding on mobile — extra whitespace below the fold on
+ *    the padding on phones — extra whitespace below the fold on
  *    the front-door pages is harmless and avoids a layout flicker
- *    on first paint of authenticated pages. */
-@media (max-width: 767px) {
+ *    on first paint of authenticated pages. The breakpoint matches
+ *    MobileTabBar's `sm:hidden` (tablets at 640px+ no longer get
+ *    the tab bar). */
+@media (max-width: 639px) {
   main {
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
+  }
+}
+
+/* 1a. Messenger-style mobile thread overlay (/messages).
+ *
+ *  When /messages sets `body[data-mobile-thread-overlay="true"]`,
+ *  the fixed-position thread panel takes over the viewport, and we
+ *  pull the global MobileTabBar + CrisisFooter out of flow so the
+ *  composer can sit pinned to the bottom edge without the chrome
+ *  poking through. Crisis access returns when the member taps
+ *  "← Conversations" to pop back to the inbox.
+ *
+ *  The `.messenger-overlay-hidden` class is applied directly on the
+ *  two chrome components — opting them in to this behavior without
+ *  affecting any other layout. The whole block is gated behind the
+ *  mobile breakpoint (< sm = 640px) — the body attribute also flips
+ *  on when a desktop user selects a thread (inThreadMode = true on
+ *  every viewport), but on tablets+ the chrome must remain visible.
+ *  Scoping the rule to the small viewport means the attribute only
+ *  does work where the overlay actually applies. */
+@media (max-width: 639px) {
+  body[data-mobile-thread-overlay="true"] .messenger-overlay-hidden {
+    display: none !important;
+  }
+  /* And drop the reserved bottom-padding on <main> since the tab bar
+   * isn't taking up that space anymore. */
+  body[data-mobile-thread-overlay="true"] main {
+    padding-bottom: 0 !important;
   }
 }
 
