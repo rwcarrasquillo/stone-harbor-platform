@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
@@ -10,6 +10,8 @@ import { emitMemberEvent, trackMilestone } from "@/lib/memberUsage";
 import { serif, sans } from "@/lib/fonts";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { AnchorMark } from "@/app/components/anchorMark";
+import { HairlineLens } from "@/app/components/hairlineLens";
+import { HorizonSegment } from "@/app/components/horizonSegment";
 import { useTheme } from "@/app/components/themeProvider";
 import { UnsavedChangesModal } from "@/app/components/unsavedChangesModal";
 import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
@@ -454,8 +456,8 @@ export default function VentCenteredPage() {
                   marks the boundary always; gold hairlines mark
                   active only. */}
               <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100">
-                <VentPanelHairline position="top" theme={theme} />
-                <VentPanelHairline position="bottom" theme={theme} />
+                <HairlineLens position="top" theme={theme} />
+                <HairlineLens position="bottom" theme={theme} />
               </div>
 
               {/* Body textarea — same typography as journal compose
@@ -514,54 +516,9 @@ export default function VentCenteredPage() {
   );
 }
 
-// ============================================================================
-// VentPanelHairline — engraved-gold lens hairlines on the slate panel.
-// Identical to the journal EntryStripCard's HairlineLens. Inlined here
-// for now; once the journal version is extracted into a shared
-// component, both can import from one source.
-// ============================================================================
-
-function VentPanelHairline({
-  position,
-  theme,
-}: {
-  position: "top" | "bottom";
-  theme: "sunlit" | "dusk";
-}) {
-  const reactId = useId();
-  const gradId = `vent-hairline-${reactId.replace(/[^a-zA-Z0-9]/g, "")}`;
-  const rgb = theme === "sunlit" ? "169,121,61" : "196,147,78";
-  const filter =
-    theme === "sunlit"
-      ? "drop-shadow(0 0.5px 0 rgba(60,40,15,0.18))"
-      : "drop-shadow(0 0 3px rgba(196,147,78,0.45)) drop-shadow(0 0 8px rgba(196,147,78,0.20))";
-
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 100 6"
-      preserveAspectRatio="none"
-      className={`pointer-events-none absolute left-1/2 h-1 w-[88%] -translate-x-1/2 ${
-        position === "top" ? "top-0" : "bottom-0"
-      }`}
-      style={{ filter }}
-    >
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="100%" y2="0">
-          <stop offset="0%" stopColor={`rgba(${rgb},0)`} />
-          <stop offset="22%" stopColor={`rgba(${rgb},0.38)`} />
-          <stop offset="50%" stopColor={`rgba(${rgb},0.95)`} />
-          <stop offset="78%" stopColor={`rgba(${rgb},0.38)`} />
-          <stop offset="100%" stopColor={`rgba(${rgb},0)`} />
-        </linearGradient>
-      </defs>
-      <path
-        d="M 0 3 Q 50 0.4 100 3 Q 50 5.6 0 3 Z"
-        fill={`url(#${gradId})`}
-      />
-    </svg>
-  );
-}
+// VentPanelHairline replaced with the shared `HairlineLens` from
+// `app/components/hairlineLens.tsx` (2026-06-18 CSS sweep). Same
+// geometry, identical theme treatment, no pixelation.
 
 // ============================================================================
 // Centered horizon mark — same component used on /journal + /dashboard.
@@ -617,58 +574,5 @@ function CenteredHorizonMark() {
   );
 }
 
-function HorizonSegment({
-  direction,
-  goldRgb,
-  lineAlphaInner,
-  lineAlphaMid,
-  filter,
-}: {
-  direction: "left" | "right";
-  goldRgb: string;
-  lineAlphaInner: number;
-  lineAlphaMid: number;
-  filter: string;
-}) {
-  const reactId = useId();
-  const gradId = `horizon-${reactId.replace(/[^a-zA-Z0-9]/g, "")}`;
-
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 100 6"
-      preserveAspectRatio="none"
-      className="h-1.5 flex-1"
-      style={{
-        filter,
-        transform: direction === "right" ? "scaleX(-1)" : undefined,
-      }}
-    >
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="100%" y2="0">
-          <stop offset="0%" stopColor={`rgba(${goldRgb},0)`} />
-          <stop
-            offset="22%"
-            stopColor={`rgba(${goldRgb},${lineAlphaMid * 0.6})`}
-          />
-          <stop
-            offset="55%"
-            stopColor={`rgba(${goldRgb},${lineAlphaMid})`}
-          />
-          <stop
-            offset="88%"
-            stopColor={`rgba(${goldRgb},${lineAlphaInner})`}
-          />
-          <stop
-            offset="100%"
-            stopColor={`rgba(${goldRgb},${lineAlphaInner})`}
-          />
-        </linearGradient>
-      </defs>
-      <path
-        d="M 0 3 Q 30 0.6 100 1.4 L 100 4.6 Q 30 5.4 0 3 Z"
-        fill={`url(#${gradId})`}
-      />
-    </svg>
-  );
-}
+// HorizonSegment moved to `app/components/horizonSegment.tsx` as part
+// of the 2026-06-18 sweep to convert every harbor hairline to CSS.

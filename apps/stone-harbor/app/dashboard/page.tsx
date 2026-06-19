@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabaseClient";
+import { cascadeFadeUp, cascadeTransition } from "@/lib/motion";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
 import {
@@ -23,6 +24,8 @@ import {
 } from "@/lib/userProgress";
 import { useTheme } from "@/app/components/themeProvider";
 import { AnchorMark } from "@/app/components/anchorMark";
+import { HairlineLens } from "@/app/components/hairlineLens";
+import { HorizonSegment } from "@/app/components/horizonSegment";
 import { PersonalizedGreeting } from "@/app/components/personalizedGreeting";
 import { TodayIntention } from "@/app/components/todayIntention";
 import { StoryInvitationCard } from "@/app/components/storyInvitationCard";
@@ -49,12 +52,18 @@ import {
  *   - A Story to Tell — feature panel at max-w-[920px], breaks the
  *     reading column to become the day's deliberate invitation
  *   - Horizon mark + "The harbor is patient." voice signature
- *   - Rooms catalog — 7 RoomCards in one horizontal row:
- *     Vent · Messages · The Map · JOURNAL · Rhythm · Lineage · The
- *     Breath. Journal sits at the exact center as the default
- *     highlight; engraved-gold lens hairlines + warm bg-tint appear
- *     on Journal by default and follow the cursor across cards on
- *     hover, returning to Journal when the cursor leaves the strip.
+ *   - Rooms catalog — 10 RoomCards in one horizontal row:
+ *     Vent · Roadmap · Messages · The Map · JOURNAL · Letters ·
+ *     Resources · Rhythm · Lineage · The Breath. Journal sits at
+ *     index 4 (slightly left of geometric center now that the row
+ *     has 10 cards instead of 7); engraved-gold lens hairlines +
+ *     warm bg-tint appear on Journal by default and follow the
+ *     cursor across cards on hover, returning to Journal when the
+ *     cursor leaves the strip. The slight off-center position is
+ *     intentional — Roadmap, Letters, and Resources were added
+ *     2026-06-19 when the MobileTabBar moved to sm:hidden, leaving
+ *     tablet + desktop members with no other entry to those three
+ *     surfaces.
  *
  * Crisis footer permanently visible at the viewport bottom via the
  * h-full layout pattern (the page fills viewport - crisis_footer; the
@@ -146,6 +155,25 @@ const COPY = {
   },
 } as const;
 
+/**
+ * Dashboard's entrance cascade — the four sections that fade in below
+ * the personalized greeting. Each value is the step index passed to
+ * `cascadeTransition` (0-indexed) so the first cascade element starts
+ * at CASCADE_BASE_DELAY (0.6s) and each subsequent one waits
+ * CASCADE_STEP (0.3s) longer. Total reveal lands at ~2.2s.
+ *
+ * The cascade vocabulary itself (timing constants, fade-up object,
+ * helper) lives in `lib/motion.ts` so every member-facing surface
+ * uses identical pacing. Only the section-to-step mapping is
+ * page-specific.
+ */
+const CASCADE_STEPS = {
+  todayIntention: 0,
+  storyCard: 1,
+  horizonMark: 2,
+  roomsStrip: 3,
+} as const;
+
 export default function DashboardCenteredPage() {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
@@ -203,7 +231,17 @@ export default function DashboardCenteredPage() {
       .select(
         "email, display_name, username, healing_stage, avatar_url, birth_month, birth_day, acknowledge_birthday, seasonal_acknowledgments_enabled, acknowledgments_dismissed, lineage_door_seen_at",
       )
-      .eq("user_id", uid)
+      // The profiles table's PK is `id`, matching auth.users.id 1:1.
+      // Every other surface (/messages, /journal, /welcome, /lineage)
+      // queries with `.eq("id", user.id)`. The dashboard was using
+      // `user_id` — a column that doesn't exist — so profileData was
+      // silently null, leaving display_name, avatar_url, healing_stage,
+      // birthdays, lineage_door_seen_at all unset. The fallback values
+      // (`?? null`, `?? true`, etc.) hid the bug as long as no UI
+      // element actually rendered profile data. Caught 2026-06-19
+      // when the Edit Profile avatar bubble started showing the
+      // AnchorMark fallback for a member who'd uploaded an avatar.
+      .eq("id", uid)
       .maybeSingle();
 
     const loadedProfile: Profile = {
@@ -319,6 +357,14 @@ export default function DashboardCenteredPage() {
             href="/dashboard"
             className="flex items-center gap-3"
             aria-label="Stone Harbor — Dashboard"
+            // Opt out of the global gold focus ring on the brand
+            // crumb — matches the pattern used by every other harbor
+            // surface (/journal, /journal/archive, /lineage,
+            // /messages, /vent). The brand crumb is the page's "you
+            // are here" marker; focusing it doesn't change anything
+            // (it links back to /dashboard from /dashboard) and the
+            // visible gold rectangle reads as an unintended outline.
+            style={{ outline: "none", outlineOffset: 0 }}
           >
             <AnchorMark size={32} />
             <span
@@ -340,10 +386,31 @@ export default function DashboardCenteredPage() {
               in the app is a "room" and every room lives in the
               cards. The top nav becomes purely account management. */}
           <nav className="flex items-center gap-6">
+            {/* Edit profile cluster: small avatar bubble + label,
+                both inside one Link so either tap target lands at
+                /welcome. Avatar shows the member's uploaded image
+                when present, falls back to a small anchor on the
+                same warm cream circle the messages Avatar uses, so
+                the look is consistent with how the member sees
+                themselves represented elsewhere in the harbor. */}
             <Link
               href="/welcome"
-              className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--sh-text-tertiary)] transition-colors hover:text-[var(--sh-accent-gold)]`}
+              style={{ outline: "none", outlineOffset: 0 }}
+              className={`${sans.className} group flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--sh-text-tertiary)] transition-colors hover:text-[var(--sh-accent-gold)]`}
+              aria-label={c.nav.editProfile}
             >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--sh-border-subtle)] bg-[#efe8dc] transition-colors group-hover:border-[var(--sh-accent-gold)]">
+                {profile?.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={profile.avatar_url}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <AnchorMark size={12} fill="#a9793d" />
+                )}
+              </span>
               {c.nav.editProfile}
             </Link>
             <button
@@ -372,11 +439,23 @@ export default function DashboardCenteredPage() {
           >
             {c.anchor.eyebrow}
           </p>
+          {/* Gate the greeting on `profile !== null` so members never
+              see the awkward "friend" → "Rafael" flash. Before the
+              profile query resolves, the dashboard has no idea what
+              name to use; rendering the greeting immediately with
+              name=null forces the component to fall back to "friend",
+              then re-render once the name arrives. Holding the render
+              until the query completes means the greeting fades in
+              once, already with the correct salutation. Brief moment
+              of empty space during the initial query is preferable
+              to the swap mid-page-load. */}
           <div className="mt-2 max-w-[720px]">
-            <PersonalizedGreeting
-              name={profile?.display_name || profile?.username || null}
-              userId={userId}
-            />
+            {profile !== null && (
+              <PersonalizedGreeting
+                name={profile.display_name || profile.username || null}
+                userId={userId}
+              />
+            )}
           </div>
         </section>
 
@@ -481,9 +560,13 @@ export default function DashboardCenteredPage() {
                 max-w-[920px] so it reads as the day's feature panel
                 instead of just another card in the stack. */}
             {userId && (
-              <div className="mb-12">
+              <motion.div
+                {...cascadeFadeUp}
+                transition={cascadeTransition(CASCADE_STEPS.todayIntention)}
+                className="mb-12"
+              >
                 <TodayIntention userId={userId} />
-              </div>
+              </motion.div>
             )}
 
             {/* ───── Small thing (day 75+, cadenced) ───── */}
@@ -503,14 +586,24 @@ export default function DashboardCenteredPage() {
               tonight's deliberate invitation and earns more presence.
               StoryInvitationCard self-hides when no eligible prompt
               is available — on those days the page composes without
-              this band. */}
+              this band.
+              Wrapped in a cascade motion.div whose delay slots this
+              element into the dashboard's coordinated entrance
+              sequence (see CASCADE_STEPS at top of file). The inner
+              motion.section inside StoryInvitationCard still runs
+              its own quick fade but happens invisibly inside the
+              outer wrapper before the wrapper reveals it. */}
           {userId && (
-            <div className="mx-auto mb-14 max-w-[920px] px-10">
+            <motion.div
+              {...cascadeFadeUp}
+              transition={cascadeTransition(CASCADE_STEPS.storyCard)}
+              className="mx-auto mb-14 max-w-[920px] px-10"
+            >
               <StoryInvitationCard
                 userId={userId}
                 userEmail={profile?.email ?? null}
               />
-            </div>
+            </motion.div>
           )}
 
           {/* ───── Horizon mark — the day's recognition closes here ─────
@@ -518,8 +611,15 @@ export default function DashboardCenteredPage() {
               segments tapered with SVG lens paths, breathing anchor at
               center, "The harbor is patient." voice signature below.
               Visually marks the boundary between today's personal
-              content and the navigation to the other rooms below. */}
-          <CenteredHorizonMark />
+              content and the navigation to the other rooms below.
+              Wrapped in a cascade motion.div so it joins the entrance
+              choreography (delay 1.2s — second to last). */}
+          <motion.div
+            {...cascadeFadeUp}
+            transition={cascadeTransition(CASCADE_STEPS.horizonMark)}
+          >
+            <CenteredHorizonMark />
+          </motion.div>
 
           {/* ───── Other Rooms — horizontal carousel ─────
               The dashboard's "archive" equivalent of journal's entries
@@ -530,12 +630,17 @@ export default function DashboardCenteredPage() {
               Lineage shows "First door" on first visit).
               overflow-x-auto handles narrower viewports gracefully. */}
           {userId && (
-            <RoomsCarousel
-              locale={locale}
-              lineageUnlocked={lineageUnlocked}
-              lineageDoorSeenAt={lineageDoorSeenAt}
-              meditationCopy={c.meditation}
-            />
+            <motion.div
+              {...cascadeFadeUp}
+              transition={cascadeTransition(CASCADE_STEPS.roomsStrip)}
+            >
+              <RoomsCarousel
+                locale={locale}
+                lineageUnlocked={lineageUnlocked}
+                lineageDoorSeenAt={lineageDoorSeenAt}
+                meditationCopy={c.meditation}
+              />
+            </motion.div>
           )}
         </main>
       </div>
@@ -602,61 +707,8 @@ function CenteredHorizonMark() {
   );
 }
 
-function HorizonSegment({
-  direction,
-  goldRgb,
-  lineAlphaInner,
-  lineAlphaMid,
-  filter,
-}: {
-  direction: "left" | "right";
-  goldRgb: string;
-  lineAlphaInner: number;
-  lineAlphaMid: number;
-  filter: string;
-}) {
-  const reactId = useId();
-  const gradId = `horizon-${reactId.replace(/[^a-zA-Z0-9]/g, "")}`;
-
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 100 6"
-      preserveAspectRatio="none"
-      className="h-1.5 flex-1"
-      style={{
-        filter,
-        transform: direction === "right" ? "scaleX(-1)" : undefined,
-      }}
-    >
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="100%" y2="0">
-          <stop offset="0%" stopColor={`rgba(${goldRgb},0)`} />
-          <stop
-            offset="22%"
-            stopColor={`rgba(${goldRgb},${lineAlphaMid * 0.6})`}
-          />
-          <stop
-            offset="55%"
-            stopColor={`rgba(${goldRgb},${lineAlphaMid})`}
-          />
-          <stop
-            offset="88%"
-            stopColor={`rgba(${goldRgb},${lineAlphaInner})`}
-          />
-          <stop
-            offset="100%"
-            stopColor={`rgba(${goldRgb},${lineAlphaInner})`}
-          />
-        </linearGradient>
-      </defs>
-      <path
-        d="M 0 3 Q 30 0.6 100 1.4 L 100 4.6 Q 30 5.4 0 3 Z"
-        fill={`url(#${gradId})`}
-      />
-    </svg>
-  );
-}
+// HorizonSegment moved to `app/components/horizonSegment.tsx` as part
+// of the 2026-06-18 sweep to convert every harbor hairline to CSS.
 
 // ============================================================================
 // RoomCard — compact horizontal card for the Other Rooms carousel.
@@ -731,6 +783,22 @@ function RoomsCarousel({
         locale === "es" ? "Dicho una vez. Listo." : "Said once. Done.",
     },
     {
+      key: "roadmap",
+      // /roadmap is a Phase 2 route (no [locale] segment in the URL).
+      // Added to the rooms catalog 2026-06-19 so tablets and desktop
+      // users — who lost the MobileTabBar at sm:hidden — have an
+      // in-app way to reach the recovery path. Sits between Vent
+      // (release) and Messages (connection) because Roadmap is the
+      // active-doing pillar of the trio.
+      href: "/roadmap",
+      eyebrow: locale === "es" ? "Recuperación" : "Recovery",
+      name: locale === "es" ? "Tu camino" : "Your path",
+      tagline:
+        locale === "es"
+          ? "Tres etapas. Avanza a tu ritmo."
+          : "Three stages. Walk at your pace.",
+    },
+    {
       key: "messages",
       href: "/messages",
       eyebrow: locale === "es" ? "Mensajes" : "Messages",
@@ -762,6 +830,39 @@ function RoomsCarousel({
         locale === "es"
           ? "Nota lo que está aquí."
           : "Notice what's here.",
+    },
+    {
+      key: "letters",
+      // /members-blog is the surface URL; "Letters" is its harbor
+      // vocabulary name after the 2026-06-18 architectural split that
+      // moved external curated content out to /resources. The eyebrow
+      // and name echo the surface's own anchor strip ("Letters" /
+      // "From the harbor.") so the dashboard card and the destination
+      // page read as one breath. Sits to the right of Journal as the
+      // first reading room — Stone Harbor's own writing.
+      href: "/members-blog",
+      eyebrow: locale === "es" ? "Cartas" : "Letters",
+      name: locale === "es" ? "Desde el puerto" : "From the harbor",
+      tagline:
+        locale === "es" ? "Lo que te escribimos." : "What we wrote you.",
+    },
+    {
+      key: "resources",
+      // /resources holds external curated reading after the same split.
+      // The sibling reading room to Letters: the team's writing on the
+      // left of the pair, the team's curation of others' writing on
+      // the right. Echoes the surface's anchor strip ("Curated" /
+      // "Reading the team has read first.").
+      href: "/resources",
+      eyebrow: locale === "es" ? "Curado" : "Curated",
+      name:
+        locale === "es"
+          ? "Lo que el equipo leyó primero"
+          : "What we read first",
+      tagline:
+        locale === "es"
+          ? "Vale la pena llevar contigo."
+          : "Worth carrying with you.",
     },
     {
       key: "rhythm",
@@ -817,6 +918,49 @@ function RoomsCarousel({
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const highlightedIdx = hoveredIdx ?? defaultIdx;
 
+  // Auto-center Journal in the scroll container on mount.
+  //
+  // Before the 2026-06-19 expansion to 10 rooms, the 7 cards fit
+  // exactly inside max-w-[1200px] and `justify-center` made the row
+  // sit visually balanced with Journal at the geometric center. With
+  // 10 cards the total stride (~1708px) exceeds the container, so
+  // `justify-center` would clip cards on BOTH ends. We instead drop
+  // `justify-center`, let the row scroll naturally, and use
+  // `scrollIntoView({ inline: "center" })` to put Journal in the
+  // horizontal middle of the viewport on first paint. Members land
+  // on the same view they always had; off-screen rooms are one
+  // trackpad swipe away. Card geometry stays at 160×116 so the
+  // visual parity with the journal entry strip is preserved.
+  //
+  // `useLayoutEffect` runs synchronously after DOM mutations but
+  // before browser paint, so the centering lands without a flash.
+  // `scrollIntoView` is more reliable than a manual `scrollLeft =
+  // offsetLeft - ...` calculation — the browser knows the container's
+  // actual visible width better than we can compute it from
+  // `offsetWidth` (which can include padding, scrollbar gutter, and
+  // other browser-specific quirks). `block: "nearest"` prevents any
+  // unwanted vertical scroll on the page.
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const journalCard = container.children[defaultIdx] as
+      | HTMLElement
+      | undefined;
+    if (!journalCard) return;
+    // Disable smooth scroll for the initial snap so the centering
+    // is instantaneous; the `scroll-smooth` class still applies to
+    // later user-initiated scrolls.
+    const previousBehavior = container.style.scrollBehavior;
+    container.style.scrollBehavior = "auto";
+    journalCard.scrollIntoView({
+      inline: "center",
+      block: "nearest",
+      behavior: "auto",
+    });
+    container.style.scrollBehavior = previousBehavior;
+  }, [defaultIdx]);
+
   return (
     // Section width matches the journal's entries-strip section: wide
     // enough that the inner row can reach its max-w-[1200px] without
@@ -824,17 +968,11 @@ function RoomsCarousel({
     // max-w cap; the section just gives it room.
     <section className="mx-auto max-w-[1440px] px-10 pb-16">
       <div
-        className="mx-auto flex w-full max-w-[1200px] justify-center gap-3 overflow-x-auto"
+        ref={scrollRef}
+        className="mx-auto flex w-full max-w-[1200px] gap-3 overflow-x-auto scroll-smooth"
         style={{ scrollbarWidth: "none" }}
         onMouseLeave={() => setHoveredIdx(null)}
       >
-        {/* The visible cards center as one balanced group via
-            justify-center on the parent row. Journal stays the
-            default-highlighted card regardless of its exact pixel
-            position — its default highlight is found by findIndex on
-            the rooms array, not by geometric center. When Lineage
-            unlocks at day 90, the row gains a 7th card and Journal
-            naturally moves to the exact center. */}
         {rooms.map((room, i) => (
           <RoomCard
             key={room.key}
@@ -884,36 +1022,74 @@ function RoomCard({
     <Link
       href={href}
       onMouseEnter={onHover}
-      style={{
-        outline: "none",
-        outlineOffset: 0,
-        width: "160px",
-        height: "116px",
-      }}
       // Visual parity with the journal's EntryStripCard:
       //   - Fixed 160px × 116px footprint (same as journal entry cards)
       //   - flex-col gap-1, px-3.5 py-3 (identical padding/rhythm)
       //   - No border — the card is a quiet rectangle of bg
-      //   - Subtle bg-tint (bg-white/[0.02]) when isHighlighted
+      //   - Edge-faded bg-tint when isHighlighted (see below)
       //   - relative so the absolutely-positioned hairlines anchor here
       // bg-tint and hairlines are driven by isHighlighted (set by the
       // parent RoomsCarousel based on cursor position or default).
-      className={`relative flex flex-shrink-0 flex-col gap-1 px-3.5 py-3 transition-colors ${
-        isHighlighted ? "bg-white/[0.02]" : ""
-      }`}
+      //
+      // Bg-tint as a "farol" — lighthouse beam falling on the card.
+      // The radial gradient is anchored at the TOP center of the card
+      // (the source — the lighthouse pointing down at this door) and
+      // is narrow horizontally + tall vertically, so the brightness
+      // falls off in a cone shape. The card content sits inside the
+      // cone of light, illuminated brightest near the top hairline
+      // (the "lintel" the beam touches first) and fading downward
+      // toward the room.
+      //
+      // Why the asymmetric ellipse:
+      //   ellipse 50% 140% at 50% 0%
+      //   horizontal radius 50% of card width (40px on each side
+      //   of center) — keeps the beam narrow, like a focused cone
+      //   horizontal radius 140% of card height (162px tall) — the
+      //   beam extends well past the bottom of the card so the
+      //   warmth carries all the way down without an abrupt fade
+      //   center at (50%, 0%) — top center of the card, anchored at
+      //   the row where the top hairline lives
+      //
+      // The contour lines of this gradient on a 160×116 card form a
+      // narrowing oval extending downward from top center — visually
+      // reading as a beam fanning outward as it descends. No hard
+      // edges, no rectangle, no symmetric oval. Just a soft cone of
+      // light falling on the door.
+      className="relative flex flex-shrink-0 flex-col gap-1 px-3.5 py-3 transition-[background] duration-300"
+      style={
+        isHighlighted
+          ? {
+              outline: "none",
+              outlineOffset: 0,
+              width: "160px",
+              height: "116px",
+              background:
+                "radial-gradient(ellipse 50% 140% at 50% 0%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.015) 55%, transparent 95%)",
+            }
+          : {
+              outline: "none",
+              outlineOffset: 0,
+              width: "160px",
+              height: "116px",
+            }
+      }
     >
-      {/* Engraved-gold lens hairlines — visible when isHighlighted.
-          Identical shape and theme treatment to the journal's
-          EntryStripCard active state. Fade in/out via opacity
-          transition so the "highlight moves" effect across cards
-          reads as one smooth crossfade. */}
+      {/* Engraved-gold lens hairline — top only. Visible when
+          isHighlighted.
+          Note: the journal's EntryStripCard uses top + bottom
+          hairlines to read as a contained moment (one entry, one
+          held thought). The dashboard rooms are doors, not moments
+          — a top hairline alone reads as the lintel of a doorway
+          with the room opening below, which fits the "step through
+          here" semantic better than a frame. The radial glow below
+          carries the eye downward into the destination instead of
+          closing it off at a bottom rule. */}
       <div
         className={`pointer-events-none absolute inset-0 transition-opacity duration-300 ${
           isHighlighted ? "opacity-100" : "opacity-0"
         }`}
       >
-        <RoomCardHairline position="top" theme={theme} />
-        <RoomCardHairline position="bottom" theme={theme} />
+        <HairlineLens position="top" theme={theme} />
       </div>
 
       {/* Row 1 — gold dot + uppercase eyebrow. Maps 1:1 to the
@@ -962,54 +1138,9 @@ function RoomCard({
   );
 }
 
-/**
- * RoomCardHairline — the engraved-gold lens shape used to mark a
- * hovered RoomCard. Identical geometry + theme-aware treatment to the
- * journal EntryStripCard's HairlineLens. Inlined here for now; once
- * we extract the journal version into a shared component, both can
- * import from one source.
- */
-function RoomCardHairline({
-  position,
-  theme,
-}: {
-  position: "top" | "bottom";
-  theme: "sunlit" | "dusk";
-}) {
-  const reactId = useId();
-  const gradId = `sh-room-hairline-${reactId.replace(/[^a-zA-Z0-9]/g, "")}`;
-  const rgb = theme === "sunlit" ? "169,121,61" : "196,147,78";
-  const filter =
-    theme === "sunlit"
-      ? "drop-shadow(0 0.5px 0 rgba(60,40,15,0.18))"
-      : "drop-shadow(0 0 3px rgba(196,147,78,0.45)) drop-shadow(0 0 8px rgba(196,147,78,0.20))";
-
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 100 6"
-      preserveAspectRatio="none"
-      className={`pointer-events-none absolute left-1/2 h-1 w-[88%] -translate-x-1/2 ${
-        position === "top" ? "top-0" : "bottom-0"
-      }`}
-      style={{ filter }}
-    >
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="100%" y2="0">
-          <stop offset="0%" stopColor={`rgba(${rgb},0)`} />
-          <stop offset="22%" stopColor={`rgba(${rgb},0.38)`} />
-          <stop offset="50%" stopColor={`rgba(${rgb},0.95)`} />
-          <stop offset="78%" stopColor={`rgba(${rgb},0.38)`} />
-          <stop offset="100%" stopColor={`rgba(${rgb},0)`} />
-        </linearGradient>
-      </defs>
-      <path
-        d="M 0 3 Q 50 0.4 100 3 Q 50 5.6 0 3 Z"
-        fill={`url(#${gradId})`}
-      />
-    </svg>
-  );
-}
+// RoomCardHairline replaced with the shared `HairlineLens` from
+// `app/components/hairlineLens.tsx` (2026-06-18 CSS sweep). Same
+// geometry, identical theme treatment, no pixelation.
 
 // ============================================================================
 // Notification copy — ported from /dashboard.

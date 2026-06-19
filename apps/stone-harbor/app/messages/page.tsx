@@ -240,6 +240,34 @@ export default function MessagesPage() {
     return conversations.find((item) => item.id === activeConversationId);
   }, [conversations, activeConversationId]);
 
+  // Mobile uses a Messenger-style two-screen flow: tap a conversation
+  // (or a search result) to push into a full-screen thread; tap "←
+  // Conversations" to pop back to the inbox. `inThreadMode` is true
+  // whenever a thread or a pending-recipient new-message view should
+  // occupy the screen. Tablets and above (sm: 640px+, catches iPad
+  // mini portrait at 744px) ignore this — both panels render
+  // side-by-side via the grid regardless.
+  const inThreadMode =
+    activeConversationId !== null || pendingRecipient !== null;
+
+  // When the mobile thread overlay is up, hide the body-level
+  // MobileTabBar and GlobalCrisisFooter via a body data attribute.
+  // Cleaner than fighting stacking contexts with z-index — the chrome
+  // simply doesn't render so the panel has the entire viewport with
+  // the composer pinned at the bottom edge. Crisis access returns
+  // when the user taps "← Conversations" to pop back to the inbox.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (inThreadMode) {
+      document.body.dataset.mobileThreadOverlay = "true";
+    } else {
+      delete document.body.dataset.mobileThreadOverlay;
+    }
+    return () => {
+      delete document.body.dataset.mobileThreadOverlay;
+    };
+  }, [inThreadMode]);
+
   const activeConvoIdx = useMemo(() => {
     return conversations.findIndex((item) => item.id === activeConversationId);
   }, [conversations, activeConversationId]);
@@ -766,11 +794,19 @@ export default function MessagesPage() {
     };
   }, [activeConversationId, userId]);
 
-  // STYLED LOADING — breathing pulse, matches dashboard/journal
+  // STYLED LOADING — breathing pulse, matches dashboard/journal.
+  //
+  // Using min-h-screen instead of h-full because during the Next.js
+  // route transition from /dashboard the parent layout's height isn't
+  // fully resolved at the moment this render fires. With h-full the
+  // wrapper would collapse to natural content height, sticking the
+  // breathing pulse to the top of the viewport. min-h-screen references
+  // the viewport directly so the centering math works regardless of
+  // parent state. Caught 2026-06-18 during hotfix smoke.
   if (loading) {
     return (
       <main
-        className={`${sans.className} flex h-full items-center justify-center bg-[var(--sh-bg-page)]`}
+        className={`${sans.className} flex min-h-screen items-center justify-center bg-[var(--sh-bg-page)]`}
       >
         <div className="flex flex-col items-center">
           <motion.div
@@ -825,8 +861,15 @@ export default function MessagesPage() {
             "BROTHERHOOD" + serif title + privacy line. Same pattern as
             other harbor surfaces. The privacy sub-line is the trust
             signal Brotherhood specifically needs upfront — members
-            need to know nothing here is displayed anywhere else. */}
-        <section className="flex flex-shrink-0 flex-col items-center border-b border-[var(--sh-border-subtle)] px-10 py-8">
+            need to know nothing here is displayed anywhere else.
+            Hidden on mobile when the member is inside a thread so the
+            composer has the vertical real estate. Always visible at
+            md: and above, and on mobile when on the inbox screen. */}
+        <section
+          className={`flex-shrink-0 flex-col items-center border-b border-[var(--sh-border-subtle)] px-4 py-6 sm:flex sm:px-10 sm:py-8 ${
+            inThreadMode ? "hidden" : "flex"
+          }`}
+        >
           <p
             className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]`}
           >
@@ -866,15 +909,27 @@ export default function MessagesPage() {
             (active thread or empty state). Both columns max-h-[640px]
             so they don't push the horizon mark off screen on shorter
             viewports. */}
-        <section className="flex flex-1 flex-col items-center px-10 py-10">
-          <div className="grid w-full max-w-[1200px] gap-0 lg:grid-cols-[0.36fr_0.64fr]">
+        <section className="flex flex-1 flex-col items-center px-4 py-6 sm:px-10 sm:py-10">
+          {/* Grid switches to two-column at md: instead of lg: — the
+              old lg: breakpoint meant tablets in portrait fell back to
+              a stacked single-column render (acknowledged as poorly
+              considered in the SH-52 closure). Mobile now uses
+              Messenger-style two-screen navigation: exactly one panel
+              visible at a time, swap on tap. */}
+          <div className="grid w-full max-w-[1200px] gap-0 sm:grid-cols-[0.36fr_0.64fr]">
             {/* LEFT — Conversations strip + search toggle.
-                border-r adds the thin vertical divider between the
-                conversations pane and the active thread, matching the
-                rest of the harbor vocabulary's subtle border rhythm.
-                Inner pr-8 gives the cards breathing room before the
-                divider line. */}
-            <aside className="flex flex-col gap-6 border-r border-[var(--sh-border-subtle)] pr-8">
+                On mobile this IS the inbox screen and fills the
+                viewport. md:border-r adds the thin vertical divider
+                between the conversations pane and the active thread
+                on desktop only — on mobile there's no second panel
+                visible to divide from, and the trailing edge would
+                read as a stray line. Inner md:pr-8 likewise applies
+                only on desktop. Hidden on mobile when inside a thread. */}
+            <aside
+              className={`flex-col gap-6 sm:flex sm:border-r sm:border-[var(--sh-border-subtle)] sm:pr-8 ${
+                inThreadMode ? "hidden" : "flex"
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <p
                   className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]`}
@@ -1035,11 +1090,41 @@ export default function MessagesPage() {
               )}
             </aside>
 
-            {/* RIGHT — Active thread or empty state. pl-8 balances
-                the left pane's pr-8 so the divider sits visually
-                centered in the gap, with equal breathing room on
-                both sides. */}
-            <div className="flex flex-col gap-5 pl-8">
+            {/* RIGHT — Active thread or empty state. md:pl-8 balances
+                the left pane's md:pr-8 so the divider sits visually
+                centered in the gap on desktop. Mobile drops the
+                padding (the panel IS the screen there) and hides
+                this column entirely when no thread is active — the
+                inbox panel is the mobile landing view, not the empty
+                state.
+                On mobile when in thread mode the panel is lifted
+                out of normal flow as a `fixed inset-0` overlay so
+                back link + thread header + composer stay pinned to
+                the viewport while the messages list scrolls between
+                them. Same pattern Messenger and iMessage use. */}
+            <div
+              className={`flex-col gap-5 sm:flex sm:pl-8 sm:relative sm:inset-auto sm:z-auto sm:h-auto sm:overflow-visible sm:bg-transparent sm:px-0 sm:pt-0 sm:pb-0 ${
+                inThreadMode
+                  ? "fixed inset-x-0 top-0 bottom-[var(--sh-mobile-crisis-h,140px)] z-50 flex overflow-hidden bg-[var(--sh-bg-page)] px-4 pb-4 pt-4"
+                  : "hidden sm:flex"
+              }`}
+            >
+              {/* Mobile-only back affordance — quiet gold uppercase
+                  link that clears both activeConversationId and
+                  pendingRecipient so the user pops back to the inbox.
+                  Hidden on desktop where both panels are visible
+                  side-by-side and back navigation isn't needed. */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveConversationId(null);
+                  setPendingRecipient(null);
+                }}
+                style={{ outline: "none", outlineOffset: 0 }}
+                className={`${sans.className} flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)] transition-colors hover:text-[var(--sh-accent-gold-bright)] sm:hidden`}
+              >
+                ← {t("backToConversations")}
+              </button>
               {activeConversation ? (
                 <>
                   {/* Thread header — avatar + eyebrow + name + read-state.
@@ -1081,9 +1166,8 @@ export default function MessagesPage() {
                       against a clean horizon. Own messages = gold bg
                       right-aligned, others = subtle bg left-aligned. */}
                   <div
-                    className="relative flex-1 overflow-y-auto pr-2"
+                    className="relative flex min-h-0 flex-1 flex-col overflow-y-auto pr-2 sm:min-h-[420px]"
                     style={{
-                      minHeight: "420px",
                       scrollbarWidth: "none",
                       WebkitMaskImage:
                         "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.45) 8%, rgba(0,0,0,0.85) 18%, black 30%, black 100%)",
@@ -1125,7 +1209,7 @@ export default function MessagesPage() {
                          time stamp. Unread own messages show only the
                          time — the absence of "read" is the signal,
                          which keeps unread state visually neutral. */
-                      <div className="mx-auto flex w-full max-w-[720px] flex-col gap-5 pt-6">
+                      <div className="mx-auto mt-auto flex w-full max-w-[720px] flex-col gap-5 pt-6">
                         {/* Date separator sits BELOW each cluster, not
                             above. The date reads as a closing mark for
                             the messages that just passed ("those
@@ -1358,7 +1442,7 @@ export default function MessagesPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-1 flex-col items-center justify-center p-10 text-center">
+                  <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center sm:p-10">
                     <p
                       className={`${serif.className} max-w-md text-[18px] italic leading-relaxed text-[var(--sh-text-tertiary)]`}
                     >

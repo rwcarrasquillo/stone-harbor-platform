@@ -112,7 +112,14 @@ export function MobileTabBar() {
   return (
     <nav
       aria-label="Primary"
-      className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-stone-800 bg-[#0A0A0B]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0A0A0B]/80"
+      // Phones-only tab bar (< sm = 640px). Tablets at 640px+ get the
+      // desktop layouts on every authenticated surface, so the bar
+      // would just compete with the composer / horizon mark for
+      // bottom-of-screen real estate. The bar is also hidden when
+      // /messages sets `body[data-mobile-thread-overlay="true"]`
+      // (Messenger thread overlay) — the in-panel "← Conversations"
+      // link replaces the bar's back affordance there.
+      className="messenger-overlay-hidden sm:hidden fixed inset-x-0 bottom-0 z-40 border-t border-stone-800 bg-[#0A0A0B]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0A0A0B]/80"
       // Respect iOS home-indicator safe area
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0)" }}
     >
