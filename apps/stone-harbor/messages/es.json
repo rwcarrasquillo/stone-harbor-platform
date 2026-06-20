@@ -7,6 +7,11 @@
       "en": "English",
       "es": "Español"
     },
+    "aria": {
+      "home": "Inicio",
+      "utilityNav": "Navegación de utilidades",
+      "legalLinks": "Enlaces legales"
+    },
     "back": "Atrás",
     "loading": "Cargando…",
     "save": "Guardar",
@@ -22,10 +27,10 @@
     "comingSoon": "Próximamente"
   },
   "nav": {
-    "backToDashboard": "Panel",
-    "returnToHarbor": "Volver Al Puerto",
+    "backToDashboard": "Tu refugio",
+    "returnToHarbor": "Volver A La Dársena",
     "openManual": "Abrir tu Manual de Operación",
-    "harbor": "Puerto"
+    "harbor": "Dársena"
   },
   "tabBar": {
     "home": "Inicio",
@@ -35,7 +40,7 @@
     "me": "Yo"
   },
   "crisisFooter": {
-    "patience": "El puerto es paciente.",
+    "patience": "La dársena es paciente.",
     "crisisLabel": "Si Estás En Crisis",
     "crisisLineStart": "Llama o envía mensaje al",
     "crisisLineEnd": "— 24/7. Gratis. Confidencial.",
@@ -88,18 +93,18 @@
   "home": {
     "nav": {
       "start": "Empieza",
-      "roadmap": "Hoja de ruta",
-      "resources": "Recursos",
+      "roadmap": "Sendero",
+      "resources": "Recursos para el camino",
       "about": "Acerca",
       "login": "Iniciar",
       "logout": "Salir",
       "join": "Unirse",
-      "dashboard": "Panel"
+      "dashboard": "Tu refugio"
     },
     "hero": {
       "h1Line1": "La tormenta",
-      "h1Line2": "te cambió.",
-      "sub": "Ahora reconstruye lo que queda — con claridad, calma, fuerza y propósito.",
+      "h1Line2": "dejó su huella.",
+      "sub": "Ahora comienza a reconstruirte con claridad, calma, fortaleza y propósito.",
       "mirrorPrefix": "Sea que la tormenta haya sido",
       "mirrorSuffix": "— estás en el lugar correcto.",
       "storms": {
@@ -118,10 +123,10 @@
       "brotherhoodSuffix": "comenzaron a recuperarse esta semana."
     },
     "breath": {
-      "label": "Antes de seguir bajando",
-      "title": "Tómate sesenta segundos.",
-      "prompt": "Un respiro es suficiente para empezar. Lo demás vendrá.",
-      "complete": "Sesenta segundos. Bien hecho. El puerto es paciente."
+      "label": "Antes de continuar, regálate un instante.",
+      "title": "Regálate sesenta segundos de calma.",
+      "prompt": "Un solo respiro basta para comenzar. Lo demás llegará a su tiempo.",
+      "complete": "Sesenta segundos. Es suficiente por ahora. La dársena permanece serena, esperándote sin prisa."
     },
     "pillars": {
       "clarity": {
@@ -130,40 +135,40 @@
       },
       "calm": {
         "title": "Calma",
-        "text": "Calma tu sistema nervioso. Recupera tu paz."
+        "text": "Permite que tu mente y tu cuerpo vuelvan a encontrar sosiego."
       },
       "strength": {
-        "title": "Fuerza",
-        "text": "Reconstruye tu identidad, tus límites, tu impulso hacia adelante."
+        "title": "Fortaleza",
+        "text": "Reconstruye quién eres, honra tus límites y recupera tu rumbo."
       }
     },
     "quote": {
-      "line1": "No necesitas ser arreglado.",
-      "line2": "Necesitas ser encontrado.",
+      "line1": "No hay nada roto en ti que necesite ser reparado.",
+      "line2": "Quizás solo necesitas volver a encontrarte.",
       "attribution": "— Stone Harbor"
     },
     "journey": {
-      "eyebrow": "Tu Viaje De Recuperación",
-      "title": "¿Dónde estás ahora mismo?",
+      "eyebrow": "Tu camino de regreso a ti mismo",
+      "title": "¿Dónde te encuentras en este momento?",
       "subtitle": "Elige la respuesta que se sienta más cercana. Stone Harbor te guiará al próximo paso firme.",
       "options": {
         "clarity": {
           "label": "Me siento confundido",
-          "title": "Empieza con claridad.",
+          "title": "Empieza por recuperar claridad.",
           "identity": "Conviértete en el hombre que ve con claridad.",
           "text": "Puede que aún cuestiones lo que pasó. Empieza nombrando patrones, separando hechos del ruido emocional, y reconstruyendo la confianza en tu propia percepción.",
           "action": "Empezar A Ver Claro"
         },
         "calm": {
           "label": "Me siento abrumado",
-          "title": "Empieza con calma.",
+          "title": "Empieza por encontrar calma.",
           "identity": "Conviértete en el hombre inquebrantable.",
           "text": "Tu sistema nervioso puede estar cargando estrés prolongado. Empieza con conexión a tierra, respiración, descanso y regulación emocional.",
           "action": "Calmarte"
         },
         "strength": {
           "label": "Estoy listo para reconstruir",
-          "title": "Empieza con fuerza.",
+          "title": "Empieza por redescubrir tu fortaleza.",
           "identity": "Conviértete en el hombre que reconstruye.",
           "text": "Estás listo para restaurar disciplina, confianza, límites e identidad. El próximo paso es reconstruir tu vida con estructura.",
           "action": "Empezar A Reconstruir"
@@ -171,7 +176,7 @@
       }
     },
     "trust": {
-      "label": "Construido Sobre Práctica Comprobada",
+      "label": "Inspirado en prácticas que ayudan a sanar.",
       "ifs": "Sistemas De La Familia Interna",
       "act": "Aceptación Y Compromiso",
       "somatic": "Práctica Somática",
@@ -179,28 +184,37 @@
       "privacy": "Tus reflexiones, tu camino, tus datos — solo tuyos. Encriptados. Nunca vendidos. Nunca compartidos."
     },
     "footer": {
-      "tagline": "Bienestar Mental Para Hombres",
-      "beginHeader": "Empezar",
-      "startHere": "Empieza Aquí",
-      "roadmap": "Mapa De Ruta",
-      "join": "Únete",
-      "exploreHeader": "Explorar",
-      "resources": "Recursos",
-      "about": "Acerca De",
-      "privacy": "Privacidad",
+      "tagline": "Un espacio para la claridad, la calma y la fortaleza de los hombres.",
+      "beginHeader": "Comienza cuando estés listo.",
+      "startHere": "Comienza aquí, sin prisa.",
+      "roadmap": "Sendero de recuperación",
+      "join": "Únete al viaje.",
+      "exploreHeader": "Explora a tu propio ritmo.",
+      "resources": "Recursos para el camino",
+      "about": "Nuestra historia",
+      "privacy": "Tu privacidad, protegida.",
       "crisisHeader": "Si Estás En Crisis",
       "crisisLine": "Llama o envía un mensaje al",
       "crisisLineEnd": "— la Línea De Vida Para Suicidio Y Crisis. 24/7. Gratis. Confidencial.",
-      "patience": "El puerto es paciente."
+      "patience": "La dársena permanece serena, esperándote sin prisa."
     },
     "aria": {
-      "joinHarbor": "Unirse a Stone Harbor",
-      "openDashboard": "Abrir panel"
+      "joinHarbor": "Únete a Stone Harbor. Tu lugar te espera.",
+      "openDashboard": "Abre tu refugio y continúa el camino."
     }
   },
   "login": {
     "title": "Bienvenido de regreso.",
-    "subtitle": "El puerto sigue firme. Inicia sesión para continuar.",
+    "subtitle": "La dársena sigue firme. Inicia sesión para continuar.",
+    "brandCrumb": "Regreso",
+    "voiceSignature": "La dársena espera, paciente.",
+    "aside": {
+      "eyebrow": "Regreso",
+      "headline": "La dársena te recuerda.",
+      "body": "Cualquiera que haya sido tu travesía desde la última vez que estuviste aquí, eres bienvenido de regreso. No hace falta que te pongas al día. Tu presencia basta.",
+      "tagline": "Tu trabajo te espera.",
+      "privacy": "Tus reflexiones están cifradas. Solo tuyas. Nunca vendidas. Nunca compartidas."
+    },
     "labels": {
       "email": "Correo electrónico",
       "password": "Contraseña"
@@ -214,7 +228,8 @@
       "submitting": "Iniciando sesión…",
       "forgot": "¿Olvidaste tu contraseña?",
       "joinPrompt": "¿Primera vez aquí?",
-      "joinLink": "Únete al puerto",
+      "joinLink": "Únete a la dársena",
+      "createAccount": "Crear cuenta",
       "back": "Volver al inicio"
     },
     "errors": {
@@ -222,13 +237,14 @@
       "generic": "Algo salió mal. Inténtalo de nuevo.",
       "needsConfirm": "Confirma tu correo antes de iniciar sesión.",
       "tooMany": "Demasiados intentos. Espera un momento e inténtalo de nuevo."
-    }
+    },
+    "successMessage": "Bienvenido de regreso. La dársena te recibe…"
   },
   "dashboard": {
-    "loading": "Regresando a tu puerto…",
+    "loading": "Volviendo a tu refugio.",
     "nav": {
       "backToHome": "← Stone Harbor",
-      "tagline": "Bienestar Mental Para Hombres",
+      "tagline": "Un espacio para la claridad, la calma y la fortaleza de los hombres.",
       "editProfile": "Editar Perfil",
       "editProfileAria": "Editar perfil",
       "messages": "Mensajes",
@@ -243,7 +259,7 @@
     "reflection": {
       "eyebrow": "Reflexión De Hoy",
       "fallbackTitle": "Tu reflexión se está preparando.",
-      "fallbackBody": "No se encontró una cita activa para la etapa {stage} de hoy. Genera las reflexiones de esta semana y refresca tu puerto."
+      "fallbackBody": "No se encontró una cita activa para la etapa {stage} de hoy. Genera las reflexiones de esta semana y refresca tu refugio."
     },
     "strip": {
       "streakLabel": "Racha",
@@ -251,7 +267,7 @@
       "streakZero": "El día cero también es un día.",
       "streakOne": "Día 1.",
       "streakN": "Día {count}.",
-      "streakSubZero": "Empieza cuando estés listo. El puerto no lleva la cuenta.",
+      "streakSubZero": "Empieza cuando estés listo. El refugio no lleva la cuenta.",
       "streakSubActive": "Perderse un día no te reinicia.",
       "tomorrowLabel": "Mañana",
       "tomorrowTitle": "Una pregunta sobre {topic}.",
@@ -266,7 +282,7 @@
     "meditation": {
       "eyebrow": "Respiración Diaria · Abrir Meditación",
       "title": "Sesenta segundos, cada mañana.",
-      "subtitle": "Una respiración en la puerta del puerto. Quédate todo el tiempo que quieras.",
+      "subtitle": "Una respiración en la puerta del refugio. Quédate todo el tiempo que quieras.",
       "cta": "Entrar A La Meditación →",
       "inhale": "Inhala",
       "exhale": "Exhala"
@@ -303,38 +319,38 @@
       "openCta": "Abrir →",
       "reflect": {
         "label": "Privado",
-        "title": "Reflexionar",
-        "text": "Escribe, busca y revisa reflexiones privadas que solo tú puedes ver."
+        "title": "Cuaderno de Reflexión",
+        "text": "Un espacio solo para ti. Para escribir, recordar y escuchar aquello que aún necesita una voz."
       },
       "vent": {
         "label": "Soltar",
-        "title": "Desahogo",
-        "text": "Una página en blanco, sin prompts, sin audiencia. Para cuando solo necesitas soltarlo."
+        "title": "Dejar el Peso",
+        "text": "Sin preguntas. Sin expectativas. Solo un lugar donde dejar aquello que ya no quieres cargar."
       },
       "brotherhood": {
         "label": "Juntos",
         "labelUnread": "{count} Sin leer",
         "title": "Hermandad",
-        "text": "Entra en la hermandad. No eres el único aquí.",
+        "text": "Acércate a la hermandad. Hay otros hombres recorriendo caminos parecidos al tuyo.",
         "textUnread": "Tienes mensajes de miembros sin leer esperando."
       },
       "breathe": {
         "label": "Sesenta segundos",
-        "title": "Respira",
-        "text": "Una respiración en la puerta del puerto. Quédate todo el tiempo que quieras."
+        "title": "Un Momento para Respirar",
+        "text": "Detente un momento. Respira. La dársena permanece abierta para ti el tiempo que necesites."
       },
       "library": {
         "label": "Leer",
-        "title": "Cartas",
-        "text": "Cartas desde el puerto — escritura original del equipo, en la voz de alguien que sabe. Lo que te escribimos sobre claridad, calma y fuerza."
+        "title": "Cartas para el Camino",
+        "text": "Palabras escritas para acompañarte en momentos de claridad, calma y fortaleza."
       },
       "resources": {
         "label": "Curado",
-        "title": "Recursos",
-        "text": "Lectura externa que el equipo leyó primero — libros, ensayos, charlas que vale la pena llevar contigo entre sesiones."
+        "title": "Recursos para el Camino",
+        "text": "Libros, ensayos y conversaciones seleccionadas con cuidado. Ideas que vale la pena llevar contigo."
       }
     },
-    "patience": "El puerto estará aquí mañana.",
+    "patience": "El refugio estará aquí mañana.",
     "roadmap": {
       "eyebrow": "Tu Mapa De Ruta",
       "title": "Continúa donde lo dejaste.",
@@ -360,7 +376,7 @@
         "headline25": "25 hermanos están contigo.",
         "body25": "Escribiste algo valiente hoy. Veinticinco hombres lo sintieron lo suficiente para decirlo sin palabras.",
         "headline50": "50 hermanos están contigo.",
-        "body50": "Cincuenta hombres dejaron el ancla a tu lado. El puerto no es una metáfora en este momento.",
+        "body50": "Cincuenta hombres dejaron el ancla a tu lado. El refugio no es una metáfora en este momento.",
         "headline100": "100 hermanos están contigo.",
         "body100": "Cien hombres. Ese número no es nada. Lo que sea que escribiste, llegó.",
         "headlineN": "{count} hermanos están contigo.",
@@ -370,7 +386,7 @@
         "eyebrow": "Ayer",
         "headline1": "1 hermano estuvo contigo el {date}.",
         "headlineN": "{count} hermanos estuvieron contigo el {date}.",
-        "body": "Pensamos que deberías saberlo — en silencio. El puerto sostenía lo que escribiste.",
+        "body": "Pensamos que deberías saberlo — en silencio. El refugio sostenía lo que escribiste.",
         "fallbackDate": "ayer"
       },
       "warning": {
@@ -381,7 +397,7 @@
       "suspension": {
         "eyebrow": "Bienvenido De Regreso",
         "headline": "Tu cuenta está activa de nuevo.",
-        "body": "Nos alegra que estés aquí. El puerto está abierto."
+        "body": "Nos alegra que estés aquí. El refugio está abierto."
       }
     },
     "withYou": {
@@ -398,13 +414,13 @@
     "personalizedGreeting": {
       "fallbackName": "amigo",
       "defaultSalutation": "Bienvenido.",
-      "defaultBody": "El puerto es paciente.",
+      "defaultBody": "El refugio es paciente.",
       "ariaLabel": "Bienvenido",
       "firstVisit": {
         "lateNightSalutation": "Es tarde, {name}.",
-        "lateNightBody": "El puerto está aquí. Tómate tu tiempo.",
+        "lateNightBody": "El refugio está aquí. Tómate tu tiempo.",
         "salutation": "{greeting}, {name}.",
-        "body": "El puerto te recuerda. No le debes nada a nadie hoy."
+        "body": "El refugio te recuerda. No le debes nada a nadie hoy."
       },
       "longGone": {
         "salutation": "Bienvenido de regreso, {name}.",
@@ -416,7 +432,7 @@
       },
       "recent": {
         "lateNightSalutation": "Es tarde, {name}.",
-        "lateNightBody": "El puerto está aquí.",
+        "lateNightBody": "El refugio está aquí.",
         "salutation": "{greeting}, {name}.",
         "body": "Qué bueno verte de nuevo."
       },
@@ -445,6 +461,15 @@
     }
   },
   "journal": {
+    "brandCrumb": "Diario",
+    "anchorPhrase": "Observa sin juzgar. Solo observa.",
+    "voiceSignature": "La dársena es paciente.",
+    "dateLabel": {
+      "today": "HOY",
+      "yesterday": "AYER",
+      "todayDisplay": "Hoy",
+      "yesterdayDisplay": "Ayer"
+    },
     "loading": "Abriendo tu diario…",
     "soundMute": "Silenciar sonidos de la naturaleza",
     "soundPlay": "Reproducir sonidos de la naturaleza",
@@ -455,7 +480,7 @@
     "streakDayN": "Día {count}.",
     "lastNever": "Tu primera entrada es la más pesada. Después se vuelven más ligeras.",
     "lastToday": "Escribiste hoy. Quédate un poco más.",
-    "lastYesterday": "Escribiste ayer. El puerto está abierto.",
+    "lastYesterday": "Escribiste ayer. La dársena está abierta.",
     "lastDays": "Tu última entrada fue hace {count} días.",
     "promptLabel": "El Prompt De Hoy",
     "promptHelp": "Úsalo si te llega. Ignóralo si no.",
@@ -464,13 +489,13 @@
     "privacy": "Tu diario es privado. Encriptado. Solo tuyo. Nadie — ni siquiera el equipo de Stone Harbor — puede leer lo que escribes aquí.",
     "storyHeader": "Una historia para contar",
     "titleLabel": "Título",
-    "titlePlaceholder": "Título opcional",
+    "titlePlaceholder": "Ponle un nombre, si lo deseas.",
     "moodLabel": "Estado de ánimo",
     "bodyCheckOffer": "Antes de escribir — ¿una respiración en tu cuerpo?",
     "bodyCheckComplete": "Chequeo del cuerpo completo · ajustar",
     "bodyCheckNoticed": "Notado en: {spots} · ajustar",
     "reflectionLabel": "Reflexión",
-    "reflectionPlaceholder": "¿Qué necesitas decir hoy?",
+    "reflectionPlaceholder": "¿Qué merece ser escrito hoy?",
     "storyPlaceholder": "Cuéntame…",
     "startNudge": "Empieza con una palabra. Cualquier palabra.",
     "wordsZero": "Empieza por cualquier parte. Hasta media oración cuenta.",
@@ -524,22 +549,22 @@
       "evening": "Buenas noches",
       "tonight": "Esta noche"
     },
-    "newEntry": "Nueva entrada",
-    "allEntries": "Todas las entradas",
+    "newEntry": "Nueva reflexión",
+    "allEntries": "Todas tus reflexiones",
     "archive": {
       "eyebrow": "Archivo",
-      "title": "Lo que has dejado aquí.",
-      "voiceSignature": "El puerto recuerda.",
+      "title": "Las palabras que has confiado a estas páginas.",
+      "voiceSignature": "Tu refugio recuerda.",
       "back": "Volver al diario",
-      "empty": "Nada aquí todavía. Tu archivo crecerá a medida que escribas.",
-      "loading": "Reuniendo todo lo que has escrito…"
+      "empty": "Aún no hay nada aquí. Con el tiempo, este espacio guardará fragmentos de tu camino.",
+      "loading": "Recorriendo las huellas que has dejado por escrito…"
     }
   },
   "lineage": {
     "eyebrow": "Linaje",
     "title": "Los que cruzaron.",
     "subtitle": "Opcional. Nada de lo que aquí escribas se muestra en otro lugar.",
-    "voiceSignature": "El puerto sabe dónde empezaste.",
+    "voiceSignature": "La dársena sabe dónde empezaste.",
     "back": "Volver al panel",
     "loading": "Abriendo el cuarto…"
   },
@@ -549,7 +574,7 @@
     "centeredEyebrow": "Hermandad",
     "centeredTitle": "Conexión sin actuación.",
     "centeredPrivacy": "Solo entre miembros. Cifrado. Nada de lo que aquí escribas se muestra en otro lugar.",
-    "voiceSignature": "El puerto guarda lo que compartes.",
+    "voiceSignature": "La dársena guarda lo que compartes.",
     "conversationsEyebrow": "Tus conversaciones",
     "findMemberShort": "+ Buscar un miembro",
     "closeSearch": "Cerrar",
@@ -616,23 +641,23 @@
     }
   },
   "membersBlog": {
-    "eyebrow": "Cartas",
-    "title": "Desde el puerto.",
-    "brandCrumb": "Cartas",
-    "voiceSignature": "El puerto escribe cartas.",
+    "eyebrow": "Cartas para el Camino",
+    "title": "Desde la dársena.",
+    "brandCrumb": "Cartas para el Camino",
+    "voiceSignature": "La dársena escribe cartas.",
     "yourPath": "Tu camino: {pillar}",
-    "featured": "Destacado",
+    "featured": "Carta Destacada",
     "yourPathBadge": "Tu Camino",
-    "seeAll": "Ver todo en {pillar} ({count}) →",
-    "seeAllShort": "Ver todo en {pillar}",
+    "seeAll": "Ver todas las cartas de {pillar} ({count}) →",
+    "seeAllShort": "Ver todas las cartas de {pillar}",
     "collapse": "Cerrar ↑",
-    "openFullView": "Abrir vista completa →",
+    "openFullView": "Abrir carta completa →",
     "piece": "carta",
     "pieces": "cartas",
-    "emptyTitle": "Aún no hay cartas.",
-    "emptySub": "El puerto está escribiendo. Regresa pronto.",
-    "loadingLibrary": "Abriendo las cartas del puerto…",
-    "readMore": "Leer →",
+    "emptyTitle": "Aún no hay cartas esperándote aquí.",
+    "emptySub": "El refugio sigue escribiendo. Regresa cuando lo necesites.",
+    "loadingLibrary": "Abriendo las cartas del refugio…",
+    "readMore": "Abrir carta →",
     "scrollBack": "Desplazar {pillar} hacia atrás",
     "scrollForward": "Desplazar {pillar} hacia adelante",
     "stripAria": "Tira de cartas de {pillar}",
@@ -644,8 +669,8 @@
   "resources": {
     "eyebrow": "Curado",
     "title": "Lecturas que el equipo leyó primero.",
-    "brandCrumb": "Recursos",
-    "voiceSignature": "El puerto lee contigo.",
+    "brandCrumb": "Recursos para el camino",
+    "voiceSignature": "La dársena lee contigo.",
     "subtitle": "Artículos, ensayos y charlas que el equipo ha revisado antes de aparecer aquí. Agrupados por el pilar al que cada uno tiende a hablarle. Toca cualquier tarjeta para abrir la fuente en una pestaña nueva.",
     "emptyMessage": "La biblioteca de recursos se está preparando. Una vez que el equipo apruebe la próxima tanda de lecturas curadas, aparecerán aquí. Regresa en unos días.",
     "readAtSource": "Leer en la fuente →",
@@ -659,8 +684,8 @@
   "roadmap": {
     "eyebrow": "Hoja De Recuperación",
     "title": "Tu camino.",
-    "brandCrumb": "Hoja de ruta",
-    "voiceSignature": "El puerto camina contigo.",
+    "brandCrumb": "Sendero",
+    "voiceSignature": "La dársena camina contigo.",
     "subtitle": "Tres etapas. Cinco pasos cada una. Avanza a tu ritmo. Marca lo que ya hiciste.",
     "yoursBadge": "El Tuyo",
     "stageBlurb": {
@@ -746,7 +771,7 @@
     "saving": "Guardando...",
     "cancel": "Cancelar",
     "leaving": {
-      "eyebrow": "Dejando El Puerto",
+      "eyebrow": "Dejando La Dársena",
       "title": "Cierra tu cuenta.",
       "body1": "Puedes cerrar tu cuenta en cualquier momento. Eliminaremos tus entradas privadas del diario en 30 días y tus otros datos personales en 90 días, como se describe en nuestra",
       "privacyPolicy": "Política de Privacidad",
@@ -856,7 +881,7 @@
     "centeredEyebrow": "Respira",
     "brandCrumb": "Respiración",
     "stay": "Quédate todo el tiempo que quieras.",
-    "voiceSignature": "El puerto respira contigo.",
+    "voiceSignature": "La dársena respira contigo.",
     "patterns": {
       "box": "Para la calma",
       "longExhale": "Para la tormenta"
@@ -871,30 +896,30 @@
       "muteSound": "Silenciar el sonido ambiental",
       "playSound": "Reproducir el sonido ambiental"
     },
-    "back": "Puerto"
+    "back": "Dársena"
   },
   "vent": {
-    "statusBadge": "Desahogo · Privado",
-    "title": "Déjalo aquí.",
-    "subtitle": "Nada de lo que escribas aquí va a ningún lado. Se guarda en tu diario privado y solo tú puedes leerlo.",
-    "moodGroupLabel": "Lo que estás sintiendo (opcional)",
-    "placeholder": "Lo que sea. Sin formato, sin audiencia.",
-    "statusAutosaving": "Guardando borrador automáticamente.",
-    "statusNothing": "Todavía no has escrito nada.",
-    "leaveDraft": "Dejar Borrador",
-    "saveToJournal": "Guardar En Diario",
+    "statusBadge": "Solo Para Ti · Privado",
+    "title": "Déjalo aquí por un momento.",
+    "subtitle": "Lo que escribas aquí permanece contigo. Se guardará en tu Cuaderno de Reflexión privado, donde solo tú podrás volver a encontrarlo.",
+    "moodGroupLabel": "Si quieres, ponle un nombre a lo que estás sintiendo.",
+    "placeholder": "No hace falta ordenar tus pensamientos. Escríbelos tal como lleguen.",
+    "statusAutosaving": "Tus palabras se están guardando en silencio.",
+    "statusNothing": "Todavía no has dejado nada aquí.",
+    "leaveDraft": "Salir por ahora",
+    "saveToJournal": "Guardar en tu Cuaderno de Reflexión",
     "saving": "Guardando…",
     "moods": {
       "angry": "Enojado",
-      "scared": "Asustado",
+      "scared": "Con miedo",
       "sad": "Triste",
-      "numb": "Adormecido"
+      "numb": "Desconectado"
     },
-    "back": "Puerto",
+    "back": "Refugio",
     "aria": {
       "back": "Volver al panel"
     },
-    "statusSaved": "Guardado en tu diario. El puerto te escuchó."
+    "statusSaved": "Guardado en tu Cuaderno de Reflexión. Tus palabras ya tienen un lugar donde descansar."
   },
   "settleIn": {
     "skip": "Saltar esta introducción",

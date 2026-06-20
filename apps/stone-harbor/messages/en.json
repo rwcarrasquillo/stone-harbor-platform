@@ -7,6 +7,11 @@
       "en": "English",
       "es": "Español"
     },
+    "aria": {
+      "home": "Home",
+      "utilityNav": "Utility navigation",
+      "legalLinks": "Legal links"
+    },
     "back": "Back",
     "loading": "Loading…",
     "save": "Save",
@@ -110,18 +115,18 @@
         "stranger": "waking up not recognizing yourself"
       },
       "cta": {
-        "begin": "Begin Today",
+        "begin": "Begin where you are.",
         "ahead": "See What's Ahead"
       },
       "brotherhoodCountSingular": "{count} man",
       "brotherhoodCountPlural": "{count} men",
-      "brotherhoodSuffix": "began recovery this week."
+      "brotherhoodSuffix": "began the work this week."
     },
     "breath": {
-      "label": "Before You Scroll Further",
+      "label": "A moment, first.",
       "title": "Take sixty seconds.",
       "prompt": "One breath is enough to begin. The rest will follow.",
-      "complete": "Sixty seconds. Well done. The harbor is patient."
+      "complete": "Sixty seconds. The harbor is patient with you."
     },
     "pillars": {
       "clarity": {
@@ -143,9 +148,9 @@
       "attribution": "— Stone Harbor"
     },
     "journey": {
-      "eyebrow": "Your Recovery Journey",
+      "eyebrow": "Your way back to yourself.",
       "title": "Where are you right now?",
-      "subtitle": "Choose the answer that feels closest. Stone Harbor will guide you toward the next grounded step.",
+      "subtitle": "Choose the one closest to where you are. The next steady step follows.",
       "options": {
         "clarity": {
           "label": "I feel confused",
@@ -171,7 +176,7 @@
       }
     },
     "trust": {
-      "label": "Built On Proven Practice",
+      "label": "Drawn from what actually helps.",
       "ifs": "Internal Family Systems",
       "act": "Acceptance & Commitment",
       "somatic": "Somatic Practice",
@@ -201,6 +206,15 @@
   "login": {
     "title": "Welcome back.",
     "subtitle": "The harbor is steady. Sign in to continue.",
+    "brandCrumb": "Sign in",
+    "voiceSignature": "The harbor waits, patient.",
+    "aside": {
+      "eyebrow": "Return",
+      "headline": "The harbor remembers you.",
+      "body": "Whatever your journey since you were last here, you're welcome back. You don't have to catch up. Your presence is enough.",
+      "tagline": "Your work is waiting.",
+      "privacy": "Your reflections are encrypted. Yours alone. Never sold. Never shared."
+    },
     "labels": {
       "email": "Email",
       "password": "Password"
@@ -215,6 +229,7 @@
       "forgot": "Forgot Password?",
       "joinPrompt": "New here?",
       "joinLink": "Join the harbor",
+      "createAccount": "Create account",
       "back": "Back to home"
     },
     "errors": {
@@ -222,7 +237,8 @@
       "generic": "Something went wrong. Please try again.",
       "needsConfirm": "Please confirm your email before signing in.",
       "tooMany": "Too many attempts. Please wait a moment and try again."
-    }
+    },
+    "successMessage": "Welcome back. Returning to the harbor…"
   },
   "dashboard": {
     "loading": "Returning to your harbor…",
@@ -241,7 +257,7 @@
       "dontShowAgain": "Don't show these again"
     },
     "reflection": {
-      "eyebrow": "Today's Reflection",
+      "eyebrow": "From today.",
       "fallbackTitle": "Your reflection is being prepared.",
       "fallbackBody": "No active quote was found for today's {stage} stage. Generate this week's reflections and refresh your harbor."
     },
@@ -304,7 +320,7 @@
       "reflect": {
         "label": "Private",
         "title": "Reflect",
-        "text": "Write, search, and revisit private reflections only you can access."
+        "text": "A space only for you. To write, look back, and listen to what still needs a voice."
       },
       "vent": {
         "label": "Release",
@@ -315,8 +331,8 @@
         "label": "Together",
         "labelUnread": "{count} Unread",
         "title": "Brotherhood",
-        "text": "Step into the brotherhood. You're not the only one here.",
-        "textUnread": "You have unread member messages waiting."
+        "text": "Walk into the brotherhood. Other men are here doing the same work.",
+        "textUnread": "Brothers are waiting for you."
       },
       "breathe": {
         "label": "Sixty seconds",
@@ -326,12 +342,12 @@
       "library": {
         "label": "Read",
         "title": "Letters",
-        "text": "Letters from the harbor — original writing from the team, in the voice of someone who knows. What we wrote you, on clarity, calm, and strength."
+        "text": "Words written to keep you company. On clarity, calm, and strength."
       },
       "resources": {
         "label": "Curated",
         "title": "Resources",
-        "text": "External reading the team has read first — books, essays, talks worth carrying with you between sessions."
+        "text": "Books, essays, and conversations chosen with care. Worth carrying with you."
       }
     },
     "patience": "The harbor will be here tomorrow.",
@@ -360,7 +376,7 @@
         "headline25": "25 brothers are with you.",
         "body25": "You wrote something brave today. Twenty-five men felt it enough to say so without words.",
         "headline50": "50 brothers are with you.",
-        "body50": "Half a hundred men dropped anchor next to your post. The harbor is not a metaphor right now.",
+        "body50": "Fifty men dropped anchor next to what you wrote. That's not a metaphor.",
         "headline100": "100 brothers are with you.",
         "body100": "One hundred men. That number is not nothing. Whatever you wrote, it reached.",
         "headlineN": "{count} brothers are with you.",
@@ -445,6 +461,15 @@
     }
   },
   "journal": {
+    "brandCrumb": "Journal",
+    "anchorPhrase": "Notice without judging. Just notice.",
+    "voiceSignature": "The harbor is patient.",
+    "dateLabel": {
+      "today": "TODAY",
+      "yesterday": "YESTERDAY",
+      "todayDisplay": "Today",
+      "yesterdayDisplay": "Yesterday"
+    },
     "loading": "Opening your journal…",
     "soundMute": "Mute Nature Sounds",
     "soundPlay": "Play Nature Sounds",
@@ -464,13 +489,13 @@
     "privacy": "Your journal is private. Encrypted. Yours alone. No one — not even Stone Harbor staff — can read what you write here.",
     "storyHeader": "A story to tell",
     "titleLabel": "Title",
-    "titlePlaceholder": "Optional title",
+    "titlePlaceholder": "Name this, if you want.",
     "moodLabel": "Mood",
     "bodyCheckOffer": "Before you write — one breath in your body?",
     "bodyCheckComplete": "Body check complete · adjust",
     "bodyCheckNoticed": "Noticed in: {spots} · adjust",
     "reflectionLabel": "Reflection",
-    "reflectionPlaceholder": "What do you need to say today?",
+    "reflectionPlaceholder": "What deserves to be written today?",
     "storyPlaceholder": "Tell me…",
     "startNudge": "Start with one word. Any word.",
     "wordsZero": "Start anywhere. Even half a sentence counts.",
@@ -495,13 +520,13 @@
     "emptyTitle": "Your first entry is the heaviest.",
     "emptySub": "Then they get lighter. Start with one honest sentence — no one is reading.",
     "emptySearch": "No entries match your search.",
-    "untitled": "Untitled Entry",
+    "untitled": "Untitled.",
     "edited": "edited",
     "editEntry": "Edit",
     "delete": "Delete",
-    "editTitlePlaceholder": "Title (optional)",
-    "editBodyPlaceholder": "Refine what you wrote…",
-    "editHelp": "Your first words (title and body) are preserved. This refines only the rendered version.",
+    "editTitlePlaceholder": "Name this, if you want.",
+    "editBodyPlaceholder": "Adjust what you wrote, if it asks for it…",
+    "editHelp": "What you first wrote stays. This adjusts only what you see now.",
     "cancel": "Cancel",
     "saveEdit": "Save Edit",
     "savingEdit": "Saving…",
@@ -511,7 +536,7 @@
     "noEntryTooltip": "No entry",
     "unsavedBody": "your journal entry",
     "alerts": {
-      "deleteConfirm": "Delete this journal entry?",
+      "deleteConfirm": "Delete this entry?",
       "editEmpty": "Entry body can't be empty. Cancel instead to leave as-is.",
       "editWindowClosed": "The edit window for this entry has closed. The original is preserved.",
       "editFailed": "Couldn't save the edit. Try again in a moment."
@@ -528,11 +553,11 @@
     "allEntries": "All entries",
     "archive": {
       "eyebrow": "Archive",
-      "title": "What you've put down here.",
+      "title": "The words you've trusted to these pages.",
       "voiceSignature": "The harbor remembers.",
       "back": "Back to journal",
-      "empty": "Nothing here yet. Your archive grows as you write.",
-      "loading": "Gathering everything you've written…"
+      "empty": "Nothing here yet. In time, this space will hold pieces of your way.",
+      "loading": "Walking through what you've written…"
     }
   },
   "lineage": {

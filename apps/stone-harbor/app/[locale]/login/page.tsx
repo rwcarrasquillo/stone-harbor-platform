@@ -7,10 +7,12 @@ import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabaseClient";
 import { serif, sans } from "@/lib/fonts";
 import { Compass, Lock } from "@/app/components/icons";
-import { UserPlus, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { RotatingNatureBackdrop } from "@/app/components/rotatingNatureBackdrop";
 import { PasswordInput } from "@/app/components/passwordInput";
 import { LanguagePicker } from "@/app/components/languagePicker";
+import { AnchorMark } from "@/app/components/anchorMark";
+import { HorizonSegment } from "@/app/components/horizonSegment";
 
 // Brand system — matches home, dashboard, journal
 const GOLD = "#c4934e";
@@ -19,6 +21,16 @@ const MOSS = "#586558";
 
 export default function LoginPage() {
   const t = useTranslations("login");
+  // Reuse the existing crisisFooter Privacy + Terms labels rather than
+  // duplicating them under a new namespace — same words, both locales
+  // already covered. The labels now live in the brand-crumb utility
+  // row at the top of the page (Path B harbor frame).
+  const tCrisis = useTranslations("crisisFooter");
+  // Common aria labels — "Home", "Utility navigation" — shared across
+  // every harbor surface's brand crumb pattern. Lives in common.aria.*
+  // so /welcome, /register, /forgot-password etc. can reuse the same
+  // keys without duplication.
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,12 +48,31 @@ export default function LoginPage() {
       password,
     });
     if (error) {
-      setMessage(error.message);
+      // Map Supabase auth errors to localized copy. The raw
+      // `error.message` from Supabase comes back in English regardless
+      // of the user's locale, so Spanish members were seeing English
+      // error text on every failed sign-in. Match by status code +
+      // message content because the `code` field varies by Supabase
+      // SDK version. Fall back to the generic message for anything
+      // we don't explicitly recognize.
+      const status = error.status;
+      const raw = (error.message || "").toLowerCase();
+      let translated: string;
+      if (status === 429 || raw.includes("too many")) {
+        translated = t("errors.tooMany");
+      } else if (raw.includes("email not confirmed") || raw.includes("not confirmed")) {
+        translated = t("errors.needsConfirm");
+      } else if (status === 400 && (raw.includes("invalid login") || raw.includes("invalid credentials"))) {
+        translated = t("errors.invalid");
+      } else {
+        translated = t("errors.generic");
+      }
+      setMessage(translated);
       setIsError(true);
       setLoading(false);
       return;
     }
-    setMessage("Welcome back. Returning to your harbor…");
+    setMessage(t("successMessage"));
     setIsError(false);
     setLoading(false);
     setTimeout(() => {
@@ -140,30 +171,77 @@ export default function LoginPage() {
         <rect width="100%" height="100%" filter="url(#login-grain)" />
       </svg>
 
-      {/* TOP BAR */}
-      <header className="relative z-30 px-4 py-3 md:px-10 md:py-6">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
+      {/* ===== Harbor brand-crumb header (Path B) =====
+          Replaces the prior bespoke "← Stone Harbor" + "Create Account"
+          top bar with the harbor-vocabulary brand crumb pattern used
+          across every other authenticated surface. The crumb still
+          points HOME (the public marketing root at /) rather than at
+          /dashboard, because the member isn't signed in yet — a crumb
+          to /dashboard would 302 right back to /login.
+
+          Utility row carries: Create account · Privacy · Terms ·
+          LanguagePicker. The legal links + language switcher moved
+          UP from the prior inline footer (which is being replaced
+          with a harbor horizon mark + voice signature + slim 988).
+          Privacy/Terms reuse the existing crisisFooter.privacy/terms
+          i18n keys so we don't duplicate translations under a new
+          namespace. */}
+      <header className="relative z-30 border-b border-[#c4934e]/20 bg-black/35 px-4 py-3 backdrop-blur-md md:px-10 md:py-4">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-y-3">
           <Link
             href="/"
-            className="group flex flex-col leading-none no-underline"
+            className="flex items-center gap-2 md:gap-3"
+            aria-label={`Stone Harbor — ${tCommon("aria.home")}`}
+            style={{ outline: "none", outlineOffset: 0 }}
           >
-            <span className="text-sm font-semibold uppercase tracking-[0.22em] text-[#c4934e] transition group-hover:text-white md:text-base md:tracking-[0.28em]">
-              ← Stone Harbor
+            <AnchorMark size={24} fill="#c4934e" />
+            <span
+              className={`${serif.className} text-base italic tracking-[-0.012em] text-stone-100 md:text-lg`}
+            >
+              Stone Harbor
             </span>
-            <span className="mt-1 hidden text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#c4934e]/70 md:block">
-              Men&apos;s Mental Wellness
+            <span aria-hidden="true" className="text-sm text-stone-500">
+              ·
+            </span>
+            <span
+              className={`${serif.className} text-base italic tracking-[-0.012em] text-stone-300 md:text-lg`}
+            >
+              {t("brandCrumb")}
             </span>
           </Link>
-          <Link
-            href="/register"
-            aria-label="Create account"
-            className="group relative overflow-hidden rounded-none border border-[#c4934e] p-2 text-[#c4934e] transition hover:bg-[#c4934e] hover:text-black md:px-5 md:py-2.5"
+          <nav
+            aria-label={tCommon("aria.utilityNav")}
+            className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-[0.22em] md:gap-x-4 md:text-xs md:tracking-[0.24em]"
           >
-            <UserPlus size={18} className="md:hidden" aria-hidden="true" />
-            <span className="relative z-10 hidden text-xs font-bold uppercase tracking-[0.22em] md:inline">
-              Create Account
+            <Link
+              href="/register"
+              className="text-stone-200 transition hover:text-[#c4934e]"
+            >
+              {t("actions.createAccount")}
+            </Link>
+            <span aria-hidden="true" className="text-stone-500">
+              ·
             </span>
-          </Link>
+            <Link
+              href="/privacy"
+              className="text-stone-200 transition hover:text-[#c4934e]"
+            >
+              {tCrisis("privacy")}
+            </Link>
+            <span aria-hidden="true" className="text-stone-500">
+              ·
+            </span>
+            <Link
+              href="/terms"
+              className="text-stone-200 transition hover:text-[#c4934e]"
+            >
+              {tCrisis("terms")}
+            </Link>
+            <span aria-hidden="true" className="text-stone-500">
+              ·
+            </span>
+            <LanguagePicker />
+          </nav>
         </div>
       </header>
 
@@ -210,24 +288,28 @@ export default function LoginPage() {
               <div className="flex items-center gap-2">
                 <Compass size={14} className="text-[#a9793d]" />
                 <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#a9793d] md:text-xs">
-                  Return
+                  {t("aside.eyebrow")}
                 </p>
               </div>
+              {/* Cream aside headline. The English headline reads as
+                  two lines ("The harbor / remembers you.") via an
+                  explicit <br/>. Spanish is one continuous line — the
+                  translation function returns a single string, the
+                  browser handles the wrap naturally, and the serif
+                  display-size + leading still gives us the dramatic
+                  cadence without the literal break. */}
               <h1
                 className={`${serif.className} mt-3 text-3xl font-semibold leading-[1] md:mt-6 md:text-7xl md:leading-[0.95] lg:text-8xl`}
               >
-                The harbor
-                <br />
-                remembers you.
+                {t("aside.headline")}
               </h1>
               <p className="mt-4 max-w-md text-sm leading-relaxed text-stone-600 md:mt-10 md:text-lg">
-                Whatever happened since you were last here — you&apos;re welcome
-                to return. No catching up required.
+                {t("aside.body")}
               </p>
               <p
                 className={`${serif.className} mt-4 text-lg italic leading-snug text-[#a9793d] md:mt-8 md:text-2xl`}
               >
-                Your work is waiting.
+                {t("aside.tagline")}
               </p>
 
               <div className="mt-6 h-px w-16 bg-[#a9793d] md:mt-12" />
@@ -235,8 +317,7 @@ export default function LoginPage() {
               <div className="mt-4 flex items-start gap-2 md:mt-8">
                 <Lock size={14} className="mt-0.5 shrink-0 text-stone-500" />
                 <p className="text-[11px] leading-relaxed text-stone-500 md:text-xs">
-                  Your reflections are encrypted. Yours alone. Never sold. Never
-                  shared.
+                  {t("aside.privacy")}
                 </p>
               </div>
             </div>
@@ -259,20 +340,17 @@ export default function LoginPage() {
             />
 
             <div className="relative z-10 mx-auto max-w-[600px]">
-              <div className="mb-6 flex items-baseline justify-between md:mb-10">
-                <h2
-                  className={`${serif.className} text-3xl font-medium text-white md:text-5xl`}
-                >
-                  {t("title")}
-                </h2>
-                <Link
-                  href="/register"
-                  className="group relative text-[11px] font-bold uppercase tracking-[0.22em] text-white/90 transition hover:text-[#c4934e] md:text-xs"
-                >
-                  <span className="relative z-10">Register</span>
-                  <span className="absolute bottom-[-4px] left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
-                </Link>
-              </div>
+              {/* The duplicate "Register" cross-link that used to sit
+                  beside the h2 was removed when the harbor brand-crumb
+                  header was added — the new utility row at the top
+                  carries the "Create account" link, and the form's
+                  own joinPrompt below still surfaces the path. Three
+                  links to /register on one page was overload. */}
+              <h2
+                className={`${serif.className} mb-6 text-3xl font-medium text-white md:mb-10 md:text-5xl`}
+              >
+                {t("title")}
+              </h2>
 
               <form onSubmit={handleLogin} className="space-y-4 md:space-y-6">
                 <Field
@@ -351,52 +429,73 @@ export default function LoginPage() {
         </div>
       </section>
 
-      {/* FOOTER — 988 crisis line, especially important on auth pages */}
-      <footer className="relative z-10 mt-4 border-t border-white/10 bg-black/40 px-4 py-5 backdrop-blur md:mt-8 md:px-10 md:py-8">
-        <div className="mx-auto grid max-w-7xl gap-3 md:grid-cols-3 md:items-center md:gap-4">
-          <p
-            className={`${serif.className} text-sm italic text-white/70 md:text-base md:text-left`}
+      {/* ===== Harbor footer — horizon mark + voice signature + 988 =====
+          Path B replaces the prior three-column inline footer (The
+          harbor is patient · wordmark · 988) plus the utility row
+          (LanguagePicker · Privacy · Terms) with the canonical harbor
+          horizon mark composition you see on /journal, /dashboard,
+          /vent, /lineage, /meditation, /messages, etc.
+
+          GlobalCrisisFooter is explicitly excluded from /login at the
+          layout level (see globalCrisisFooter.tsx — public/auth pages
+          opt out because they want bespoke treatment), so the 988
+          crisis band stays inline below the harbor horizon. Auth
+          pages especially need the crisis line surfaced — vulnerable
+          members may land here in a difficult moment.
+
+          LanguagePicker + Privacy + Terms moved UP into the brand-
+          crumb utility row in the header (Path B Option A). They
+          deliberately don't render here again. */}
+      <footer className="relative z-10 mt-4 border-t border-white/10 bg-black/45 px-4 py-6 backdrop-blur md:mt-8 md:px-10 md:py-8">
+        <div className="mx-auto flex max-w-[640px] flex-col items-center justify-center">
+          <motion.div
+            animate={{ opacity: [0.78, 1, 0.78] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="flex w-3/4 max-w-[560px] items-center justify-center gap-3"
           >
-            The harbor is patient.
-          </p>
-          <p className="text-center text-[9px] font-bold uppercase tracking-[0.28em] text-white/50 md:text-[10px]">
-            Stone Harbor · Men&apos;s Mental Wellness
-          </p>
-          <p className="text-left text-xs leading-relaxed text-white/80 md:text-right md:text-sm">
-            <span className="block text-[10px] font-bold uppercase tracking-[0.3em] text-white/50">
-              If You Are In Crisis
-            </span>
-            <span className="mt-1 block">
-              Call or text <span className="font-bold text-[#c4934e]">988</span>{" "}
-              — 24/7. Free. Confidential.
-            </span>
+            <HorizonSegment
+              direction="left"
+              goldRgb="196,147,78"
+              lineAlphaInner={0.85}
+              lineAlphaMid={0.4}
+              filter="drop-shadow(0 0 3px rgba(196,147,78,0.35)) drop-shadow(0 0 6px rgba(196,147,78,0.18))"
+            />
+            <motion.div
+              animate={{ scale: [1, 1.04, 1] }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              style={{ transformOrigin: "center" }}
+            >
+              <AnchorMark size={20} shaftHeight={42} fill="#c4934e" />
+            </motion.div>
+            <HorizonSegment
+              direction="right"
+              goldRgb="196,147,78"
+              lineAlphaInner={0.85}
+              lineAlphaMid={0.4}
+              filter="drop-shadow(0 0 3px rgba(196,147,78,0.35)) drop-shadow(0 0 6px rgba(196,147,78,0.18))"
+            />
+          </motion.div>
+          <p
+            className={`${serif.className} mt-3 text-[14px] italic text-stone-400`}
+          >
+            {t("voiceSignature")}
           </p>
         </div>
-        {/* Language picker + legal links — quiet utility row. Privacy +
-            Terms added 2026-06-06 (SH-8) so the legal notices are
-            reachable from /login, not only from /register's checkbox. */}
-        <div className="mx-auto mt-4 flex max-w-7xl flex-col items-center gap-3 md:mt-6 md:flex-row md:justify-between">
-          <LanguagePicker />
-          <nav
-            aria-label="Legal links"
-            className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white/55"
-          >
-            <Link
-              href="/privacy"
-              className="transition hover:text-[#c4934e]"
-            >
-              Privacy
-            </Link>
-            <span aria-hidden="true" className="opacity-50">
-              ·
-            </span>
-            <Link
-              href="/terms"
-              className="transition hover:text-[#c4934e]"
-            >
-              Terms
-            </Link>
-          </nav>
+        {/* Slim 988 crisis band — auth-page substitute for the body-
+            level GlobalCrisisFooter that gets suppressed on /login. */}
+        <div className="mx-auto mt-6 max-w-[640px] border-t border-white/10 pt-4 text-center md:mt-8 md:pt-6">
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/55">
+            {tCrisis("crisisLabel")}
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-white/75 md:text-sm">
+            {tCrisis("crisisLineStart")}{" "}
+            <span className="font-bold text-[#c4934e]">988</span>{" "}
+            {tCrisis("crisisLineEnd")}
+          </p>
         </div>
       </footer>
     </main>
