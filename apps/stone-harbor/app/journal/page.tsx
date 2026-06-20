@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { serif, sans } from "@/lib/fonts";
 import { EASE, cascadeFadeUp, cascadeTransition } from "@/lib/motion";
 import { AnchorMark } from "@/app/components/anchorMark";
@@ -15,6 +15,7 @@ import { UnsavedChangesModal } from "@/app/components/unsavedChangesModal";
 import { supabase } from "@/lib/supabaseClient";
 import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
 import { isWithinEditWindow } from "@/lib/journalEditWindow";
+import { deriveTitleFromPrompt } from "@/lib/story/surfacer";
 
 /**
  * Stone Harbor — Journal route (production, centered design).
@@ -142,6 +143,27 @@ type DBEntry = {
   mood: string | null;
   created_at: string;
   edited_at: string | null;
+  /**
+   * SH-73: When set, this entry answered a Story Series invitation.
+   * Drives the quiet visual marker on the strip card + archive card so
+   * a member can see which entries came from a prompt vs. freeform
+   * writing. Null for every entry created before this feature shipped
+   * and for any entry the member writes outside the Story flow.
+   */
+  story_invitation_id: string | null;
+};
+
+/**
+ * Pending Story Series invitation that's driving compose mode. Set when
+ * the page loads with `?invitation_id=X` in the URL. Cleared after the
+ * member saves the entry (which transitions the invitation to
+ * `answered` and back-links the entry id). Persists across the writing
+ * session so the prompt text stays visible above the composer even as
+ * the title is edited.
+ */
+type ActiveStoryInvitation = {
+  invitationId: string;
+  promptText: string;
 };
 
 /**
@@ -154,7 +176,32 @@ type DBEntry = {
  * lowercases TODAY/YESTERDAY for its big italic stamp (see the reader
  * JSX), so we keep this string canonical and let the reader transform.
  */
-function formatEntryDate(iso: string): string {
+/**
+ * Strip-card date pill formatter. Locale-aware.
+ *
+ * Returns:
+ *   - The localized "TODAY" / "YESTERDAY" label for same-day / previous-day entries
+ *   - Otherwise the locale's short weekday + day + short month, uppercased
+ *     (e.g. "SAT 13 JUN" for en, "SÁB. 13 JUN" for es).
+ *
+ * Two locale-aware paths instead of one — the today/yesterday labels
+ * come from the i18n bundle (so editorial control), while the
+ * weekday/month abbreviations come from Intl (so we don't have to
+ * hand-translate a 7+12 array per locale we ever add).
+ *
+ * Callers must pass:
+ *   - locale — from useLocale()
+ *   - tDate — useTranslations("journal.dateLabel")
+ *
+ * The signature changed Jun 2026 from (iso) to (iso, locale, tDate)
+ * during the Spanish-leak fix; the previous version produced English
+ * sentinels regardless of app locale.
+ */
+function formatEntryDate(
+  iso: string,
+  locale: string,
+  tDate: (key: string) => string,
+): string {
   const date = new Date(iso);
   const now = new Date();
   const startOfToday = new Date(
@@ -165,25 +212,32 @@ function formatEntryDate(iso: string): string {
   const startOfYesterday = new Date(startOfToday);
   startOfYesterday.setDate(startOfYesterday.getDate() - 1);
 
-  if (date >= startOfToday) return "TODAY";
-  if (date >= startOfYesterday) return "YESTERDAY";
+  if (date >= startOfToday) return tDate("today");
+  if (date >= startOfYesterday) return tDate("yesterday");
 
-  const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-  const months = [
-    "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-    "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
-  ];
-  return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]}`;
+  // Intl handles the weekday/month abbreviations for any locale we
+  // ever support. The display stays uppercase to match the strip
+  // card's editorial style (small caps tracked wide).
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  })
+    .format(date)
+    .toUpperCase()
+    .replace(/[.,]/g, "");
 }
 
 /**
- * Reader meta-row time stamp — "9:32 AM".
- * Uses the browser's locale via Intl so it adapts to the member's
- * system settings (e.g., 24h time in many EU locales).
+ * Reader meta-row time stamp — e.g. "9:32 AM" (en) or "9:32" (es 24h).
+ * Uses the APP locale (not the browser's) so the format follows the
+ * member's chosen language, not the OS that happens to be in front
+ * of them. The browser locale fallback (`undefined`) was producing
+ * English-style 12h on /es journal for members on English systems.
  */
-function formatEntryTime(iso: string): string {
+function formatEntryTime(iso: string, locale: string): string {
   const date = new Date(iso);
-  return date.toLocaleTimeString(undefined, {
+  return date.toLocaleTimeString(locale, {
     hour: "numeric",
     minute: "2-digit",
   });
@@ -209,7 +263,36 @@ function bodyParagraphs(content: string): string[] {
   return content.split(/\n\n+/).filter((p) => p.trim().length > 0);
 }
 
-const ANCHOR_PHRASE = "Notice without judging. Just notice.";
+// ANCHOR_PHRASE moved into i18n (journal.anchorPhrase) on 2026-06-19
+// during the partial-translation fix. The phrase used to live as a
+// module-level constant here, which left it English-only on /es.
+
+/**
+ * Title size + line-height that fits the reader pane's max-w-[720px]
+ * column. Discrete tiers (rather than continuous scaling) so a few
+ * keystrokes don't bounce the size mid-type — the harbor picks a
+ * size that fits the title and stays there for a stable range.
+ *
+ * Tier boundaries calibrated for the serif at the column width:
+ *   - ≤ 24 chars  → 44px (short freeform titles: "Feeling Better Today")
+ *   - 25–39 chars → 36px (longer freeform: "What did I carry with me…")
+ *   - 40–55 chars → 28px (medium prompt titles)
+ *   - ≥ 56 chars  → 22px (full derived prompt titles, e.g. "Write about
+ *                          a moment from when you were small that you…")
+ *
+ * Both the reading-mode h1 and the composing/editing input read from
+ * here so the title's optical weight matches across modes.
+ */
+function titleTypography(text: string): {
+  fontSize: string;
+  lineHeight: string;
+} {
+  const len = text.trim().length;
+  if (len >= 56) return { fontSize: "22px", lineHeight: "1.3" };
+  if (len >= 40) return { fontSize: "28px", lineHeight: "1.22" };
+  if (len >= 25) return { fontSize: "36px", lineHeight: "1.15" };
+  return { fontSize: "44px", lineHeight: "1.1" };
+}
 
 // ============================================================================
 // Page
@@ -219,7 +302,15 @@ export default function JournalPage() {
   const router = useRouter();
   const { theme } = useTheme();
   const t = useTranslations("journal");
+  const tDate = useTranslations("journal.dateLabel");
   const tMood = useTranslations("mood");
+  // App locale (not browser locale) so the strip pills, big date
+  // stamp, and reader-meta time all follow the member's chosen
+  // language. The pre-2026-06-19 implementation used `undefined`
+  // (browser default), which produced English-formatted
+  // "7:55 AM" / "SAT 13 JUN" on /es/journal for any member whose
+  // OS was in English. See SH-71-adjacent fix.
+  const locale = useLocale();
 
   // Entry list state + active entry index. `entries === null` means
   // we're still loading; `entries.length === 0` is the empty state.
@@ -249,6 +340,29 @@ export default function JournalPage() {
   const [draftMood, setDraftMood] = useState<string | null>(null);
   const [editingForId, setEditingForId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // SH-73 — Story Series invitation that's driving compose mode.
+  // Populated by the URL param effect below; cleared by the save
+  // handler once the entry is persisted and the invitation transitions
+  // to `answered`. The persistent prompt header in the reader pane
+  // reads from this state so the question stays visible while the man
+  // writes (he's writing TO the question, not from a blank page).
+  const [activeStoryInvitation, setActiveStoryInvitation] =
+    useState<ActiveStoryInvitation | null>(null);
+
+  // Title textarea ref — drives the auto-grow behavior so long
+  // pre-filled prompt titles wrap to multiple lines instead of
+  // overflowing horizontally. The effect runs on every draftTitle
+  // change AND on mode change so the textarea is correctly sized
+  // both when first mounted with a pre-filled value and as the man
+  // types/edits. Scrollheight + manual height reset is the same
+  // pattern every autosize library uses; cheap and reliable.
+  const titleTextareaRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const ta = titleTextareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = `${ta.scrollHeight}px`;
+  }, [draftTitle, mode]);
 
   // ───── Unsaved-changes guard ─────
   //
@@ -306,6 +420,10 @@ export default function JournalPage() {
           mood: draftMood,
           created_at: new Date().toISOString(),
           edited_at: null,
+          // SH-73 — Mirror the active invitation into the virtual
+          // draft entry so the strip's leftmost card shows the same
+          // gold dot as the saved row will after persist.
+          story_invitation_id: activeStoryInvitation?.invitationId ?? null,
         }
       : null;
 
@@ -449,13 +567,13 @@ export default function JournalPage() {
         const [focusedResult, recentResult] = await Promise.all([
           supabase
             .from("journal_entries")
-            .select("id, title, content, mood, created_at, edited_at")
+            .select("id, title, content, mood, created_at, edited_at, story_invitation_id")
             .eq("user_id", user.id)
             .eq("id", focusId)
             .maybeSingle(),
           supabase
             .from("journal_entries")
-            .select("id, title, content, mood, created_at, edited_at")
+            .select("id, title, content, mood, created_at, edited_at, story_invitation_id")
             .eq("user_id", user.id)
             .neq("id", focusId)
             .order("created_at", { ascending: false })
@@ -491,7 +609,7 @@ export default function JournalPage() {
       // Default — no focus param, fetch top 7 most recent.
       const { data, error } = await supabase
         .from("journal_entries")
-        .select("id, title, content, mood, created_at, edited_at")
+        .select("id, title, content, mood, created_at, edited_at, story_invitation_id")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(7);
@@ -513,13 +631,87 @@ export default function JournalPage() {
     };
   }, [router]);
 
+  // SH-73 — Story Series invitation handoff.
+  //
+  // When a member arrives via the dashboard's "Write this story" CTA,
+  // the URL carries `?invitation_id=<uuid>`. We resolve that to the
+  // prompt text + invitation row, then prime the composer:
+  //   - mode → "composing"
+  //   - draftTitle ← deriveTitleFromPrompt(prompt.prompt_text) (editable)
+  //   - activeStoryInvitation ← { invitationId, promptText }
+  //
+  // The persistent prompt header in the reader-pane JSX reads from
+  // activeStoryInvitation so the question stays visible during the
+  // entire write — the man is writing TO the question, not from a
+  // blank page.
+  //
+  // Defensive behavior:
+  //   - Bad invitation id (404, not member's, already answered, etc.)
+  //     → fall through silently and let the journal open in regular
+  //     reading mode. We don't want to throw an error toast at a man
+  //     who clicked yes to writing.
+  //   - Invitation belongs to a different member → RLS will return
+  //     null. Same fallthrough.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const invitationId = new URLSearchParams(window.location.search).get(
+      "invitation_id",
+    );
+    if (!invitationId) return;
+
+    let cancelled = false;
+    void (async () => {
+      // Single round-trip: join the invitation row to its prompt row.
+      // The story_prompts FK on member_story_invitations gives us the
+      // nested select for free. RLS on member_story_invitations
+      // restricts this read to the calling member's own rows.
+      const { data, error } = await supabase
+        .from("member_story_invitations")
+        .select("id, status, prompt:story_prompts(prompt_text)")
+        .eq("id", invitationId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error || !data) {
+        // eslint-disable-next-line no-console
+        console.warn("[journal] invitation handoff failed:", error);
+        return;
+      }
+      // Only prime compose mode when the invitation is actually still
+      // pending. An already-answered or dismissed one falls through to
+      // normal reading — the entry it produced is in the list.
+      if (data.status !== "pending") return;
+      // Supabase JS generates joined-row types as arrays even when the
+      // join is a single-FK relation. We know member_story_invitations
+      // → story_prompts is one-to-one, so flatten via unknown to keep
+      // the runtime check below simple.
+      const promptUnknown = data.prompt as unknown;
+      const promptRow = Array.isArray(promptUnknown)
+        ? (promptUnknown[0] as { prompt_text?: string } | undefined)
+        : (promptUnknown as { prompt_text?: string } | null);
+      if (!promptRow?.prompt_text) return;
+
+      const promptText = promptRow.prompt_text;
+      setActiveStoryInvitation({
+        invitationId: data.id as string,
+        promptText,
+      });
+      setDraftTitle(deriveTitleFromPrompt(promptText));
+      setDraftContent("");
+      setDraftMood(null);
+      setMode("composing");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Refetch — called after a delete so the sidebar reflects the
   // new state without a full page reload.
   async function refetchEntries() {
     if (!userId) return;
     const { data } = await supabase
       .from("journal_entries")
-      .select("id, title, content, mood, created_at, edited_at")
+      .select("id, title, content, mood, created_at, edited_at, story_invitation_id")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(7);
@@ -642,6 +834,12 @@ export default function JournalPage() {
     setDraftContent("");
     setDraftMood(null);
     setActiveIdx(0);
+    // SH-73 — abandoning the draft drops the Story Series handoff
+    // state but does NOT mark the invitation as answered. Per founder
+    // decision: the invitation stays `pending`, and the dashboard
+    // surfacer will keep showing this same prompt next time. Only an
+    // actual save transitions the lifecycle.
+    setActiveStoryInvitation(null);
   }
 
   // Save the draft. Branches by mode:
@@ -662,18 +860,56 @@ export default function JournalPage() {
     try {
       if (mode === "composing") {
         const trimmedTitle = draftTitle.trim();
-        const { error } = await supabase.from("journal_entries").insert({
-          user_id: userId,
-          title: trimmedTitle || null,
-          original_title: trimmedTitle || null,
-          content: trimmedContent,
-          original_content: trimmedContent,
-          mood: draftMood,
-        });
+        // SH-73 — if this is a Story Series response, stamp the entry
+        // with the invitation FK so the visual marker can render and
+        // the invitation lifecycle can transition below.
+        const { data: insertedRow, error } = await supabase
+          .from("journal_entries")
+          .insert({
+            user_id: userId,
+            title: trimmedTitle || null,
+            original_title: trimmedTitle || null,
+            content: trimmedContent,
+            original_content: trimmedContent,
+            mood: draftMood,
+            story_invitation_id:
+              activeStoryInvitation?.invitationId ?? null,
+          })
+          .select("id")
+          .single();
         if (error) {
           // eslint-disable-next-line no-console
           console.error("[journal] save (insert) failed:", error);
           return;
+        }
+        // SH-73 — close the loop on the invitation lifecycle.
+        // Status transitions pending → answered, the response_journal_entry_id
+        // back-link is populated, and responded_at is stamped. The
+        // dashboard surfacer re-runs on its next mount and either
+        // surfaces the next eligible prompt or hides the card.
+        //
+        // If this update fails, the journal entry still saves cleanly
+        // (the invitation just stays pending — the surfacer's "existing
+        // pending wins" rule will re-show the same prompt next time).
+        // That's a recoverable degradation, so we log + continue rather
+        // than throwing.
+        if (activeStoryInvitation && insertedRow) {
+          const { error: invitationError } = await supabase
+            .from("member_story_invitations")
+            .update({
+              status: "answered",
+              responded_at: new Date().toISOString(),
+              response_journal_entry_id: insertedRow.id,
+            })
+            .eq("id", activeStoryInvitation.invitationId);
+          if (invitationError) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[journal] invitation status update failed (entry saved OK):",
+              invitationError,
+            );
+          }
+          setActiveStoryInvitation(null);
         }
       } else if (mode === "editing" && editingForId) {
         const trimmedTitle = draftTitle.trim();
@@ -768,7 +1004,7 @@ export default function JournalPage() {
             <span
               className={`${serif.className} text-[20px] italic tracking-[-0.012em] text-[var(--sh-text-secondary)]`}
             >
-              Journal
+              {t("brandCrumb")}
             </span>
           </Link>
 
@@ -798,7 +1034,7 @@ export default function JournalPage() {
           <p
             className={`${serif.className} mt-1.5 text-[20px] italic font-medium tracking-[-0.01em]`}
           >
-            {ANCHOR_PHRASE}
+            {t("anchorPhrase")}
           </p>
         </motion.section>
 
@@ -969,9 +1205,17 @@ export default function JournalPage() {
                   }`}
                 >
                   {(() => {
-                    const stamp = formatEntryDate(reader.created_at);
-                    if (stamp === "TODAY") return "Today";
-                    if (stamp === "YESTERDAY") return "Yesterday";
+                    const stamp = formatEntryDate(
+                      reader.created_at,
+                      locale,
+                      tDate,
+                    );
+                    // Big-italic date display swaps the uppercase
+                    // sentinels (TODAY/YESTERDAY in EN, HOY/AYER in ES)
+                    // for their titlecase display variants. Any other
+                    // date (e.g. "SAT 13 JUN") renders as-is.
+                    if (stamp === tDate("today")) return tDate("todayDisplay");
+                    if (stamp === tDate("yesterday")) return tDate("yesterdayDisplay");
                     return stamp;
                   })()}
                 </p>
@@ -1006,7 +1250,7 @@ export default function JournalPage() {
                     <span
                       className={`${sans.className} text-[11px] text-[var(--sh-text-muted)]`}
                     >
-                      {formatEntryTime(reader.created_at)}
+                      {formatEntryTime(reader.created_at, locale)}
                     </span>
                     {reader.edited_at && (
                       <>
@@ -1078,38 +1322,134 @@ export default function JournalPage() {
                     background, no border. The reader and the writer
                     share one visual language. */}
                 {mode === "reading" ? (
-                  <h1
-                    className={`${serif.className} mt-6 text-[44px] font-medium leading-[1.1] tracking-[-0.015em]`}
-                    style={
-                      theme === "sunlit"
-                        ? {
-                            textShadow:
-                              "0 1px 0 rgba(255,248,235,0.55), 0 -0.5px 0 rgba(60,40,15,0.08)",
-                          }
-                        : undefined
-                    }
-                  >
-                    {reader.title?.trim() || t("untitled")}
-                  </h1>
+                  (() => {
+                    // Reading-mode h1 size scales with title length so
+                    // a long prompt-derived title doesn't crash off the
+                    // edge of the 720px column. Short freeform titles
+                    // still get the full 44px display weight.
+                    const displayTitle =
+                      reader.title?.trim() || t("untitled");
+                    const typo = titleTypography(displayTitle);
+                    return (
+                      <h1
+                        className={`${serif.className} mt-6 font-medium tracking-[-0.015em]`}
+                        style={{
+                          fontSize: typo.fontSize,
+                          lineHeight: typo.lineHeight,
+                          ...(theme === "sunlit"
+                            ? {
+                                textShadow:
+                                  "0 1px 0 rgba(255,248,235,0.55), 0 -0.5px 0 rgba(60,40,15,0.08)",
+                              }
+                            : {}),
+                        }}
+                      >
+                        {displayTitle}
+                      </h1>
+                    );
+                  })()
                 ) : (
-                  <input
-                    type="text"
-                    value={draftTitle}
-                    onChange={(e) => setDraftTitle(e.target.value)}
-                    placeholder={t("titlePlaceholder")}
-                    autoFocus
-                    className={`${serif.className} mt-6 bg-transparent text-[44px] font-medium leading-[1.1] tracking-[-0.015em] text-[var(--sh-text-primary)] placeholder:font-normal placeholder:italic placeholder:text-[var(--sh-text-muted)]`}
-                    style={{
-                      outline: "none",
-                      outlineOffset: 0,
-                      ...(theme === "sunlit"
-                        ? {
-                            textShadow:
-                              "0 1px 0 rgba(255,248,235,0.55), 0 -0.5px 0 rgba(60,40,15,0.08)",
-                          }
-                        : {}),
-                    }}
-                  />
+                  <>
+                    {/* SH-73 — Story Series prompt header.
+                        Only renders when this compose session was
+                        primed by a "Write this story" handoff from
+                        the dashboard. Italic serif, smaller than the
+                        title, gold-tertiary so it reads as a held
+                        question rather than chrome. Persistent — the
+                        man is writing TO this question, not from a
+                        blank page. */}
+                    {mode === "composing" && activeStoryInvitation && (
+                      <div className="mt-6 flex flex-col gap-1">
+                        <p
+                          className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]`}
+                        >
+                          {t("storyHeader")}
+                        </p>
+                        <p
+                          className={`${serif.className} text-[16px] italic leading-[1.4] text-[var(--sh-text-tertiary)] md:text-[18px]`}
+                        >
+                          {activeStoryInvitation.promptText}
+                        </p>
+                      </div>
+                    )}
+                    {(() => {
+                      // Adaptive sizing scales down for long titles,
+                      // but a single-line input forces horizontal scroll
+                      // once even the smallest tier overflows the
+                      // column. A textarea wraps naturally — so a
+                      // 60-char prompt title becomes two lines instead
+                      // of clipping. The body container below absorbs
+                      // the height shift via `flex-1 min-h-0`, so
+                      // adding a title line just pushes the writing
+                      // surface down by one line. Enter is suppressed
+                      // — the title is conceptually single-string,
+                      // wrapping for fit, not for newlines.
+                      //
+                      // Two complementary sizing strategies:
+                      //   1. `field-sizing: content` — modern CSS that
+                      //      makes the textarea grow with its content
+                      //      automatically. Works in Chrome 123+,
+                      //      Safari 17.4+, Firefox 121+ (all GA by
+                      //      mid-2024). This is the primary mechanism.
+                      //   2. useLayoutEffect scrollHeight pattern (on
+                      //      titleTextareaRef) — fallback for any
+                      //      browser that doesn't support field-sizing
+                      //      yet. Sets height to scrollHeight after
+                      //      every draftTitle change.
+                      //
+                      // `overflow-y-hidden` (NOT `overflow-hidden`) so
+                      // horizontal overflow can never scroll, but
+                      // vertical content is never clipped — wrapping
+                      // is the whole point.
+                      //
+                      // `maxWidth: 100%` enforces the column constraint
+                      // explicitly so the textarea can never grow wider
+                      // than its parent's max-w-[720px] regardless of
+                      // any inherited UA min-width on textarea.
+                      const typo = titleTypography(draftTitle);
+                      return (
+                        <textarea
+                          ref={titleTextareaRef}
+                          value={draftTitle}
+                          onChange={(e) => setDraftTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                            }
+                          }}
+                          placeholder={t("titlePlaceholder")}
+                          autoFocus
+                          rows={1}
+                          className={`${serif.className} ${
+                            mode === "composing" && activeStoryInvitation
+                              ? "mt-3"
+                              : "mt-6"
+                          } block w-full resize-none overflow-x-hidden bg-transparent font-medium tracking-[-0.015em] text-[var(--sh-text-primary)] placeholder:font-normal placeholder:italic placeholder:text-[var(--sh-text-muted)]`}
+                          style={{
+                            outline: "none",
+                            outlineOffset: 0,
+                            fontSize: typo.fontSize,
+                            lineHeight: typo.lineHeight,
+                            maxWidth: "100%",
+                            // Modern CSS textarea auto-grow. Cast
+                            // through Record<string,string> because the
+                            // React 19 CSS types don't include
+                            // `fieldSizing` yet.
+                            ...({ fieldSizing: "content" } as Record<
+                              string,
+                              string
+                            >),
+                            ...(theme === "sunlit"
+                              ? {
+                                  textShadow:
+                                    "0 1px 0 rgba(255,248,235,0.55), 0 -0.5px 0 rgba(60,40,15,0.08)",
+                                }
+                              : {}),
+                          }}
+                        />
+                      );
+                    })()}
+                  </>
                 )}
               </motion.div>
             </AnimatePresence>
@@ -1396,6 +1736,7 @@ export default function JournalPage() {
  */
 function CenteredHorizonMark() {
   const { theme } = useTheme();
+  const t = useTranslations("journal");
   const goldRgb = theme === "sunlit" ? "169,121,61" : "196,147,78";
   const goldHex = theme === "sunlit" ? "#a9793d" : "#c4934e";
   const filterShadow =
@@ -1445,7 +1786,7 @@ function CenteredHorizonMark() {
       <p
         className={`${serif.className} mt-3 text-[14px] italic text-[var(--sh-text-tertiary)]`}
       >
-        The harbor is patient.
+        {t("voiceSignature")}
       </p>
     </div>
   );
@@ -1480,6 +1821,13 @@ function EntryStripCard({
   untitledLabel: string;
   moodTranslator: (key: string) => string;
 }) {
+  // Locale + date-label translator drive the strip pill so /es renders
+  // "AYER" / "SÁB 13 JUN" instead of the pre-2026-06-19 English-only
+  // "YESTERDAY" / "SAT 13 JUN". The strip card is its own React
+  // component so we can call the hooks directly here rather than
+  // threading locale through every prop.
+  const locale = useLocale();
+  const tDate = useTranslations("journal.dateLabel");
   const titleText = entry.title?.trim() || untitledLabel;
 
   return (
@@ -1526,10 +1874,23 @@ function EntryStripCard({
           className="inline-block h-1.5 w-1.5 rounded-full"
           style={{ backgroundColor: moodDotFor(entry.mood) }}
         />
+        {/* SH-73 — quiet gold dot when this entry answered a Story
+            Series prompt. Sits inline after the mood dot so the man
+            can see the source of an entry at a glance without us
+            shouting it. Engraved gold (#a9793d) reads on both themes
+            and matches the strip's hairline color. */}
+        {entry.story_invitation_id && (
+          <span
+            aria-hidden="true"
+            className="inline-block h-1.5 w-1.5 rounded-full"
+            style={{ backgroundColor: "#a9793d" }}
+            title="A story to tell"
+          />
+        )}
         <span
           className={`${sans.className} text-[9px] font-semibold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)]`}
         >
-          {formatEntryDate(entry.created_at)}
+          {formatEntryDate(entry.created_at, locale, tDate)}
         </span>
       </div>
       <p
@@ -1654,6 +2015,7 @@ function EntryTailpiece() {
   // + anchor composition, the centering — all theme-invariant. What
   // swaps is gold color, alpha shape, and shadow direction.
   const { theme } = useTheme();
+  const t = useTranslations("journal");
 
   // Gold core: deeper on sunlit (so it reads on cream without a halo),
   // brighter on dusk (so the halo can lift it off near-black).
@@ -1837,7 +2199,7 @@ function EntryTailpiece() {
       <p
         className={`${serif.className} mt-5 text-[14px] italic text-[var(--sh-text-tertiary)]`}
       >
-        The harbor is patient.
+        {t("voiceSignature")}
       </p>
     </div>
   );
@@ -1858,6 +2220,11 @@ function EntryCard({
   /** Translator from useTranslations("mood"), keyed by lowercase mood. */
   moodTranslator: (key: string) => string;
 }) {
+  // Locale + date-label translator for the dateStamp below — see
+  // EntryStripCard for the same pattern. EntryCard is the larger
+  // sidebar variant; the strip card is the compact horizontal one.
+  const locale = useLocale();
+  const tDate = useTranslations("journal.dateLabel");
   // Active-state background:
   //   - sunlit → warm gold-tinted cream ~4% alpha, suggests the page
   //     got slightly more sun in this spot. The lens hairlines alone
@@ -1872,7 +2239,7 @@ function EntryCard({
     active && theme === "sunlit" ? "bg-[rgba(196,147,78,0.045)]" : "";
   const hoverBg = !active ? "hover:bg-white/[0.02]" : "";
 
-  const dateStamp = formatEntryDate(entry.created_at);
+  const dateStamp = formatEntryDate(entry.created_at, locale, tDate);
   const titleText = entry.title?.trim() || untitledLabel;
   const previewText = previewFor(entry.content);
 
@@ -1893,6 +2260,16 @@ function EntryCard({
           className="inline-block h-1.5 w-1.5 rounded-full"
           style={{ backgroundColor: moodDotFor(entry.mood) }}
         />
+        {/* SH-73 — same quiet gold dot as the strip card. Marks
+            entries that came from a Story Series prompt. */}
+        {entry.story_invitation_id && (
+          <span
+            aria-hidden="true"
+            className="inline-block h-1.5 w-1.5 rounded-full"
+            style={{ backgroundColor: "#a9793d" }}
+            title="A story to tell"
+          />
+        )}
         <span
           className={`${sans.className} text-[9px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]`}
         >

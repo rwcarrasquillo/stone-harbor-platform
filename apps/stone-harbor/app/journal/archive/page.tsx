@@ -95,6 +95,8 @@ type DBEntry = {
   mood: string | null;
   created_at: string;
   edited_at: string | null;
+  /** SH-73 — set when this entry came from a Story Series prompt. */
+  story_invitation_id: string | null;
 };
 
 /**
@@ -209,7 +211,7 @@ export default function JournalArchivePage() {
 
       const { data, error } = await supabase
         .from("journal_entries")
-        .select("id, title, content, mood, created_at, edited_at")
+        .select("id, title, content, mood, created_at, edited_at, story_invitation_id")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(500);
@@ -480,6 +482,18 @@ function ArchiveEntryCard({
           className="inline-block h-1.5 w-1.5 rounded-full"
           style={{ backgroundColor: moodDotFor(entry.mood) }}
         />
+        {/* SH-73 — same quiet gold dot the strip + sidebar card use
+            to mark Story Series responses. Lives inline so a member
+            scanning the archive can see the source of each entry
+            at a glance. */}
+        {entry.story_invitation_id && (
+          <span
+            aria-hidden="true"
+            className="inline-block h-1.5 w-1.5 rounded-full"
+            style={{ backgroundColor: "#a9793d" }}
+            title="A story to tell"
+          />
+        )}
         <span
           className={`${sans.className} text-[9px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]`}
         >
