@@ -106,6 +106,7 @@ type Notification = {
 
 const COPY = {
   en: {
+    brandCrumb: "Home",
     nav: {
       journal: "Journal",
       messages: "Messages",
@@ -130,6 +131,14 @@ const COPY = {
     },
   },
   es: {
+    // "Tu refugio" matches the canonical Spanish noun for the
+    // Dashboard room established 2026-06-19 (nav.dashboard,
+    // nav.backToDashboard, and the dashboard surface copy all use
+    // refugio as the personal-shelter framing). The brand crumb is
+    // the dashboard saying its own name back at the member, so
+    // "Stone Harbor · Tu refugio" reads as "Stone Harbor · Your
+    // refuge" — declarative + intimate at the same time.
+    brandCrumb: "Tu refugio",
     nav: {
       journal: "Diario",
       messages: "Mensajes",
@@ -376,7 +385,7 @@ export default function DashboardCenteredPage() {
             <span
               className={`${serif.className} text-[20px] italic tracking-[-0.012em] text-[var(--sh-text-secondary)]`}
             >
-              Home
+              {c.brandCrumb}
             </span>
           </Link>
 
