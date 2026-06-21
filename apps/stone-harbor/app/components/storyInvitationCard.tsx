@@ -27,7 +27,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { supabase } from "@/lib/supabaseClient";
 import { serif } from "@/lib/fonts";
@@ -59,6 +59,13 @@ export function StoryInvitationCard({ userId, userEmail }: Props) {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
   const t = useTranslations("dashboard.storyCard");
+  // Member's active locale — drives which language pool the surfacer
+  // pulls from. `fetchPromptPool` filters by `language` server-side
+  // so a Spanish-locale member only ever sees Spanish prompts; an
+  // English-locale member only ever sees English. The Dad pool has
+  // 108 prompts in each language (see story_prompts table) so there
+  // are no fallback gaps — the surfacer always finds a candidate.
+  const locale = useLocale();
 
   const [state, setState] = useState<CardState>({ kind: "loading" });
   const [skipping, setSkipping] = useState(false);
@@ -75,7 +82,10 @@ export function StoryInvitationCard({ userId, userEmail }: Props) {
     let cancelled = false;
     void (async () => {
       try {
-        const pool = await fetchPromptPool(supabase, { seriesSlug: "dad" });
+        const pool = await fetchPromptPool(supabase, {
+          seriesSlug: "dad",
+          language: locale,
+        });
         const history = await fetchInvitationHistory(
           supabase,
           userId,
@@ -126,7 +136,10 @@ export function StoryInvitationCard({ userId, userEmail }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [isFounder, userId]);
+    // `locale` is in deps so a locale toggle (en ↔ es) re-runs the
+    // surfacer against the matching language pool — the card swaps
+    // to the Spanish prompt set without a hard page reload.
+  }, [isFounder, userId, locale]);
 
   async function handleSkip() {
     if (state.kind !== "ready" || skipping) return;
@@ -149,8 +162,13 @@ export function StoryInvitationCard({ userId, userEmail }: Props) {
       });
       if (!res.ok) throw new Error(`skip failed: ${res.status}`);
       // Re-run the surfacer locally so the card reflects the next prompt
-      // (or hides cleanly if nothing's eligible).
-      const pool = await fetchPromptPool(supabase, { seriesSlug: "dad" });
+      // (or hides cleanly if nothing's eligible). Same `language: locale`
+      // filter as the initial load so the swapped-in card honors the
+      // member's language preference.
+      const pool = await fetchPromptPool(supabase, {
+        seriesSlug: "dad",
+        language: locale,
+      });
       const history = await fetchInvitationHistory(
         supabase,
         userId,
