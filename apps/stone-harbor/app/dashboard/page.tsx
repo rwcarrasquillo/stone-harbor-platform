@@ -88,6 +88,11 @@ type Profile = {
   username: string | null;
   healing_stage: string | null;
   avatar_url: string | null;
+  // cover_url is the member's uploaded profile-cover image. Used as
+  // the portada texture on the dashboard greeting band — the band
+  // shows whatever the member chose, falling back to /forest-hero.png
+  // when the member hasn't uploaded a cover.
+  cover_url: string | null;
   birth_month?: number | null;
   birth_day?: number | null;
   acknowledge_birthday?: boolean;
@@ -116,6 +121,58 @@ const COPY = {
     acknowledgment: {
       dismiss: "Dismiss",
       dontShowAgain: "Don't show this again",
+      // Per-acknowledgment content keyed by the camelCase slug derived
+      // from lib/seasonalAcknowledgments.ts. The library returns its
+      // own English strings (kept for backward compat with non-dashboard
+      // callers) but the dashboard renders from these so the strings
+      // also have Spanish counterparts in COPY.es below. New
+      // acknowledgments must add an entry on BOTH locales — TypeScript
+      // enforces shape parity via `as const`.
+      //
+      // Voice: the harbor witnesses a hard day rather than inventorying
+      // possible feelings at the member. Concrete sensory anchors
+      // (table, room, weight, hands), asymmetric pairings ("the fathers
+      // we had / the fathers we became"), and room for the reader to
+      // feel without being told what to feel. Each card opens with the
+      // day's weight named, lands on a clause that grants permission
+      // not to perform, and closes with a presence ("the harbor sees
+      // it" / "the harbor is open until it does") rather than advice.
+      thanksgiving: {
+        eyebrow: "Today",
+        headline:
+          "However you find yourself at today's table — surrounded, alone, beside an empty chair — the harbor sees you.",
+        body: "Gratitude is welcome. Its absence is welcome too. The day asks nothing of you that you cannot give it. Just be in your own life today; that is enough.",
+      },
+      christmasEve: {
+        eyebrow: "Tonight",
+        headline:
+          "Christmas Eve has its own weight. You do not have to lift it alone.",
+        body: "Some men tonight feel everything at once. Some feel nothing where joy was expected. Both are in the harbor. So are you.",
+      },
+      christmasDay: {
+        eyebrow: "Today",
+        headline:
+          "Whatever this Christmas is for you — bright, hollow, somewhere between — is what it is. You don't have to make it more.",
+        body: "Joy is welcome. Its absence is welcome too. You can be in the room with the people, or in the room with yourself. The day will hold you either way.",
+      },
+      newYearsEve: {
+        eyebrow: "Tonight",
+        headline:
+          "A year is closing tonight. You don't owe it a speech, or a list, or a plan.",
+        body: "It is enough to sit with what this year actually was. The small things you carried. The things you got through that nobody else saw. Tomorrow will come without your help. The harbor is open until it does.",
+      },
+      fathersDay: {
+        eyebrow: "Today",
+        headline:
+          "Today carries a lot for many men. The fathers we had. The fathers we became. The fathers we wished we'd had, then tried to be.",
+        body: "Whatever this day stirs in you — pride, grief, longing, anger, a kind of love that doesn't have a clean name — the harbor sees it. You don't have to celebrate. You don't have to fix anything. Just be here today, with whatever comes.",
+      },
+      birthday: {
+        eyebrow: "Today",
+        headline:
+          "Today is your birthday. The harbor does not need you to feel about it in any particular way.",
+        body: "Some years this day is light. Some years it carries a weight nobody else can see. Some years you forget about it until afternoon. Wherever you land today, we notice it with you. That is enough.",
+      },
     },
     rooms: {
       header: "Other rooms",
@@ -148,6 +205,49 @@ const COPY = {
     acknowledgment: {
       dismiss: "Descartar",
       dontShowAgain: "No mostrar esto otra vez",
+      // Spanish acknowledgments — written as parallel literary
+      // versions, not translations. Uses harbor vocabulary (dársena,
+      // tú not usted) and matches the English's witnessing register:
+      // names the day's weight, grants permission not to perform,
+      // closes with a presence rather than advice. Each card has the
+      // same emotional shape as its English counterpart but reads as
+      // natively Spanish prose, not a translated English sentence.
+      thanksgiving: {
+        eyebrow: "Hoy",
+        headline:
+          "Como sea que te encuentres hoy junto a la mesa — acompañado, solo, al lado de una silla vacía — la dársena te ve.",
+        body: "La gratitud es bienvenida. Su ausencia también. El día no te pide nada que no puedas darle. Solo habita tu propia vida hoy; con eso basta.",
+      },
+      christmasEve: {
+        eyebrow: "Esta noche",
+        headline:
+          "La víspera de Navidad tiene su propio peso. No tienes que cargarlo tú solo.",
+        body: "Hay hombres esta noche que lo sienten todo a la vez. Otros no sienten nada donde se esperaba alegría. Ambos están en la dársena. Tú también.",
+      },
+      christmasDay: {
+        eyebrow: "Hoy",
+        headline:
+          "Como sea esta Navidad para ti — luminosa, hueca, en algún punto entre las dos — eso es lo que es. No tienes que hacerla más grande.",
+        body: "La alegría es bienvenida. Su ausencia también. Puedes estar en la habitación con la gente, o en la habitación contigo mismo. El día te sostendrá de cualquier modo.",
+      },
+      newYearsEve: {
+        eyebrow: "Esta noche",
+        headline:
+          "Un año se cierra esta noche. No le debes un discurso, ni una lista, ni un plan.",
+        body: "Basta con sentarse junto a lo que este año en verdad fue. Las cosas pequeñas que cargaste. Lo que atravesaste y que nadie más vio. El mañana llegará sin tu ayuda. La dársena está abierta hasta entonces.",
+      },
+      fathersDay: {
+        eyebrow: "Hoy",
+        headline:
+          "Hoy carga con mucho para muchos hombres. Los padres que tuvimos. Los padres en que nos convertimos. Los padres que hubiéramos querido tener, y luego intentamos ser.",
+        body: "Lo que este día despierte en ti — orgullo, duelo, nostalgia, ira, una clase de amor que no tiene un nombre limpio — la dársena lo ve. No tienes que celebrar. No tienes que arreglar nada. Solo quédate aquí hoy, con lo que venga.",
+      },
+      birthday: {
+        eyebrow: "Hoy",
+        headline:
+          "Hoy es tu cumpleaños. La dársena no necesita que sientas nada en particular al respecto.",
+        body: "Algunos años este día es ligero. Algunos años carga con un peso que nadie más puede ver. Algunos años se te olvida hasta la tarde. Como sea que te encuentres hoy, lo notamos contigo. Con eso basta.",
+      },
     },
     rooms: {
       header: "Otras habitaciones",
@@ -163,6 +263,40 @@ const COPY = {
     },
   },
 } as const;
+
+/**
+ * Resolve the locale-specific copy for an acknowledgment.
+ *
+ * The library `lib/seasonalAcknowledgments.ts` returns acknowledgments
+ * with hyphenated keys ('fathers-day', 'christmas-eve') and English
+ * `eyebrow`/`headline`/`body` strings. The dashboard COPY constant
+ * holds the same content per acknowledgment in BOTH languages, indexed
+ * by camelCase slug ('fathersDay', 'christmasEve'). This helper bridges
+ * the two — converts the hyphenated library key to camelCase, looks up
+ * the localized copy, and falls back to the library's English strings
+ * if no localized entry exists (defensive — new acknowledgment keys
+ * may land in the library before the COPY is updated, and we'd rather
+ * show English than crash).
+ */
+function localizedAckCopy(
+  ackCopy:
+    | (typeof COPY)["en"]["acknowledgment"]
+    | (typeof COPY)["es"]["acknowledgment"],
+  ack: { key: string; eyebrow: string; headline: string; body: string },
+): { eyebrow: string; headline: string; body: string } {
+  const slug = ack.key.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+  const fromCopy = (
+    ackCopy as unknown as Record<
+      string,
+      { eyebrow?: string; headline?: string; body?: string } | undefined
+    >
+  )[slug];
+  return {
+    eyebrow: fromCopy?.eyebrow ?? ack.eyebrow,
+    headline: fromCopy?.headline ?? ack.headline,
+    body: fromCopy?.body ?? ack.body,
+  };
+}
 
 /**
  * Dashboard's entrance cascade — the four sections that fade in below
@@ -238,7 +372,7 @@ export default function DashboardCenteredPage() {
     const { data: profileData } = await supabase
       .from("profiles")
       .select(
-        "email, display_name, username, healing_stage, avatar_url, birth_month, birth_day, acknowledge_birthday, seasonal_acknowledgments_enabled, acknowledgments_dismissed, lineage_door_seen_at",
+        "email, display_name, username, healing_stage, avatar_url, cover_url, birth_month, birth_day, acknowledge_birthday, seasonal_acknowledgments_enabled, acknowledgments_dismissed, lineage_door_seen_at",
       )
       // The profiles table's PK is `id`, matching auth.users.id 1:1.
       // Every other surface (/messages, /journal, /welcome, /lineage)
@@ -259,6 +393,7 @@ export default function DashboardCenteredPage() {
       username: profileData?.username ?? null,
       healing_stage: profileData?.healing_stage ?? null,
       avatar_url: profileData?.avatar_url ?? null,
+      cover_url: profileData?.cover_url ?? null,
       birth_month: profileData?.birth_month ?? null,
       birth_day: profileData?.birth_day ?? null,
       acknowledge_birthday: profileData?.acknowledge_birthday ?? true,
@@ -441,10 +576,124 @@ export default function DashboardCenteredPage() {
             content is the day-aware PersonalizedGreeting. Members
             land on the dashboard and see "Welcome back, [name]" or
             the appropriate days-since-last-visit line as the first
-            literary moment. */}
-        <section className="flex flex-shrink-0 flex-col items-center border-b border-[var(--sh-border-subtle)] px-10 py-5">
+            literary moment.
+
+            PORTADA TEST (2026-06-20) — the band carries the
+            member's own profile-cover image as a soft texture
+            behind the greeting. Falls back to the home-page hero
+            (/forest-hero.png) when the member hasn't uploaded a
+            cover, so new members still get the marketing-language
+            continuity (home → login → dashboard) while returning
+            members see their own atmosphere. Dialed down for daily
+            exposure:
+              - Image opacity 0.22 (vs home's 0.45) — texture, not awe.
+              - No Ken Burns slow zoom — a static still. The harbor
+                doesn't move. A 24s repeating zoom would be wallpaper
+                by week 2 and irritation by month 3.
+              - Scrim runs from-black/70 via-black/45 to-black/80 so
+                the lightest point of the gradient sits in the
+                vertical middle where the eyebrow + greeting + body
+                copy land, giving the typography a soft spotlight.
+              - overflow-hidden + relative on the section clip the
+                image at the existing border-b hairline. The image
+                does NOT bleed onto the scrollable content below —
+                the rooms strip, today's intention, story card stay
+                on the flat dark surface so the dashboard's working
+                area still reads as journal-baseline calm.
+              - Text wrapped in relative z-10 so it floats above
+                both image + scrim. */}
+        <section className="relative flex flex-shrink-0 flex-col items-center overflow-hidden px-10 py-5">
+          {/* Portada — three layered passes (blurred underlay,
+              sharp focal pass, scrim). All three share the SAME
+              radial vignette mask so the band as a whole dissolves
+              into the page's natural dark at the edges instead of
+              terminating in a rectangle. The bottom hairline
+              (border-b) is dropped for the same reason — a crisp
+              line at the band's foot would re-introduce the
+              rectangle silhouette the mask is working to dissolve.
+
+              The shared mask: radial-gradient(ellipse 80% 100% at
+              center, black 38%, transparent 100%) — fully opaque
+              until 38% from center (the middle stays solid so the
+              greeting reads against full image+scrim contrast),
+              fading to transparent at the ellipse boundary. This
+              mirrors how the dashboard RoomCard farol fades to
+              transparent at the corners — same dissolution
+              language across the harbor's lit surfaces.
+
+              Layer A (blurred underlay) — same image, heavy blur.
+              `scale(1.08)` pushes the blur algorithm's own soft
+              fringe outside the band's visible bounds so the blur
+              reads as filling cleanly inside the mask (without
+              the scale the blur edges would fade prematurely and
+              compete with the mask's intended fade).
+
+              Layer B (sharp focal pass) — same image, no blur.
+              Reads as the eye-line texture of the band.
+
+              Layer C (scrim) — middle-light vertical gradient
+              (dark top/bottom, lighter middle) so the typography
+              has a soft spotlight where it lands. */}
+          {/* Gate both image layers on `profile !== null` so the
+              dashboard never paints the forest-hero fallback on
+              first render and then swap it for the member's cover
+              once the profile query resolves. Until profile loads,
+              the band shows just the scrim vignette + eyebrow —
+              the dark structural presence is there from frame 1
+              while the personal texture waits for the data it
+              needs. Same pattern the greeting already uses
+              (gated on profile !== null) to avoid the friend →
+              Rafael name swap. Once profile resolves, both image
+              layers fade in together over 0.7s using the harbor's
+              standard cascade easing so the texture arrives as a
+              quiet reveal, not a pop. */}
+          {profile !== null && (
+            <>
+              <motion.div
+                aria-hidden="true"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.14 }}
+                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                className="pointer-events-none absolute inset-0 bg-cover bg-center grayscale"
+                style={{
+                  backgroundImage: `url('${profile.cover_url ?? "/forest-hero.png"}')`,
+                  filter: "blur(18px)",
+                  transform: "scale(1.08)",
+                  maskImage:
+                    "radial-gradient(ellipse 80% 100% at center, black 38%, transparent 100%)",
+                  WebkitMaskImage:
+                    "radial-gradient(ellipse 80% 100% at center, black 38%, transparent 100%)",
+                }}
+              />
+              <motion.div
+                aria-hidden="true"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.22 }}
+                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                className="pointer-events-none absolute inset-0 bg-cover bg-center grayscale"
+                style={{
+                  backgroundImage: `url('${profile.cover_url ?? "/forest-hero.png"}')`,
+                  maskImage:
+                    "radial-gradient(ellipse 65% 85% at center, black 25%, transparent 95%)",
+                  WebkitMaskImage:
+                    "radial-gradient(ellipse 65% 85% at center, black 25%, transparent 95%)",
+                }}
+              />
+            </>
+          )}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/70 via-black/45 to-black/80"
+            style={{
+              maskImage:
+                "radial-gradient(ellipse 80% 100% at center, black 38%, transparent 100%)",
+              WebkitMaskImage:
+                "radial-gradient(ellipse 80% 100% at center, black 38%, transparent 100%)",
+            }}
+          />
+
           <p
-            className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]`}
+            className={`${sans.className} relative z-10 text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]`}
           >
             {c.anchor.eyebrow}
           </p>
@@ -458,7 +707,7 @@ export default function DashboardCenteredPage() {
               once, already with the correct salutation. Brief moment
               of empty space during the initial query is preferable
               to the swap mid-page-load. */}
-          <div className="mt-2 max-w-[720px]">
+          <div className="relative z-10 mt-2 max-w-[720px]">
             {profile !== null && (
               <PersonalizedGreeting
                 name={profile.display_name || profile.username || null}
@@ -484,21 +733,124 @@ export default function DashboardCenteredPage() {
                 Animated in/out via AnimatePresence so dismissal feels
                 intentional. Visual treatment ported from production
                 dashboard — left gold bar, tinted card, dismissible. */}
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
               {acknowledgment && (
-                <motion.section
+                /*
+                 * Two-element structure for clean collapse:
+                 *
+                 *   Outer motion.div — handles the LAYOUT collapse.
+                 *     Animates height (auto ↔ 0), marginBottom (32 ↔ 0),
+                 *     opacity (1 ↔ 0), y (0 ↔ -8). Has overflow: hidden
+                 *     so the inner section's padding gets clipped as the
+                 *     wrapper shrinks. No visual styling of its own —
+                 *     no padding, no border, no background.
+                 *
+                 *   Inner <section> — keeps all the VISUAL styling
+                 *     (px/py padding, bg color, radial farol, shadow).
+                 *     Doesn't animate. Just sits inside the wrapper.
+                 *
+                 * Why this split: a single-element animation that puts
+                 * height + padding on the SAME element runs into the
+                 * "padding doesn't shrink with height" problem — when
+                 * height reaches 0, the element still occupies its
+                 * padding (24-28px top + bottom), then unmount snaps
+                 * those pixels away. By collapsing on an outer wrapper
+                 * with no padding, the wrapper's height can truly reach
+                 * 0 and the unmount is invisible.
+                 *
+                 * lg:-mx-[100px] moves to the wrapper so the width
+                 * extension is part of the same layout container that
+                 * controls collapse — the inner section just fills its
+                 * parent's width.
+                 *
+                 * Duration: 0.8s, same as before. Ease curve is the
+                 * harbor's standard cascade easing.
+                 */
+                <motion.div
                   key={acknowledgment.key}
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                  className={`relative mb-8 overflow-hidden border border-l-[3px] px-6 py-6 ${
-                    isDusk
-                      ? "border-white/10 bg-black/35 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-md"
-                      : "border-stone-200 bg-[#f8f4ed] shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
-                  }`}
-                  style={{ borderLeftColor: GOLD_DEEP }}
+                  initial={{ opacity: 0, y: -8, height: 0, marginBottom: 0 }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    height: "auto",
+                    marginBottom: 32,
+                  }}
+                  exit={{ opacity: 0, y: -8, height: 0, marginBottom: 0 }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  className="lg:-mx-[100px]"
+                  style={{ overflow: "hidden" }}
                 >
+                <section
+                  /*
+                   * Width tier: middle ground between the 720px personal
+                   * column (notifications, today's intention) and the
+                   * 920px "A story to tell" feature card. The wrapper
+                   * above handles the lg:-mx-[100px] width extension;
+                   * this section just fills its parent's width.
+                   *
+                   * Mobile + tablet (under lg=1024px): card stays at
+                   * column width. The narrower line length is actually
+                   * better for prose at small viewports — keeps the
+                   * literary cadence (60-70 char line length) readable.
+                   *
+                   * Desktop (lg+): wrapper's -mx-[100px] extends the
+                   * card out 100px on each side past the 640px column
+                   * content area, landing at ~840px wide. That earns
+                   * visual presence for the literary witness-card
+                   * register without rivaling the Story card's primacy
+                   * below. Padding bumps to px-8 py-7 so the inner text
+                   * doesn't hug the wider container.
+                   *
+                   * Visual treatment — ported from the dashboard
+                   * RoomCard farol + top-only hairline language:
+                   *   - The previous 3px gold-deep LEFT bar (notification
+                   *     accent semantic) is gone. Replaced with the
+                   *     "lintel of a doorway" treatment — a single
+                   *     HairlineLens at the top edge — which fits the
+                   *     acknowledgment's witnessing function better
+                   *     than a notification stripe. The card reads as
+                   *     "you've stepped into a moment of recognition,"
+                   *     not "you have an unread alert."
+                   *   - Background gets a radial-gradient farol anchored
+                   *     at top-center (same geometry language as the
+                   *     RoomCard but widened — ellipse 60% 180% — to
+                   *     cover the larger surface). Reads as a cone of
+                   *     warm light falling on the card from above.
+                   *   - Sunlit uses a gold-deep tint (visible against
+                   *     the cream backdrop); dusk uses a white tint
+                   *     (visible against the dark backdrop). The
+                   *     RoomCard uses white for both because it's a
+                   *     small surface, but at acknowledgment width the
+                   *     white-on-cream version is invisible — so we
+                   *     theme-switch the gradient color.
+                   *   - Drops all 1px borders. The hairline at top +
+                   *     shadow + bg-color provide enough structural
+                   *     presence on a standalone card. Bordered cards
+                   *     are for stripped/repeated patterns (notifications
+                   *     list); standalone moments don't need them.
+                   */
+                  className={`relative overflow-hidden px-6 py-6 lg:px-8 lg:py-7 ${
+                    isDusk
+                      ? "bg-black/35 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-md"
+                      : "bg-[#f8f4ed] shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
+                  }`}
+                  style={{
+                    backgroundImage: isDusk
+                      ? "radial-gradient(ellipse 60% 180% at 50% 0%, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.04) 30%, rgba(255,255,255,0.015) 60%, transparent 95%)"
+                      : "radial-gradient(ellipse 60% 180% at 50% 0%, rgba(196,147,78,0.10) 0%, rgba(196,147,78,0.05) 30%, rgba(196,147,78,0.02) 60%, transparent 95%)",
+                  }}
+                >
+                  {/* Engraved-gold lens hairline — top only. Same
+                      "lintel of a doorway" language as the dashboard
+                      RoomCard: the beam reaches the lintel first, the
+                      card content opens beneath it. The hairline is
+                      always visible here (unlike RoomCard where it
+                      gates on hover) because the acknowledgment card
+                      IS the highlighted state — it doesn't appear at
+                      all unless the day calls for it. */}
+                  <div className="pointer-events-none absolute inset-x-0 top-0 z-10">
+                    <HairlineLens position="top" theme={theme} />
+                  </div>
                   <button
                     type="button"
                     disabled={ackDismissing}
@@ -509,17 +861,32 @@ export default function DashboardCenteredPage() {
                     <X size={18} aria-hidden="true" />
                   </button>
                   <div className="pr-8">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]">
-                      {acknowledgment.eyebrow}
-                    </p>
-                    <p
-                      className={`${serif.className} mt-3 text-2xl italic leading-[1.2] text-[var(--sh-text-primary)]`}
-                    >
-                      {acknowledgment.headline}
-                    </p>
-                    <p className="mt-3 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-                      {acknowledgment.body}
-                    </p>
+                    {/* Locale-aware copy: the library returns its English
+                        strings, but we render from COPY[locale] so this
+                        card respects the member's language. See
+                        localizedAckCopy() at the top of this file for
+                        the slug conversion and fallback semantics. */}
+                    {(() => {
+                      const lc = localizedAckCopy(
+                        c.acknowledgment,
+                        acknowledgment,
+                      );
+                      return (
+                        <>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]">
+                            {lc.eyebrow}
+                          </p>
+                          <p
+                            className={`${serif.className} mt-3 text-2xl italic leading-[1.2] text-[var(--sh-text-primary)]`}
+                          >
+                            {lc.headline}
+                          </p>
+                          <p className="mt-3 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
+                            {lc.body}
+                          </p>
+                        </>
+                      );
+                    })()}
                     <button
                       type="button"
                       disabled={ackDismissing}
@@ -529,7 +896,8 @@ export default function DashboardCenteredPage() {
                       {c.acknowledgment.dontShowAgain}
                     </button>
                   </div>
-                </motion.section>
+                </section>
+                </motion.div>
               )}
             </AnimatePresence>
 
