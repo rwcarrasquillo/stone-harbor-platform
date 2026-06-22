@@ -590,9 +590,20 @@ export default function NewMembersBlogPage() {
       `,
       )
       .eq("consumer", "stone_harbor")
-      .eq("blog_post_translations.language", locale)
-      .eq("blog_post_translations.is_published", true)
-      .order("blog_post_translations.published_at", { ascending: false });
+      // Filter on the EMBED ALIAS, not the underlying table name. The
+      // select above aliases the embed as `translation:...!inner`, so
+      // PostgREST registers the joined resource under the alias
+      // `translation`. Filters referencing `blog_post_translations.X`
+      // would look for a literal column of that name on the base
+      // blog_posts table and return zero rows. Using the alias makes
+      // PostgREST apply the filter to the joined rows — combined with
+      // !inner, base rows without a matching joined row are excluded.
+      .eq("translation.language", locale)
+      .eq("translation.is_published", true)
+      .order("published_at", {
+        referencedTable: "translation",
+        ascending: false,
+      });
 
     if (error) console.error("posts:", error.message);
 
