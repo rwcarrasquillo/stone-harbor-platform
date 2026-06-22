@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
@@ -86,6 +86,7 @@ type BlogPost = {
   summary: string | null;
   content: string;
   pillar: Pillar;
+  cover_image_url: string | null;
   published_at: string | null;
   created_at: string;
 };
@@ -114,9 +115,9 @@ function postSummary(post: BlogPost): string | null {
   return post.summary ?? post.excerpt;
 }
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: string) {
   if (!value) return "";
-  return new Date(value).toLocaleDateString([], {
+  return new Date(value).toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -205,6 +206,82 @@ function VisualSlot({
 }
 
 /* ──────────────────────────────────────────────
+   COVER VISUAL SLOT — atmospheric panel when cover_image_url is set
+   Inline equivalent of the treatment built + smoke-tested in the
+   /letters-cover-preview page earlier today (that scratch page was
+   removed during cleanup). When a letter carries a cover panel we
+   render it edge-to-edge with a blurred underlay, a radial vignette
+   mask that softens it into the card chrome, a downward scrim for
+   sigil legibility, and a gentle scale-up on hover. When null we
+   fall straight back to the gradient VisualSlot — graceful by default.
+   ────────────────────────────────────────────── */
+
+function CoverVisualSlot({
+  pillar,
+  coverImageUrl,
+  variant = "card",
+}: {
+  pillar: Pillar;
+  coverImageUrl: string | null;
+  variant?: "hero" | "card" | "strip";
+}) {
+  // No cover assigned → the existing gradient + sigil slot, unchanged.
+  if (!coverImageUrl) {
+    return <VisualSlot pillar={pillar} variant={variant} />;
+  }
+
+  const meta = PILLAR_META[pillar];
+  const aspect =
+    variant === "hero"
+      ? "aspect-[4/3] md:aspect-auto md:h-full"
+      : "aspect-[16/10]";
+  const iconSize = variant === "hero" ? 120 : variant === "strip" ? 72 : 64;
+  const vignette =
+    "radial-gradient(120% 120% at 50% 40%, #000 55%, transparent 100%)";
+
+  return (
+    <div className={`${aspect} relative overflow-hidden`}>
+      {/* Blurred underlay — fills the frame so the vignette never reveals
+          a hard letterbox edge behind the sharp image. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 scale-110 bg-cover bg-center blur-xl"
+        style={{ backgroundImage: `url(${coverImageUrl})` }}
+      />
+      {/* Sharp cover — scales up gently when the parent card/hero is
+          hovered (both carry the `group` class). */}
+      <div
+        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-105"
+        style={{
+          backgroundImage: `url(${coverImageUrl})`,
+          WebkitMaskImage: vignette,
+          maskImage: vignette,
+        }}
+      />
+      {/* Downward scrim — keeps the pillar sigil legible over bright
+          atmospheric panels. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.18) 60%, rgba(0,0,0,0.34) 100%)",
+        }}
+      />
+      {/* Pillar sigil — overlaid at higher opacity than the gradient
+          slot so a cover letter still reads as belonging to its pillar. */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <meta.Icon
+          size={iconSize}
+          strokeWidth={1.1}
+          style={{ color: "#ffffff", opacity: 0.72 }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────
    LETTER CARD — used in strips and grid
    ────────────────────────────────────────────── */
 
@@ -220,6 +297,7 @@ function LetterCard({
   const meta = PILLAR_META[post.pillar];
   const tCard = useTranslations("membersBlog");
   const tPillar = useTranslations("pillar");
+  const locale = useLocale();
   const pillarLabel = tPillar(post.pillar);
   const date = postDate(post);
 
@@ -262,7 +340,11 @@ function LetterCard({
         />
       </span>
 
-      <VisualSlot pillar={post.pillar} variant="strip" />
+      <CoverVisualSlot
+        pillar={post.pillar}
+        coverImageUrl={post.cover_image_url}
+        variant="strip"
+      />
       <div className="flex flex-1 flex-col p-5">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           {/* Pillar chip — no border, just the icon + accent-colored
@@ -292,7 +374,7 @@ function LetterCard({
         )}
         <div className="mt-auto flex items-center justify-between pt-4">
           <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
-            {formatDate(date)}
+            {formatDate(date, locale)}
           </span>
           <span
             className="text-xs font-bold uppercase tracking-[0.22em]"
@@ -322,6 +404,7 @@ function HeroLetter({
   const meta = PILLAR_META[post.pillar];
   const tCard = useTranslations("membersBlog");
   const tPillar = useTranslations("pillar");
+  const locale = useLocale();
   const pillarLabel = tPillar(post.pillar);
   const date = postDate(post);
 
@@ -367,7 +450,11 @@ function HeroLetter({
           />
         </span>
 
-        <VisualSlot pillar={post.pillar} variant="hero" />
+        <CoverVisualSlot
+          pillar={post.pillar}
+          coverImageUrl={post.cover_image_url}
+          variant="hero"
+        />
         <div className="flex flex-col p-6 md:p-10">
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <span
@@ -397,7 +484,7 @@ function HeroLetter({
           )}
           <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-6 md:pt-8">
             <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
-              {formatDate(date)}
+              {formatDate(date, locale)}
             </span>
             <span
               className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em]"
@@ -419,6 +506,7 @@ function HeroLetter({
 export default function NewMembersBlogPage() {
   const t = useTranslations("membersBlog");
   const tPillar = useTranslations("pillar");
+  const locale = useLocale();
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
 
@@ -474,23 +562,101 @@ export default function NewMembersBlogPage() {
     // `consumer = 'stone_harbor'` filter is defense-in-depth on top
     // of M5 RLS, so cross-app blog rows (eg The Long Light's future
     // table) never leak in even if a future row misses its RLS scope.
+    //
+    // Post-i18n (Phase 1B): the language-specific fields live in
+    // blog_post_translations. We inner-join the translation row for
+    // the member's active locale, so a Spanish-locale member never
+    // sees a card pointing at English-only content, and publish state
+    // is now a per-translation concern (the parent no longer carries
+    // is_published). Falls to the empty state cleanly when a locale
+    // has zero published translations.
     const { data, error } = await supabase
       .from("blog_posts")
       .select(
-        "id, title, excerpt, summary, content, pillar, published_at, created_at",
+        `
+        id,
+        pillar,
+        cover_image_url,
+        created_at,
+        translation:blog_post_translations!inner (
+          title,
+          excerpt,
+          summary,
+          content,
+          slug,
+          is_published,
+          published_at
+        )
+      `,
       )
-      .eq("is_published", true)
       .eq("consumer", "stone_harbor")
-      .order("published_at", { ascending: false, nullsFirst: false });
+      // Filter on the EMBED ALIAS, not the underlying table name. The
+      // select above aliases the embed as `translation:...!inner`, so
+      // PostgREST registers the joined resource under the alias
+      // `translation`. Filters referencing `blog_post_translations.X`
+      // would look for a literal column of that name on the base
+      // blog_posts table and return zero rows. Using the alias makes
+      // PostgREST apply the filter to the joined rows — combined with
+      // !inner, base rows without a matching joined row are excluded.
+      .eq("translation.language", locale)
+      .eq("translation.is_published", true)
+      .order("published_at", {
+        referencedTable: "translation",
+        ascending: false,
+      });
 
     if (error) console.error("posts:", error.message);
-    setPosts((data ?? []) as BlogPost[]);
+
+    // The embedded translation comes back as an array (blog_posts →
+    // blog_post_translations is one-to-many); after the language filter
+    // it holds the single matching-locale row. Flatten it into the
+    // BlogPost shape the cards/hero/reader already consume.
+    type TranslationRow = {
+      title: string;
+      excerpt: string | null;
+      summary: string | null;
+      content: string;
+      slug: string | null;
+      is_published: boolean;
+      published_at: string | null;
+    };
+    type JoinedRow = {
+      id: string;
+      pillar: string | null;
+      cover_image_url: string | null;
+      created_at: string;
+      translation: TranslationRow[] | TranslationRow | null;
+    };
+
+    const flat: BlogPost[] = ((data ?? []) as JoinedRow[]).flatMap((row) => {
+      const tr = Array.isArray(row.translation)
+        ? row.translation[0]
+        : row.translation;
+      if (!tr) return [];
+      return [
+        {
+          id: row.id,
+          title: tr.title,
+          excerpt: tr.excerpt,
+          summary: tr.summary,
+          content: tr.content,
+          pillar: normalizeStage(row.pillar),
+          cover_image_url: row.cover_image_url,
+          published_at: tr.published_at,
+          created_at: row.created_at,
+        },
+      ];
+    });
+    setPosts(flat);
     setLoading(false);
   }
 
+  // Refetch when the active locale changes so switching language swaps
+  // the letter set in place rather than showing stale-locale cards.
   useEffect(() => {
     loadAll();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale]);
 
   const sortedPosts = useMemo<BlogPost[]>(() => {
     return [...posts].sort((a, b) => {
@@ -930,7 +1096,11 @@ export default function NewMembersBlogPage() {
             >
               {t("closeReader")}
             </button>
-            <VisualSlot pillar={openItem.pillar} variant="hero" />
+            <CoverVisualSlot
+              pillar={openItem.pillar}
+              coverImageUrl={openItem.cover_image_url}
+              variant="hero"
+            />
             <div className="p-6 md:p-12">
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <span
@@ -940,7 +1110,7 @@ export default function NewMembersBlogPage() {
                   {tPillar(openItem.pillar)}
                 </span>
                 <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
-                  {formatDate(postDate(openItem))}
+                  {formatDate(postDate(openItem), locale)}
                 </span>
               </div>
               <h1
