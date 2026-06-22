@@ -231,11 +231,14 @@ function CoverVisualSlot({
   }
 
   const meta = PILLAR_META[pillar];
+  // `meta` retained for any future per-pillar styling on the cover
+  // (e.g. tinting the scrim by pillar). The pillar sigil overlay was
+  // removed deliberately — see the comment above the JSX block below.
+  void meta;
   const aspect =
     variant === "hero"
       ? "aspect-[4/3] md:aspect-auto md:h-full"
       : "aspect-[16/10]";
-  const iconSize = variant === "hero" ? 120 : variant === "strip" ? 72 : 64;
   const vignette =
     "radial-gradient(120% 120% at 50% 40%, #000 55%, transparent 100%)";
 
@@ -268,15 +271,19 @@ function CoverVisualSlot({
             "linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.18) 60%, rgba(0,0,0,0.34) 100%)",
         }}
       />
-      {/* Pillar sigil — overlaid at higher opacity than the gradient
-          slot so a cover letter still reads as belonging to its pillar. */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <meta.Icon
-          size={iconSize}
-          strokeWidth={1.1}
-          style={{ color: "#ffffff", opacity: 0.72 }}
-        />
-      </div>
+      {/* Pillar sigil overlay deliberately omitted. Three places already
+          carry the pillar signal for a single letter:
+            1. Section strip header above the row ("👁 Clarity").
+            2. Card body's pillar chip ("👁 CLARITY" eyebrow).
+            3. Original gradient VisualSlot fallback (icon-centered) when
+               cover_image_url is null — still rendered above.
+          The cover image IS this letter's primary visual identity; a
+          third icon overlay on top of the photograph reads as a brand
+          stamp and pulls the eye away from the photograph itself. The
+          card chrome (gold/moss accents, serif italic title, eyebrow
+          chip) carries the harbor's identity. Mirrors the dashboard
+          greeting band's portada treatment — atmospheric image with
+          typography on top, no overlaid sigil. */}
     </div>
   );
 }
