@@ -240,8 +240,108 @@ async function pickNextAngle(ctx: Ctx, pillar: Pillar, language: Lang): Promise<
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
+/**
+ * SH-90 — fetch prior succeeded letters at the SAME (angle_id, language) so the
+ * Writer can be told to diverge from them. Returns title + opening (first 800
+ * chars) per prior, in attempt order.
+ *
+ * Two queries rather than a PostgREST embed: editorial_assignments and
+ * blog_post_translations have no direct FK between them (both only FK to
+ * blog_posts), so an `editorial_assignments → blog_post_translations` embed
+ * won't resolve. Querying translations separately also lets us filter by
+ * language explicitly — a bilingual post otherwise returns both translations.
+ *
+ * The current in-flight generation is excluded naturally: its assignment is
+ * still succeeded=false at this point (it's flipped true only after the draft
+ * inserts), and failed/deleted attempts are reverted to succeeded=false.
+ */
+async function fetchPriorLettersForAngle(
+  ctx: Ctx, angle_id: string, language: Lang,
+): Promise<Array<{ title: string; opening: string }>> {
+  const { data: assigns } = await ctx.supabase
+    .from("editorial_assignments")
+    .select("post_id, attempted_at")
+    .eq("angle_id", angle_id)
+    .eq("language", language)
+    .eq("succeeded", true)
+    .not("post_id", "is", null)
+    .order("attempted_at", { ascending: true });
+  const postIds = ((assigns ?? []) as { post_id: string | null }[])
+    .map((a) => a.post_id)
+    .filter((id): id is string => !!id);
+  if (postIds.length === 0) return [];
+
+  const { data: trs } = await ctx.supabase
+    .from("blog_post_translations")
+    .select("post_id, title, content")
+    .in("post_id", postIds)
+    .eq("language", language);
+  // deno-lint-ignore no-explicit-any
+  const byPost = new Map<string, any>(
+    ((trs ?? []) as any[]).map((t) => [t.post_id as string, t]),
+  );
+
+  const out: Array<{ title: string; opening: string }> = [];
+  for (const id of postIds) {
+    const t = byPost.get(id);
+    if (t?.title && t?.content) {
+      out.push({ title: t.title as string, opening: (t.content as string).slice(0, 800) });
+    }
+  }
+  return out;
+}
+
+/**
+ * SH-90 — build the "PRIOR LETTERS AT THIS ANGLE" diversity block (language
+ * aware). Empty string when there are no priors, so the first letter at each
+ * angle gets the unchanged prompt. Leads with newlines so it can be injected
+ * directly after the assignment paragraph.
+ */
+function buildDiversityContext(
+  priors: Array<{ title: string; opening: string }>,
+  language: Lang,
+): string {
+  if (priors.length === 0) return "";
+  if (language === "es") {
+    const list = priors
+      .map((p, i) => `${i + 1}. Título: ${p.title}\n   Apertura: ${p.opening}`)
+      .join("\n\n");
+    return `
+
+CARTAS PREVIAS EN ESTE ÁNGULO (debes tomar un enfoque sustancialmente diferente):
+
+${list}
+
+Tu carta debe:
+- Abrir en un dominio diferente (si la previa abrió en una cocina, tú abres en un carro o jardín o taller o calle — no el mismo dominio)
+- Desarrollar un momento específico sustancialmente diferente dentro del territorio de este ángulo
+- Usar un registro metafórico diferente (si la previa usó imágenes acuáticas, tú usas piedra, madera, luz, clima)
+- Aterrizar en una imagen de cierre específica diferente
+
+El sustrato terapéutico y la instrucción de encarnación permanecen iguales — tu trabajo es encontrar una ejecución DIFERENTE del mismo movimiento psicológico.`;
+  }
+  const list = priors
+    .map((p, i) => `${i + 1}. Title: ${p.title}\n   Opening: ${p.opening}`)
+    .join("\n\n");
+  return `
+
+PRIOR LETTERS AT THIS ANGLE (you must take a substantively different approach):
+
+${list}
+
+Your letter must:
+- Open in a different domain (if prior opened in a kitchen, you open in a car or garden or workshop or street — not the same domain)
+- Develop a substantively different specific moment within this angle's territory
+- Use different metaphoric register (if prior used water imagery, you use stone, wood, light, weather)
+- Land on a different specific closing image
+
+The therapeutic substrate and embodiment instruction remain the same — your job is to find a DIFFERENT execution of the same psychological move.`;
+}
+
 /** Build the Writer's user prompt with the canon assignment injected. */
-function buildWriterPrompt(pillar: Pillar, language: Lang, angle: Angle): string {
+function buildWriterPrompt(
+  pillar: Pillar, language: Lang, angle: Angle, diversityBlock = "",
+): string {
   if (language === "es") {
     // Framing wrappers + instruction-to-the-Writer translate; the substrate
     // and embodiment_instruction stay in English (clinical guidance).
@@ -253,7 +353,7 @@ ENCARGO EDITORIAL (del canon de la dársena):
 - Sustrato terapéutico (NUNCA lo nombres en la carta — solo es orientación para ti, el escritor): ${angle.therapeutic_substrate}
 - Instrucción de encarnación: ${angle.embodiment_instruction}
 
-Desarrolla este ángulo y SOLO este ángulo. El lector debe experimentar el sustrato como un reconocimiento preciso de su interior, no como una instrucción.
+Desarrolla este ángulo y SOLO este ángulo. El lector debe experimentar el sustrato como un reconocimiento preciso de su interior, no como una instrucción.${diversityBlock}
 
 Escribe en español nativo (no una traducción literal), en la voz de la dársena. Dirígete al lector como "tú" — nunca "usted".
 
@@ -271,7 +371,7 @@ EDITORIAL ASSIGNMENT (from the harbor's canon):
 - Therapeutic substrate (NEVER name in letter — Writer priming only): ${angle.therapeutic_substrate}
 - Embodiment instruction: ${angle.embodiment_instruction}
 
-Develop this angle and ONLY this angle. The reader should experience the substrate as accurate recognition of their interior, not as instruction.
+Develop this angle and ONLY this angle. The reader should experience the substrate as accurate recognition of their interior, not as instruction.${diversityBlock}
 
 Return strict format:
 Title: <literary title, 4-9 words, sentence case>
@@ -572,7 +672,12 @@ serve(async (req) => {
           const assignmentId = (assignmentRow as any)?.id as string | undefined;
 
           // ── Writer ──────────────────────────────────────────────────
-          const writerUser = buildWriterPrompt(pillar, language, angle);
+          // SH-90: when this angle already has succeeded letters in this
+          // language, show the Writer their openings and require a different
+          // execution — bakes intra-angle diversity into the first draft.
+          const priors = await fetchPriorLettersForAngle(ctx, angle.id, language);
+          const diversityBlock = buildDiversityContext(priors, language);
+          const writerUser = buildWriterPrompt(pillar, language, angle, diversityBlock);
           const written = await generate(ctx, system, writerUser, language, temperature, maxTokens);
           if (!written) {
             if (assignmentId) {
