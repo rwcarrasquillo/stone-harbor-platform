@@ -3,25 +3,58 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /**
- * Stone Harbor — generate-blog-posts (bilingual, post-i18n).
+ * Stone Harbor — generate-blog-posts (SH-85 Phase 2: agentic loop).
  *
- * For each requested pillar, generates one Letter in EACH requested
- * language (default ['en','es']) by reading the matching prompt
- * template `blog.{pillar}.{lang}`. Inserts:
+ * Replaces the prior one-shot bilingual generator with a 4-agent loop that
+ * generates against the editorial canon and self-corrects against the
+ * quality scorer:
  *
- *   - ONE row into blog_posts (language-independent: pillar, model,
- *     prompt, is_ai_generated, consumer, cover_image_url=null).
- *   - ONE row into blog_post_translations per language, linked by
- *     post_id, language='en'|'es', is_published=false.
+ *   Strategist (rule-based) — picks the next under-covered canon angle for
+ *     a (pillar, language) from editorial_canon_angles, using the count of
+ *     succeeded editorial_assignments vs. blog_library_target_per_angle.
  *
- * For backward compatibility during Phase 1B, the legacy
- * blog_posts.title/excerpt/summary/content columns are ALSO populated
- * with the English version of the generated content. This lets the
- * legacy admin draft list (which still reads those columns) keep
- * working until Phase 2 rewrites the admin UI.
+ *   Writer (Claude Sonnet primary, OpenAI fallback) — writes a Letter from
+ *     the Harbor that develops the assigned angle. The pillar voice template
+ *     (blog.{pillar}.{lang}) is the harbor-voice SYSTEM prompt; the canon
+ *     assignment is injected into the USER prompt. The therapeutic substrate
+ *     is Writer-priming only — never named in the letter.
  *
- * On Phase 1C the legacy columns get dropped and this dual-write step
- * is removed.
+ *   Critic (HTTP → score-blog-draft) — scores the draft on the 5-dimension
+ *     rubric (incl. therapeutic_depth) and writes blog_draft_scores.
+ *
+ *   Reviser (loops up to max_revisions) — if the draft fails hard rules, the
+ *     overall threshold, or therapeutic_depth < 7, it is revised in place
+ *     (translation row overwritten) against the specific failing dimensions,
+ *     then re-scored.
+ *
+ * On final pass: editorial_assignments.succeeded=true, post_id linked, scorer
+ * fields recorded. On final fail after revisions: the blog_posts +
+ * blog_post_translations rows are DELETED (no point keeping a sub-threshold
+ * draft — it regenerates next call) and the assignment is marked failed with
+ * a reason. The orphaned blog_draft_scores row is intentionally kept for
+ * post-mortem (matches the no-FK design in blog_001_draft_scores.sql).
+ *
+ * Request body (all optional):
+ *   { pillar?, language?, max_revisions?=2, count?=1 }
+ *     pillar:   "clarity" | "calm" | "strength" — default: all three
+ *     language: "en" | "es" | ["en","es"]       — default: both
+ *     max_revisions: number                       — default 2
+ *     count:    number — letters per (pillar, language) — default 1
+ *
+ * If admin_settings.blog_library_complete = true, returns immediately with
+ * { status: "skipped", reason: "library complete" } and the daily cron noops.
+ *
+ * NOTE on the assignment lifecycle: the scorer fetches the substrate by
+ * looking up the assignment via (post_id, succeeded=true). So we link the
+ * post_id and flip succeeded=true OPTIMISTICALLY right after the draft is
+ * inserted — otherwise the Critic would score therapeutic_depth against the
+ * generic substrate fallback instead of the assigned one. On final failure
+ * we flip it back to false. Execution within a call is sequential, so
+ * Strategist counts stay accurate between generations.
+ *
+ * Provider routing reuses admin_settings.ai_primary_provider /
+ * .ai_fallback_provider / .ai_models / .ai_pricing. Logs to ai_usage_log
+ * under task "blog", called_from "edge:generate-blog-posts:{lang}".
  */
 
 const corsHeaders = {
@@ -36,6 +69,12 @@ const PILLARS: Pillar[] = ["clarity", "calm", "strength"];
 type Lang = "en" | "es";
 const LANGS: Lang[] = ["en", "es"];
 type Provider = "anthropic" | "openai";
+
+const PILLAR_ES: Record<Pillar, string> = {
+  clarity: "la Claridad",
+  calm: "la Calma",
+  strength: "la Fortaleza",
+};
 
 function renderTemplate(tmpl: string, vars: Record<string, string>): string {
   return tmpl.replace(/\{\{(\w+)\}\}/g, (_m, k) => vars[k] ?? "");
@@ -76,7 +115,7 @@ async function callAnthropic(
     input_tokens: body.usage?.input_tokens ?? 0,
     output_tokens: body.usage?.output_tokens ?? 0,
     cached_tokens: (body.usage?.cache_read_input_tokens ?? 0) +
-                   (body.usage?.cache_creation_input_tokens ?? 0),
+      (body.usage?.cache_creation_input_tokens ?? 0),
     latency_ms: Date.now() - start,
   };
 }
@@ -125,9 +164,9 @@ function estimateCost(
 }
 
 function parseResponse(raw: string): { title: string; summary: string; body: string } {
-  // Title:/Summary: markers stay in English even for Spanish prompts —
-  // the prompt template instructs the model to keep them as parseable
-  // tokens regardless of body language.
+  // Title:/Summary: markers stay in English even for Spanish letters — the
+  // Writer is instructed to keep them as parseable tokens regardless of body
+  // language.
   const titleMatch = raw.match(/^Title:\s*(.+)$/im);
   const summaryMatch = raw.match(/^Summary:\s*(.+)$/im);
   if (!titleMatch || !summaryMatch) {
@@ -145,10 +184,267 @@ function parseResponse(raw: string): { title: string; summary: string; body: str
   return { title, summary, body };
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+type Ctx = {
+  supabase: ReturnType<typeof createClient>;
+  supabaseUrl: string;
+  serviceKey: string;
+  primary: Provider;
+  fallback: Provider;
+  anthropicKey: string | undefined;
+  openaiKey: string | undefined;
+  aiModels: Record<string, Record<Provider, string>>;
+  aiPricing: Record<string, { input_per_million?: number; output_per_million?: number }>;
+  toneGuidance: string;
+  threshold: number;
+  targetPerAngle: number;
+};
+
+type Angle = {
+  id: string;
+  angle_name: string;
+  harbor_framing: string;
+  therapeutic_substrate: string;
+  embodiment_instruction: string;
+};
+
+/**
+ * Strategist — pick the next under-covered active angle for (pillar, lang).
+ * Returns null when every angle for the pillar has reached the target count.
+ */
+async function pickNextAngle(ctx: Ctx, pillar: Pillar, language: Lang): Promise<Angle | null> {
+  const { data: angles } = await ctx.supabase
+    .from("editorial_canon_angles")
+    .select("id, angle_name, harbor_framing, therapeutic_substrate, embodiment_instruction")
+    .eq("pillar", pillar)
+    .eq("is_active", true)
+    .order("display_order");
+  const angleList = (angles ?? []) as Angle[];
+  if (angleList.length === 0) return null;
+
+  const { data: assignments } = await ctx.supabase
+    .from("editorial_assignments")
+    .select("angle_id")
+    .eq("language", language)
+    .eq("succeeded", true);
+
+  const counts = new Map<string, number>();
+  for (const a of (assignments ?? []) as { angle_id: string }[]) {
+    counts.set(a.angle_id, (counts.get(a.angle_id) ?? 0) + 1);
   }
+
+  const undercovered = angleList.filter((a) => (counts.get(a.id) ?? 0) < ctx.targetPerAngle);
+  if (undercovered.length === 0) return null;
+
+  const minCount = Math.min(...undercovered.map((a) => counts.get(a.id) ?? 0));
+  const candidates = undercovered.filter((a) => (counts.get(a.id) ?? 0) === minCount);
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+/** Build the Writer's user prompt with the canon assignment injected. */
+function buildWriterPrompt(pillar: Pillar, language: Lang, angle: Angle): string {
+  if (language === "es") {
+    // Framing wrappers + instruction-to-the-Writer translate; the substrate
+    // and embodiment_instruction stay in English (clinical guidance).
+    return `Escribe una Carta desde la Dársena sobre el territorio de ${PILLAR_ES[pillar]}.
+
+ENCARGO EDITORIAL (del canon de la dársena):
+- Ángulo: ${angle.angle_name}
+- Encuadre de la dársena: ${angle.harbor_framing}
+- Sustrato terapéutico (NUNCA lo nombres en la carta — solo es orientación para ti, el escritor): ${angle.therapeutic_substrate}
+- Instrucción de encarnación: ${angle.embodiment_instruction}
+
+Desarrolla este ángulo y SOLO este ángulo. El lector debe experimentar el sustrato como un reconocimiento preciso de su interior, no como una instrucción.
+
+Escribe en español nativo (no una traducción literal), en la voz de la dársena. Dirígete al lector como "tú" — nunca "usted".
+
+Devuelve exactamente este formato y nada más. Los marcadores Title: y Summary: permanecen en inglés (los lee un parser); el contenido va en español:
+Title: <título literario en español, 4 a 9 palabras, sin comillas>
+Summary: <una oración en español, 12 a 20 palabras, sin comillas>
+
+<el cuerpo en español, 700-1000 palabras, solo prosa plana>`;
+  }
+  return `Write a Letter from the Harbor on the territory of ${pillar}.
+
+EDITORIAL ASSIGNMENT (from the harbor's canon):
+- Angle: ${angle.angle_name}
+- Harbor framing: ${angle.harbor_framing}
+- Therapeutic substrate (NEVER name in letter — Writer priming only): ${angle.therapeutic_substrate}
+- Embodiment instruction: ${angle.embodiment_instruction}
+
+Develop this angle and ONLY this angle. The reader should experience the substrate as accurate recognition of their interior, not as instruction.
+
+Return strict format:
+Title: <literary title, 4-9 words, sentence case>
+Summary: <one sentence, 12-20 words>
+
+<body, 700-1000 words, plain prose>`;
+}
+
+/** Build the Reviser's user prompt from the failing dimensions + hard rules. */
+function buildReviserPrompt(
+  language: Lang, title: string, body: string,
+  failing: { name: string; score: unknown; reasoning: string }[],
+  violations: string[],
+): string {
+  const dims = failing.map((d) => `${d.name}: ${d.score}/10 — ${d.reasoning}`).join("\n");
+  const hard = violations.length ? `\nHard-rule violations:\n${violations.join("\n")}\n` : "";
+  if (language === "es") {
+    return `Escribiste esta carta:
+
+Title: ${title}
+
+${body}
+
+El Crítico la evaluó. Dimensiones que fallaron:
+${dims}${hard}
+Revisa esta carta. Atiende específicamente los fallos listados arriba. NO la reescribas desde cero — conserva lo que funciona. Corrige cada fallo con un cambio puntual.
+
+Se aplican las mismas reglas de la voz de la dársena — encarna la sabiduría, nunca nombres el marco terapéutico; sin instrucciones ni prescripciones al lector; sin clichés; sin markdown ni separadores. Dirígete al lector como "tú", nunca "usted".
+
+Devuelve exactamente este formato (los marcadores Title:/Summary: en inglés, el contenido en español):
+Title: <puede mantenerse o revisarse>
+Summary: <puede mantenerse o revisarse>
+
+<el cuerpo revisado en español, 700-1000 palabras, solo prosa plana>`;
+  }
+  return `You wrote this letter:
+
+Title: ${title}
+
+${body}
+
+The Critic scored it. Specific failing dimensions:
+${dims}${hard}
+Revise this letter. Specifically address the failures listed above. Do NOT rewrite from scratch — preserve what works. Address each failure with a targeted change.
+
+The same harbor voice rules apply — embody the wisdom, never cite the framework; no instructions or prescriptions to the reader; no clichés; no markdown headings, bullets, or separator marks.
+
+Return strict format:
+Title: <may keep same or revise>
+Summary: <may keep same or revise>
+
+<revised body, 700-1000 words, plain prose>`;
+}
+
+/** Run the provider chain (primary → fallback), logging usage either way. */
+async function generate(
+  ctx: Ctx, system: string, user: string, lang: Lang,
+  temperature: number | null, maxTokens: number | null,
+): Promise<{ text: string; model: string; provider: Provider } | null> {
+  const order: Provider[] = ctx.fallback !== ctx.primary
+    ? [ctx.primary, ctx.fallback]
+    : [ctx.primary];
+  for (const p of order) {
+    const model = ctx.aiModels["blog"]?.[p] ?? (p === "anthropic" ? "claude-sonnet-4-6" : "gpt-4o");
+    const key = p === "anthropic" ? ctx.anthropicKey : ctx.openaiKey;
+    if (!key) continue;
+    try {
+      const result = p === "anthropic"
+        ? await callAnthropic(key, model, system, user, temperature, maxTokens)
+        : await callOpenAI(key, model, system, user, temperature, maxTokens);
+      await ctx.supabase.from("ai_usage_log").insert({
+        provider: p, model, task: "blog",
+        called_from: `edge:generate-blog-posts:${lang}`,
+        input_tokens: result.input_tokens,
+        output_tokens: result.output_tokens,
+        cached_tokens: result.cached_tokens,
+        estimated_cost_usd: estimateCost(model, result.input_tokens, result.output_tokens, ctx.aiPricing),
+        latency_ms: result.latency_ms,
+      });
+      return { text: result.text, model, provider: p };
+    } catch (err) {
+      await ctx.supabase.from("ai_usage_log").insert({
+        provider: p, model, task: "blog",
+        called_from: `edge:generate-blog-posts:${lang}`,
+        input_tokens: 0, output_tokens: 0, cached_tokens: 0,
+        estimated_cost_usd: 0, latency_ms: 0,
+        error: err instanceof Error ? err.message.slice(0, 500) : String(err),
+      });
+    }
+  }
+  return null;
+}
+
+type Evaluation = {
+  scored: boolean;
+  overall: number;
+  therapeuticDepth: number;
+  hardOk: boolean;
+  pass: boolean;
+  failing: { name: string; score: unknown; reasoning: string }[];
+  violations: string[];
+};
+
+/** Critic — score via HTTP, then read blog_draft_scores and evaluate. */
+async function criticEvaluate(ctx: Ctx, post_id: string, language: Lang): Promise<Evaluation> {
+  const empty: Evaluation = {
+    scored: false, overall: 0, therapeuticDepth: 0, hardOk: false,
+    pass: false, failing: [], violations: [],
+  };
+  try {
+    const res = await fetch(`${ctx.supabaseUrl}/functions/v1/score-blog-draft`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${ctx.serviceKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ post_id, language }),
+    });
+    if (!res.ok) return empty;
+    const j = await res.json();
+    const outcome = j.results?.[0];
+    if (!outcome || outcome.status !== "scored") return empty;
+  } catch (_) {
+    return empty;
+  }
+
+  const { data: scoreRow } = await ctx.supabase
+    .from("blog_draft_scores")
+    .select("overall_score, hard_rules_passed, passed_threshold, scales, hard_rules")
+    .eq("post_id", post_id)
+    .eq("language", language)
+    .maybeSingle();
+  if (!scoreRow) return empty;
+
+  // deno-lint-ignore no-explicit-any
+  const scales = ((scoreRow as any).scales ?? {}) as Record<string, any>;
+  // deno-lint-ignore no-explicit-any
+  const hr = ((scoreRow as any).hard_rules ?? {}) as Record<string, any>;
+  const overall = Number((scoreRow as any).overall_score ?? 0);
+  const therapeuticDepth = Number(scales.therapeutic_depth ?? 0);
+  const hardOk = (scoreRow as any).hard_rules_passed === true;
+
+  const dimKeys = [
+    "witnessing_register",
+    "grounding",
+    "competitive_bar",
+    "therapeutic_depth",
+    language === "es" ? "native_cadence" : "prose_quality",
+  ];
+  const failing = dimKeys
+    .filter((k) => Number(scales[k] ?? 10) < 7)
+    .map((k) => ({
+      name: k,
+      score: scales[k],
+      reasoning: String(scales[`${k}_reasoning`] ?? ""),
+    }));
+
+  const violations: string[] = [];
+  if (hr.word_count_ok === false) violations.push(`word_count out of range (${hr.word_count})`);
+  if (hr.forbidden_phrases_ok === false) {
+    violations.push(`forbidden phrases: ${(hr.forbidden_phrases_found ?? []).join(", ")}`);
+  }
+  if (hr.pillar_coherence_ok === false) {
+    violations.push(`pillar coherence: ${hr.pillar_coherence_reasoning ?? ""}`);
+  }
+  if (language === "es" && hr.usted_ok === false) violations.push(`uses "usted" (${hr.usted_count})`);
+
+  const pass = hardOk && overall >= ctx.threshold && therapeuticDepth >= 7;
+  return { scored: true, overall, therapeuticDepth, hardOk, pass, failing, violations };
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -156,15 +452,17 @@ serve(async (req) => {
     const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     if (!supabaseUrl || !serviceKey) {
-      return new Response(
-        JSON.stringify({ error: "Missing SUPABASE env" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Missing SUPABASE env" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Request body — optional pillar filter + optional languages array.
+    // Parse request body.
     let requestedPillars: Pillar[] = PILLARS;
     let requestedLanguages: Lang[] = LANGS;
+    let maxRevisions = 2;
+    let count = 1;
     if (req.method === "POST") {
       try {
         const body = await req.json();
@@ -172,200 +470,304 @@ serve(async (req) => {
           const p = body.pillar.toLowerCase();
           if (PILLARS.includes(p as Pillar)) requestedPillars = [p as Pillar];
         }
-        if (body && Array.isArray(body.languages)) {
-          const ls = body.languages.filter((l: unknown): l is Lang =>
-            typeof l === "string" && LANGS.includes(l as Lang)
-          );
+        if (body && typeof body.language === "string" && LANGS.includes(body.language as Lang)) {
+          requestedLanguages = [body.language as Lang];
+        } else if (body && Array.isArray(body.language)) {
+          const ls = body.language.filter((l: unknown): l is Lang =>
+            typeof l === "string" && LANGS.includes(l as Lang));
           if (ls.length > 0) requestedLanguages = ls;
         }
-      } catch (_) {}
+        if (body && Number.isFinite(body.max_revisions)) {
+          maxRevisions = Math.max(0, Math.min(5, Math.floor(body.max_revisions)));
+        }
+        if (body && Number.isFinite(body.count)) {
+          count = Math.max(1, Math.min(10, Math.floor(body.count)));
+        }
+      } catch (_) { /* default config */ }
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
     const { data: settings } = await supabase
       .from("admin_settings")
-      .select("ai_primary_provider, ai_fallback_provider, ai_models, ai_pricing, ai_tone_guidance")
+      .select(
+        "ai_primary_provider, ai_fallback_provider, ai_models, ai_pricing, ai_tone_guidance, blog_library_complete, blog_library_target_per_angle, blog_quality_gate_threshold",
+      )
       .eq("id", 1)
       .maybeSingle();
-    const primary: Provider = (settings?.ai_primary_provider as Provider) ?? "anthropic";
-    const fallback: Provider = (settings?.ai_fallback_provider as Provider) ?? "openai";
-    const aiModels = (settings?.ai_models ?? {}) as Record<string, Record<Provider, string>>;
-    const aiPricing = (settings?.ai_pricing ?? {}) as Record<string, { input_per_million?: number; output_per_million?: number }>;
-    const toneGuidance: string = settings?.ai_tone_guidance ?? "";
+
+    // Library complete → noop (the daily cron lands here once the founder
+    // flips the flag after reviewing the initial library).
+    if ((settings as any)?.blog_library_complete === true) {
+      await supabase.from("blog_generation_logs").insert({
+        pillar: requestedPillars[0],
+        status: "skipped",
+        message: "library complete — generation noop",
+      });
+      return new Response(JSON.stringify({ status: "skipped", reason: "library complete" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const ctx: Ctx = {
+      supabase,
+      supabaseUrl,
+      serviceKey,
+      primary: ((settings as any)?.ai_primary_provider as Provider) ?? "anthropic",
+      fallback: ((settings as any)?.ai_fallback_provider as Provider) ?? "openai",
+      anthropicKey,
+      openaiKey,
+      aiModels: ((settings as any)?.ai_models ?? {}) as Record<string, Record<Provider, string>>,
+      aiPricing: ((settings as any)?.ai_pricing ?? {}) as Record<string, { input_per_million?: number; output_per_million?: number }>,
+      toneGuidance: (settings as any)?.ai_tone_guidance ?? "",
+      threshold: Number((settings as any)?.blog_quality_gate_threshold ?? 7.0),
+      targetPerAngle: Number((settings as any)?.blog_library_target_per_angle ?? 2),
+    };
 
     const results: Array<Record<string, unknown>> = [];
 
     for (const pillar of requestedPillars) {
-      // For each pillar we generate the requested languages IN PARALLEL.
-      // The pillar row in blog_posts is inserted AFTER all languages
-      // complete so we can write the parent + all translations in a
-      // single logical "letter" creation.
-
-      type LangAttempt = {
-        lang: Lang;
-        ok: boolean;
-        parsed?: { title: string; summary: string; body: string };
-        provider?: Provider;
-        model?: string;
-        prompt?: string;
-        error?: string;
-      };
-
-      const langAttempts: LangAttempt[] = await Promise.all(
-        requestedLanguages.map(async (lang): Promise<LangAttempt> => {
-          const slug = `blog.${pillar}.${lang}`;
-          const { data: tmpl } = await supabase
-            .from("prompt_templates")
-            .select("user_prompt_template, system_prompt, temperature, max_tokens, active_version")
-            .eq("slug", slug)
-            .maybeSingle();
-          if (!tmpl) {
-            return { lang, ok: false, error: `Prompt template ${slug} not found.` };
-          }
-          const user = renderTemplate(tmpl.user_prompt_template, { pillar });
-          const system = [toneGuidance, tmpl.system_prompt ?? ""].filter(Boolean).join("\n\n");
-
-          // Provider attempt with fallback. Same shape as the prior version.
-          async function tryProvider(p: Provider) {
-            const model = aiModels["blog"]?.[p] ?? (p === "anthropic" ? "claude-sonnet-4-6" : "gpt-4o");
-            const key = p === "anthropic" ? anthropicKey : openaiKey;
-            if (!key) return null;
-            try {
-              const result = p === "anthropic"
-                ? await callAnthropic(key, model, system, user, tmpl.temperature, tmpl.max_tokens)
-                : await callOpenAI(key, model, system, user, tmpl.temperature, tmpl.max_tokens);
-              await supabase.from("ai_usage_log").insert({
-                provider: p, model, task: "blog",
-                called_from: `edge:generate-blog-posts:${lang}`,
-                input_tokens: result.input_tokens,
-                output_tokens: result.output_tokens,
-                cached_tokens: result.cached_tokens,
-                estimated_cost_usd: estimateCost(model, result.input_tokens, result.output_tokens, aiPricing),
-                latency_ms: result.latency_ms,
-              });
-              return { result, model };
-            } catch (err) {
-              await supabase.from("ai_usage_log").insert({
-                provider: p, model, task: "blog",
-                called_from: `edge:generate-blog-posts:${lang}`,
-                input_tokens: 0, output_tokens: 0, cached_tokens: 0,
-                estimated_cost_usd: 0, latency_ms: 0,
-                error: err instanceof Error ? err.message.slice(0, 500) : String(err),
-              });
-              return null;
-            }
-          }
-
-          let providerUsed: Provider = primary;
-          let attempt = await tryProvider(primary);
-          if (!attempt && fallback !== primary) {
-            providerUsed = fallback;
-            attempt = await tryProvider(fallback);
-          }
-          if (!attempt) return { lang, ok: false, error: "Both providers failed.", prompt: user };
-
-          try {
-            const parsed = parseResponse(attempt.result.text);
-            return { lang, ok: true, parsed, provider: providerUsed, model: attempt.model, prompt: user };
-          } catch (err) {
-            return { lang, ok: false, error: err instanceof Error ? err.message : String(err), prompt: user };
-          }
-        }),
-      );
-
-      // If at least one language succeeded, create the parent + translations.
-      const successful = langAttempts.filter((a): a is LangAttempt & { ok: true } => a.ok && !!a.parsed);
-      if (successful.length === 0) {
-        // All languages failed for this pillar — log and continue.
-        for (const failed of langAttempts) {
-          await supabase.from("blog_generation_logs").insert({
-            pillar,
-            status: "failed",
-            message: failed.error ?? "unknown",
-            model: failed.model ?? null,
-            prompt: failed.prompt ?? null,
-          });
+      // Load the pillar voice template once per (pillar, language) below.
+      for (const language of requestedLanguages) {
+        const slug = `blog.${pillar}.${language}`;
+        const { data: tmpl } = await supabase
+          .from("prompt_templates")
+          .select("system_prompt, user_prompt_template, temperature, max_tokens")
+          .eq("slug", slug)
+          .eq("is_active", true)
+          .maybeSingle();
+        if (!tmpl) {
+          results.push({ pillar, language, status: "failed", error: `voice template ${slug} not found` });
+          continue;
         }
-        results.push({ pillar, status: "failed", error: "All languages failed." });
-        continue;
+        // The pillar template is the harbor-voice SYSTEM prompt. Prefer the
+        // dedicated system_prompt; fall back to the (rendered) user template.
+        const voice = (tmpl as any).system_prompt
+          ? renderTemplate((tmpl as any).system_prompt, { pillar })
+          : renderTemplate((tmpl as any).user_prompt_template ?? "", { pillar });
+        const system = [ctx.toneGuidance, voice].filter(Boolean).join("\n\n");
+        const temperature = (tmpl as any).temperature ?? null;
+        const maxTokens = (tmpl as any).max_tokens ?? null;
+
+        for (let i = 0; i < count; i++) {
+          // ── Strategist ──────────────────────────────────────────────
+          const angle = await pickNextAngle(ctx, pillar, language);
+          if (!angle) {
+            results.push({ pillar, language, status: "pillar_complete" });
+            break; // no point looping `count` more times for this pillar/lang
+          }
+
+          // Log the attempt up-front (succeeded=false, no post yet).
+          const { data: assignmentRow } = await supabase
+            .from("editorial_assignments")
+            .insert({
+              angle_id: angle.id,
+              language,
+              attempted_at: new Date().toISOString(),
+              succeeded: false,
+            })
+            .select("id")
+            .single();
+          const assignmentId = (assignmentRow as any)?.id as string | undefined;
+
+          // ── Writer ──────────────────────────────────────────────────
+          const writerUser = buildWriterPrompt(pillar, language, angle);
+          const written = await generate(ctx, system, writerUser, language, temperature, maxTokens);
+          if (!written) {
+            if (assignmentId) {
+              await supabase.from("editorial_assignments")
+                .update({ failure_reason: "writer: both providers failed" })
+                .eq("id", assignmentId);
+            }
+            results.push({ pillar, language, status: "failed", error: "writer: both providers failed", angle_name: angle.angle_name });
+            continue;
+          }
+
+          let parsed: { title: string; summary: string; body: string };
+          try {
+            parsed = parseResponse(written.text);
+          } catch (err) {
+            if (assignmentId) {
+              await supabase.from("editorial_assignments")
+                .update({ failure_reason: `writer parse: ${err instanceof Error ? err.message : String(err)}` })
+                .eq("id", assignmentId);
+            }
+            results.push({ pillar, language, status: "failed", error: `writer parse failed`, angle_name: angle.angle_name });
+            continue;
+          }
+
+          // Insert parent + this-language translation.
+          const { data: inserted, error: insErr } = await supabase
+            .from("blog_posts")
+            .insert({
+              title: parsed.title,
+              excerpt: parsed.summary,
+              summary: parsed.summary,
+              content: parsed.body,
+              is_published: false,
+              pillar,
+              category: "Recovery",
+              is_ai_generated: true,
+              model: written.model,
+              prompt: writerUser,
+              cover_image_url: null,
+              consumer: "stone_harbor",
+            })
+            .select("id")
+            .single();
+          if (insErr || !inserted) {
+            if (assignmentId) {
+              await supabase.from("editorial_assignments")
+                .update({ failure_reason: `blog_posts insert: ${insErr?.message ?? "no row"}` })
+                .eq("id", assignmentId);
+            }
+            results.push({ pillar, language, status: "failed", error: `blog_posts insert failed`, angle_name: angle.angle_name });
+            continue;
+          }
+          const postId = (inserted as any).id as string;
+
+          const { error: trErr } = await supabase
+            .from("blog_post_translations")
+            .insert({
+              post_id: postId,
+              language,
+              title: parsed.title,
+              excerpt: parsed.summary,
+              summary: parsed.summary,
+              content: parsed.body,
+              slug: null,
+              is_published: false,
+            });
+          if (trErr) {
+            await supabase.from("blog_posts").delete().eq("id", postId);
+            if (assignmentId) {
+              await supabase.from("editorial_assignments")
+                .update({ failure_reason: `translation insert: ${trErr.message}` })
+                .eq("id", assignmentId);
+            }
+            results.push({ pillar, language, status: "failed", error: `translation insert failed`, angle_name: angle.angle_name });
+            continue;
+          }
+
+          // Link the assignment + flip succeeded=true OPTIMISTICALLY so the
+          // scorer can read the assigned substrate for therapeutic_depth.
+          // Reverted to false on final failure below.
+          if (assignmentId) {
+            await supabase.from("editorial_assignments")
+              .update({ post_id: postId, succeeded: true })
+              .eq("id", assignmentId);
+          }
+
+          // ── Critic + Reviser loop ───────────────────────────────────
+          let evalResult = await criticEvaluate(ctx, postId, language);
+          let revisions = 0;
+          while (!evalResult.pass && revisions < maxRevisions && evalResult.scored) {
+            revisions++;
+            // Re-read the current translation body (it was overwritten on a
+            // prior pass; on the first revision it's the Writer's output).
+            const { data: cur } = await supabase
+              .from("blog_post_translations")
+              .select("title, content")
+              .eq("post_id", postId)
+              .eq("language", language)
+              .maybeSingle();
+            const curTitle = (cur as any)?.title ?? parsed.title;
+            const curBody = (cur as any)?.content ?? parsed.body;
+
+            const reviserUser = buildReviserPrompt(
+              language, curTitle, curBody, evalResult.failing, evalResult.violations,
+            );
+            const revised = await generate(ctx, system, reviserUser, language, temperature, maxTokens);
+            if (!revised) break;
+            let parsed2: { title: string; summary: string; body: string };
+            try {
+              parsed2 = parseResponse(revised.text);
+            } catch (_) {
+              break; // keep the prior version; loop ends, finalize as fail
+            }
+            await supabase.from("blog_post_translations")
+              .update({
+                title: parsed2.title,
+                excerpt: parsed2.summary,
+                summary: parsed2.summary,
+                content: parsed2.body,
+              })
+              .eq("post_id", postId)
+              .eq("language", language);
+            // Keep blog_posts legacy columns in sync with the revised text.
+            await supabase.from("blog_posts")
+              .update({ title: parsed2.title, excerpt: parsed2.summary, summary: parsed2.summary, content: parsed2.body, model: revised.model })
+              .eq("id", postId);
+
+            evalResult = await criticEvaluate(ctx, postId, language);
+          }
+
+          // ── Finalize ────────────────────────────────────────────────
+          if (evalResult.pass) {
+            if (assignmentId) {
+              await supabase.from("editorial_assignments")
+                .update({
+                  succeeded: true,
+                  post_id: postId,
+                  scorer_overall: evalResult.overall,
+                  // scorer_therapeutic_depth is an integer column — round the
+                  // scorer's 1-10 value defensively.
+                  scorer_therapeutic_depth: Math.round(evalResult.therapeuticDepth),
+                })
+                .eq("id", assignmentId);
+            }
+            // Re-read the final title (may have been revised).
+            const { data: fin } = await supabase
+              .from("blog_post_translations")
+              .select("title")
+              .eq("post_id", postId)
+              .eq("language", language)
+              .maybeSingle();
+            results.push({
+              pillar,
+              language,
+              status: "success",
+              post_id: postId,
+              angle_id: angle.id,
+              angle_name: angle.angle_name,
+              title: (fin as any)?.title ?? parsed.title,
+              overall_score: evalResult.overall,
+              therapeutic_depth: evalResult.therapeuticDepth,
+              revisions,
+            });
+          } else {
+            const reason = `Failed after ${revisions} revision(s): overall=${evalResult.overall} (threshold ${ctx.threshold}), therapeutic_depth=${evalResult.therapeuticDepth}. Failing: ${evalResult.failing.map((f) => `${f.name}=${f.score}`).join(", ") || "n/a"}. Hard: ${evalResult.violations.join("; ") || "none"}`;
+            // Drop the sub-threshold draft. The orphaned blog_draft_scores
+            // row is intentionally retained for post-mortem.
+            await supabase.from("blog_post_translations").delete().eq("post_id", postId);
+            await supabase.from("blog_posts").delete().eq("id", postId);
+            if (assignmentId) {
+              await supabase.from("editorial_assignments")
+                .update({ succeeded: false, post_id: null, failure_reason: reason.slice(0, 1000) })
+                .eq("id", assignmentId);
+            }
+            results.push({
+              pillar,
+              language,
+              status: "failed",
+              angle_id: angle.id,
+              angle_name: angle.angle_name,
+              reason,
+              revisions,
+            });
+          }
+        }
       }
-
-      // Pick the English attempt (or the first successful one) as the
-      // "canonical" letter for the dual-write of the legacy columns.
-      const canonical = successful.find((a) => a.lang === "en") ?? successful[0];
-
-      const { data: inserted, error: insertErr } = await supabase
-        .from("blog_posts")
-        .insert({
-          // Legacy columns — dual-write so the old admin draft list keeps
-          // working until Phase 2 rewrites it. Dropped in Phase 1C.
-          title: canonical.parsed!.title,
-          excerpt: canonical.parsed!.summary,
-          summary: canonical.parsed!.summary,
-          content: canonical.parsed!.body,
-          is_published: false,
-          // Language-independent fields.
-          pillar,
-          category: "Recovery",
-          is_ai_generated: true,
-          model: canonical.model,
-          prompt: canonical.prompt,
-          cover_image_url: null,
-        })
-        .select("id")
-        .single();
-      if (insertErr || !inserted) {
-        results.push({ pillar, status: "failed", error: insertErr?.message ?? "insert returned no row" });
-        continue;
-      }
-
-      // Insert translation rows for every successful language.
-      const translationRows = successful.map((a) => ({
-        post_id: inserted.id,
-        language: a.lang,
-        title: a.parsed!.title,
-        excerpt: a.parsed!.summary,
-        summary: a.parsed!.summary,
-        content: a.parsed!.body,
-        slug: null,
-        is_published: false,
-      }));
-      const { error: trErr } = await supabase
-        .from("blog_post_translations")
-        .insert(translationRows);
-      if (trErr) {
-        results.push({ pillar, status: "partial", error: `Parent inserted but translations failed: ${trErr.message}`, post_id: inserted.id });
-        continue;
-      }
-
-      await supabase.from("blog_generation_logs").insert({
-        pillar,
-        status: "success",
-        message: `Drafted ${pillar} letter in ${successful.length} language(s): ${successful.map(a => a.lang).join(", ")}`,
-        model: canonical.model,
-        prompt: canonical.prompt,
-        post_id: inserted.id,
-      });
-
-      results.push({
-        pillar,
-        status: successful.length === requestedLanguages.length ? "success" : "partial",
-        post_id: inserted.id,
-        languages_generated: successful.map(a => a.lang),
-        languages_failed: langAttempts.filter(a => !a.ok).map(a => a.lang),
-        title: canonical.parsed!.title,
-      });
     }
 
-    return new Response(
-      JSON.stringify({ status: "completed", results }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ status: "completed", count: results.length, results }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({
+      error: error instanceof Error ? error.message : String(error),
+    }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
