@@ -205,6 +205,9 @@ type Angle = {
   harbor_framing: string;
   therapeutic_substrate: string;
   embodiment_instruction: string;
+  // SH-92: Spanish-native substrate priming (fall back to EN if null).
+  therapeutic_substrate_es: string | null;
+  embodiment_instruction_es: string | null;
 };
 
 /**
@@ -214,7 +217,7 @@ type Angle = {
 async function pickNextAngle(ctx: Ctx, pillar: Pillar, language: Lang): Promise<Angle | null> {
   const { data: angles } = await ctx.supabase
     .from("editorial_canon_angles")
-    .select("id, angle_name, harbor_framing, therapeutic_substrate, embodiment_instruction")
+    .select("id, angle_name, harbor_framing, therapeutic_substrate, embodiment_instruction, therapeutic_substrate_es, embodiment_instruction_es")
     .eq("pillar", pillar)
     .eq("is_active", true)
     .order("display_order");
@@ -338,9 +341,91 @@ Your letter must:
 The therapeutic substrate and embodiment instruction remain the same — your job is to find a DIFFERENT execution of the same psychological move.`;
 }
 
+/**
+ * SH-92 — fetch the most recent succeeded letters across ALL other angles
+ * (any pillar) in this language, so the Writer can be told to vary its opening
+ * domain from the wider library. Lighter than the intra-angle context: title +
+ * first 400 chars only. Excludes the current angle (already covered by the
+ * intra-angle PRIOR LETTERS block).
+ *
+ * Two queries, but the second can use a real embed: blog_post_translations has
+ * a direct FK to blog_posts, so blog_posts:post_id!inner(pillar) resolves.
+ */
+async function fetchRecentLettersAcrossPillars(
+  ctx: Ctx, language: Lang, excludeAngleId: string, limit = 5,
+): Promise<Array<{ title: string; opening: string; pillar: string }>> {
+  const { data: assigns } = await ctx.supabase
+    .from("editorial_assignments")
+    .select("post_id")
+    .eq("language", language)
+    .eq("succeeded", true)
+    .neq("angle_id", excludeAngleId)
+    .not("post_id", "is", null)
+    .order("attempted_at", { ascending: false })
+    .limit(limit);
+  const postIds = ((assigns ?? []) as { post_id: string | null }[])
+    .map((a) => a.post_id)
+    .filter((id): id is string => !!id);
+  if (postIds.length === 0) return [];
+
+  const { data: trs } = await ctx.supabase
+    .from("blog_post_translations")
+    .select("post_id, title, content, blog_posts:post_id!inner(pillar)")
+    .in("post_id", postIds)
+    .eq("language", language);
+  // deno-lint-ignore no-explicit-any
+  const byPost = new Map<string, any>(
+    ((trs ?? []) as any[]).map((t) => [t.post_id as string, t]),
+  );
+
+  // Preserve recency order from the assignments query.
+  const out: Array<{ title: string; opening: string; pillar: string }> = [];
+  for (const id of postIds) {
+    const t = byPost.get(id);
+    if (!t?.title || !t?.content) continue;
+    const bp = Array.isArray(t.blog_posts) ? t.blog_posts[0] : t.blog_posts;
+    out.push({
+      title: t.title as string,
+      opening: (t.content as string).slice(0, 400),
+      pillar: (bp?.pillar as string) ?? "",
+    });
+  }
+  return out;
+}
+
+/**
+ * SH-92 — build the "RECENT LETTERS ACROSS THE LIBRARY" cross-pillar block.
+ * Empty string when there are none. Leads with newlines for direct injection
+ * after the intra-angle block.
+ */
+function buildCrossPillarContext(
+  recents: Array<{ title: string; opening: string; pillar: string }>,
+  language: Lang,
+): string {
+  if (recents.length === 0) return "";
+  if (language === "es") {
+    const list = recents
+      .map((r, i) => `${i + 1}. ${r.pillar.toUpperCase()} — Título: "${r.title}"\n   Apertura: ${r.opening}`)
+      .join("\n\n");
+    return `
+
+CARTAS RECIENTES EN LA BIBLIOTECA (varía tu dominio de apertura respecto a estas — un escenario diferente, un anclaje sensorial diferente):
+
+${list}`;
+  }
+  const list = recents
+    .map((r, i) => `${i + 1}. ${r.pillar.toUpperCase()} — Title: "${r.title}"\n   Opening: ${r.opening}`)
+    .join("\n\n");
+  return `
+
+RECENT LETTERS ACROSS THE LIBRARY (vary your opening domain from these — a different setting, a different sensory anchor):
+
+${list}`;
+}
+
 /** Build the Writer's user prompt with the canon assignment injected. */
 function buildWriterPrompt(
-  pillar: Pillar, language: Lang, angle: Angle, diversityBlock = "",
+  pillar: Pillar, language: Lang, angle: Angle, diversityBlock = "", crossPillarBlock = "",
 ): string {
   if (language === "es") {
     // Framing wrappers + instruction-to-the-Writer translate; the substrate
@@ -350,10 +435,10 @@ function buildWriterPrompt(
 ENCARGO EDITORIAL (del canon de la dársena):
 - Ángulo: ${angle.angle_name}
 - Encuadre de la dársena: ${angle.harbor_framing}
-- Sustrato terapéutico (NUNCA lo nombres en la carta — solo es orientación para ti, el escritor): ${angle.therapeutic_substrate}
-- Instrucción de encarnación: ${angle.embodiment_instruction}
+- Sustrato terapéutico (NUNCA lo nombres en la carta — solo es orientación para ti, el escritor): ${angle.therapeutic_substrate_es ?? angle.therapeutic_substrate}
+- Instrucción de encarnación: ${angle.embodiment_instruction_es ?? angle.embodiment_instruction}
 
-Desarrolla este ángulo y SOLO este ángulo. El lector debe experimentar el sustrato como un reconocimiento preciso de su interior, no como una instrucción.${diversityBlock}
+Desarrolla este ángulo y SOLO este ángulo. El lector debe experimentar el sustrato como un reconocimiento preciso de su interior, no como una instrucción.${diversityBlock}${crossPillarBlock}
 
 Escribe en español nativo (no una traducción literal), en la voz de la dársena. Dirígete al lector como "tú" — nunca "usted".
 
@@ -371,7 +456,7 @@ EDITORIAL ASSIGNMENT (from the harbor's canon):
 - Therapeutic substrate (NEVER name in letter — Writer priming only): ${angle.therapeutic_substrate}
 - Embodiment instruction: ${angle.embodiment_instruction}
 
-Develop this angle and ONLY this angle. The reader should experience the substrate as accurate recognition of their interior, not as instruction.${diversityBlock}
+Develop this angle and ONLY this angle. The reader should experience the substrate as accurate recognition of their interior, not as instruction.${diversityBlock}${crossPillarBlock}
 
 Return strict format:
 Title: <literary title, 4-9 words, sentence case>
@@ -473,6 +558,10 @@ type Evaluation = {
   pass: boolean;
   failing: { name: string; score: unknown; reasoning: string }[];
   violations: string[];
+  // SH-92: carried through so failed drafts can be logged with full critic data.
+  scales: Record<string, unknown>;
+  summary: string;
+  scorerModel: string;
 };
 
 /** Critic — score via HTTP, then read blog_draft_scores and evaluate. */
@@ -480,6 +569,7 @@ async function criticEvaluate(ctx: Ctx, post_id: string, language: Lang): Promis
   const empty: Evaluation = {
     scored: false, overall: 0, therapeuticDepth: 0, hardOk: false,
     pass: false, failing: [], violations: [],
+    scales: {}, summary: "", scorerModel: "",
   };
   try {
     const res = await fetch(`${ctx.supabaseUrl}/functions/v1/score-blog-draft`, {
@@ -500,7 +590,7 @@ async function criticEvaluate(ctx: Ctx, post_id: string, language: Lang): Promis
 
   const { data: scoreRow } = await ctx.supabase
     .from("blog_draft_scores")
-    .select("overall_score, hard_rules_passed, passed_threshold, scales, hard_rules")
+    .select("overall_score, hard_rules_passed, passed_threshold, scales, hard_rules, summary, scorer_model")
     .eq("post_id", post_id)
     .eq("language", language)
     .maybeSingle();
@@ -540,7 +630,57 @@ async function criticEvaluate(ctx: Ctx, post_id: string, language: Lang): Promis
   if (language === "es" && hr.usted_ok === false) violations.push(`uses "usted" (${hr.usted_count})`);
 
   const pass = hardOk && overall >= ctx.threshold && therapeuticDepth >= 7;
-  return { scored: true, overall, therapeuticDepth, hardOk, pass, failing, violations };
+  return {
+    scored: true, overall, therapeuticDepth, hardOk, pass, failing, violations,
+    scales,
+    summary: String((scoreRow as any).summary ?? ""),
+    scorerModel: String((scoreRow as any).scorer_model ?? ""),
+  };
+}
+
+/** SH-92 — classify why an evaluation failed (for blog_failed_drafts). */
+function failureReason(e: Evaluation, threshold: number): string {
+  const reasons: string[] = [];
+  if (!e.hardOk) reasons.push("hard_rules_failed");
+  if (e.overall < threshold) reasons.push("overall_below_threshold");
+  if (e.therapeuticDepth < 7) reasons.push("therapeutic_depth_below_7");
+  return reasons.join(",") || "unknown";
+}
+
+/**
+ * SH-92 — fire-and-forget forensics. Every failing Critic score (initial draft
+ * and each revision) is captured in blog_failed_drafts before the Reviser tries
+ * again or the final delete runs, so we keep operational signal on which angles
+ * and embodiment instructions are hard. A failed insert must NOT affect the
+ * main generation flow.
+ */
+async function logFailedDraft(ctx: Ctx, params: {
+  angle_id: string;
+  language: Lang;
+  attempt_number: number;
+  writer_prompt: string;
+  generated_title: string | null;
+  generated_content: string;
+  critic_overall: number;
+  critic_scales: Record<string, unknown>;
+  critic_summary: string;
+  failure_reason: string;
+  scorer_model: string;
+}): Promise<void> {
+  const { error } = await ctx.supabase.from("blog_failed_drafts").insert({
+    angle_id: params.angle_id,
+    language: params.language,
+    attempt_number: params.attempt_number,
+    writer_prompt: params.writer_prompt,
+    generated_title: params.generated_title,
+    generated_content: params.generated_content,
+    critic_overall_score: params.critic_overall,
+    critic_scales: params.critic_scales,
+    critic_summary: params.critic_summary,
+    failure_reason: params.failure_reason,
+    scorer_model: params.scorer_model,
+  });
+  if (error) console.warn("logFailedDraft insert failed (non-fatal):", error.message);
 }
 
 serve(async (req) => {
@@ -677,7 +817,10 @@ serve(async (req) => {
           // execution — bakes intra-angle diversity into the first draft.
           const priors = await fetchPriorLettersForAngle(ctx, angle.id, language);
           const diversityBlock = buildDiversityContext(priors, language);
-          const writerUser = buildWriterPrompt(pillar, language, angle, diversityBlock);
+          // SH-92: cross-pillar context — vary the opening from the wider library.
+          const recents = await fetchRecentLettersAcrossPillars(ctx, language, angle.id);
+          const crossPillarBlock = buildCrossPillarContext(recents, language);
+          const writerUser = buildWriterPrompt(pillar, language, angle, diversityBlock, crossPillarBlock);
           const written = await generate(ctx, system, writerUser, language, temperature, maxTokens);
           if (!written) {
             if (assignmentId) {
@@ -766,6 +909,19 @@ serve(async (req) => {
 
           // ── Critic + Reviser loop ───────────────────────────────────
           let evalResult = await criticEvaluate(ctx, postId, language);
+          // SH-92: capture the initial Writer output (attempt 0) if the Critic
+          // failed it — even when a later revision rescues the letter.
+          if (evalResult.scored && !evalResult.pass) {
+            await logFailedDraft(ctx, {
+              angle_id: angle.id, language, attempt_number: 0,
+              writer_prompt: writerUser,
+              generated_title: parsed.title, generated_content: parsed.body,
+              critic_overall: evalResult.overall, critic_scales: evalResult.scales,
+              critic_summary: evalResult.summary,
+              failure_reason: failureReason(evalResult, ctx.threshold),
+              scorer_model: evalResult.scorerModel,
+            });
+          }
           let revisions = 0;
           while (!evalResult.pass && revisions < maxRevisions && evalResult.scored) {
             revisions++;
@@ -806,6 +962,19 @@ serve(async (req) => {
               .eq("id", postId);
 
             evalResult = await criticEvaluate(ctx, postId, language);
+            // SH-92: capture this revision's output (attempt = revision #) if
+            // the Critic still failed it.
+            if (evalResult.scored && !evalResult.pass) {
+              await logFailedDraft(ctx, {
+                angle_id: angle.id, language, attempt_number: revisions,
+                writer_prompt: reviserUser,
+                generated_title: parsed2.title, generated_content: parsed2.body,
+                critic_overall: evalResult.overall, critic_scales: evalResult.scales,
+                critic_summary: evalResult.summary,
+                failure_reason: failureReason(evalResult, ctx.threshold),
+                scorer_model: evalResult.scorerModel,
+              });
+            }
           }
 
           // ── Finalize ────────────────────────────────────────────────

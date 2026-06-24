@@ -319,7 +319,7 @@ async function scoreOne(
   const { data: assignment } = await supabase
     .from("editorial_assignments")
     .select(
-      "angle_id, editorial_canon_angles:angle_id(angle_name, therapeutic_substrate, embodiment_instruction)",
+      "angle_id, editorial_canon_angles:angle_id(angle_name, therapeutic_substrate, embodiment_instruction, therapeutic_substrate_es, embodiment_instruction_es)",
     )
     .eq("post_id", post_id)
     .eq("language", language)
@@ -330,10 +330,18 @@ async function scoreOne(
   const angleRow = (assignment as any)?.editorial_canon_angles;
   const angle = Array.isArray(angleRow) ? angleRow[0] : angleRow;
   const angle_name = angle?.angle_name ?? "(no assignment — legacy letter)";
+  // SH-92: score against the SAME language the Writer was primed with, so
+  // therapeutic_depth judges the letter against the Spanish substrate for ES
+  // letters. Fall back to EN if the ES column is null (defensive).
   const substrate =
-    angle?.therapeutic_substrate ??
+    (language === "es"
+      ? (angle?.therapeutic_substrate_es ?? angle?.therapeutic_substrate)
+      : angle?.therapeutic_substrate) ??
     "(no substrate assigned — score therapeutic_depth against general harbor recovery substrate)";
-  const embodiment_instruction = angle?.embodiment_instruction ?? "";
+  const embodiment_instruction =
+    (language === "es"
+      ? (angle?.embodiment_instruction_es ?? angle?.embodiment_instruction)
+      : angle?.embodiment_instruction) ?? "";
 
   // 2b. Pull the scoring prompt template for this language.
   const slug = `blog.score.${language}`;
