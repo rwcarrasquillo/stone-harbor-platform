@@ -37,6 +37,7 @@ const PHASE_2_PAGES = new Set([
   "resources",
   "roadmap",
   "welcome",
+  "profile",
   "settle-in",
   "meditation",
   "vent",

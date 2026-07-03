@@ -538,7 +538,7 @@ export default function DashboardCenteredPage() {
                 the look is consistent with how the member sees
                 themselves represented elsewhere in the harbor. */}
             <Link
-              href="/welcome"
+              href="/profile"
               style={{ outline: "none", outlineOffset: 0 }}
               className={`${sans.className} group flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--sh-text-tertiary)] transition-colors hover:text-[var(--sh-accent-gold)]`}
               aria-label={c.nav.editProfile}

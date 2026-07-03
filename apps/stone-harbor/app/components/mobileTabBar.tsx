@@ -96,10 +96,12 @@ const TABS: Tab[] = [
     match: (p) => p.startsWith("/roadmap"),
   },
   {
-    href: "/welcome",
+    href: "/profile",
     label: "Me",
     icon: User,
-    match: (p) => p.startsWith("/welcome") || p.startsWith("/profile"),
+    // /profile is the canonical destination; /welcome kept in the match
+    // so the tab still highlights during the /welcome → /profile redirect.
+    match: (p) => p.startsWith("/profile") || p.startsWith("/welcome"),
   },
 ];
 

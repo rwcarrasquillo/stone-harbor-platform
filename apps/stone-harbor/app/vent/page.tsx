@@ -258,7 +258,7 @@ export default function VentCenteredPage() {
 
           <nav className="flex items-center gap-6">
             <Link
-              href="/welcome"
+              href="/profile"
               className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--sh-text-tertiary)] transition-colors hover:text-[var(--sh-accent-gold)]`}
             >
               {locale === "es" ? "Editar perfil" : "Edit profile"}

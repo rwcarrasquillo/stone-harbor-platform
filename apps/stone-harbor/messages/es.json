@@ -709,6 +709,163 @@
       "undoFailed": "No pude deshacer ese paso. Inténtalo de nuevo."
     }
   },
+  "profile": {
+    "loading": "Abriendo tu perfil…",
+    "signOut": "Cerrar sesión",
+    "saving": "Guardando…",
+    "saveChanges": "Guardar cambios",
+    "unsavedBody": "tu perfil",
+    "eyebrow": "PERFIL · TU LUGAR EN LA DÁRSENA",
+    "title": "Cómo te conoce la dársena",
+    "supportLine": "Los detalles que has escogido compartir.",
+    "voiceSignature": "La dársena guarda lo que le has confiado.",
+    "toasts": {
+      "saved": "Guardado.",
+      "error": "No se pudo guardar. Intenta de nuevo."
+    },
+    "sections": {
+      "identity": {
+        "header": "Cómo te llamamos",
+        "subtitle": "Cómo la dársena te habla por tu nombre.",
+        "fields": {
+          "avatar": "Foto",
+          "avatarChange": "Cambiar",
+          "avatarUploading": "Subiendo…",
+          "avatarHelp": "Un rostro que la dársena reconoce. Opcional.",
+          "name": "Nombre",
+          "username": "Usuario",
+          "pronouns": "Pronombres (opcional)",
+          "email": "Correo",
+          "emailSupport": "Para cambiar tu correo, usa el flujo \"Olvidé mi contraseña\"."
+        }
+      },
+      "dates": {
+        "header": "Fechas que la dársena recuerda",
+        "subtitle": "Cuándo la dársena te reconoce, y a qué te has apuntado.",
+        "fields": {
+          "birthday": "Cumpleaños",
+          "month": "Mes",
+          "day": "Día",
+          "year": "Año",
+          "birthdaySupport": "Opcional. Cualquier parte.",
+          "acknowledgeBirthday": "Deja que la dársena marque tu semana de cumpleaños.",
+          "seasonalAcknowledgments": "Deja que la dársena marque los solsticios y equinoccios.",
+          "healingStage": "Etapa de sanación",
+          "healingStageSupport": "El pilar que la dársena enfatiza para ti ahora mismo. Puedes cambiarlo cuando quieras."
+        }
+      },
+      "privacy": {
+        "header": "Privacidad y lengua",
+        "subtitle": "Con quién puede la dársena hablar de ti, y en qué idioma.",
+        "fields": {
+          "privacyLevel": "Nivel de privacidad",
+          "knownLanguages": "Idiomas que lees"
+        }
+      },
+      "extended": {
+        "header": "Lo que has escogido compartir",
+        "subtitle": "Todo esto es opcional. La dársena no te pide nada de lo que sigue.",
+        "fields": {
+          "bio": "Sobre ti",
+          "location": "Dónde vives ahora",
+          "hometown": "De dónde vienes",
+          "work": "Trabajo",
+          "education": "Educación",
+          "relationshipStatus": "Estado sentimental",
+          "website": "Sitio web",
+          "interests": "Intereses",
+          "favoriteQuote": "Una frase a la que vuelves",
+          "workSearching": "Buscando…"
+        }
+      },
+      "lineage": {
+        "header": "Tu linaje",
+        "subtitle": "Los tres pequeños hilos hacia atrás. Empiezan a hacerse notar el día 90."
+      }
+    },
+    "validation": {
+      "usernameTaken": "Ese nombre de usuario ya está en uso.",
+      "websiteInvalid": "Esto no parece una URL válida.",
+      "dateInvalid": "Esa fecha no es válida."
+    },
+    "options": {
+      "relationship": {
+        "Prefer not to say": "Prefiero no decir",
+        "Single": "Soltero",
+        "In a relationship": "En una relación",
+        "Married": "Casado",
+        "Separated": "Separado",
+        "Divorced": "Divorciado",
+        "Widowed": "Viudo",
+        "Co-parenting": "Co-paternidad",
+        "Complicated": "Complicado",
+        "Healing": "Sanando",
+        "Focused on myself": "Enfocado en mí mismo"
+      },
+      "healingStage": {
+        "Clarity": "Claridad",
+        "Rebuilding": "Reconstruyendo",
+        "Healing": "Sanando",
+        "Growing": "Creciendo",
+        "Surviving": "Sobreviviendo",
+        "Thriving": "Floreciendo"
+      },
+      "privacy": {
+        "Private": "Privado",
+        "Members Only": "Solo Miembros",
+        "Friends Only": "Solo Amigos",
+        "Public": "Público"
+      },
+      "education": {
+        "Prefer not to say": "Prefiero no decir",
+        "High School": "Bachillerato",
+        "GED": "GED",
+        "Some College": "Universidad incompleta",
+        "Associate Degree": "Grado Asociado",
+        "Bachelor’s Degree": "Licenciatura",
+        "Master’s Degree": "Maestría",
+        "MBA": "MBA",
+        "Doctorate / PhD": "Doctorado / PhD",
+        "Trade School": "Escuela Técnica",
+        "Technical Certification": "Certificación Técnica",
+        "Military Training": "Entrenamiento Militar",
+        "Self-Taught": "Autodidacta",
+        "Currently Studying": "Estudiando Actualmente",
+        "Other": "Otro"
+      },
+      "months": {
+        "January": "Enero",
+        "February": "Febrero",
+        "March": "Marzo",
+        "April": "Abril",
+        "May": "Mayo",
+        "June": "Junio",
+        "July": "Julio",
+        "August": "Agosto",
+        "September": "Septiembre",
+        "October": "Octubre",
+        "November": "Noviembre",
+        "December": "Diciembre"
+      },
+      "languages": {
+        "english": "Inglés",
+        "spanish": "Español",
+        "portuguese": "Portugués",
+        "french": "Francés",
+        "italian": "Italiano",
+        "german": "Alemán",
+        "mandarin": "Mandarín",
+        "arabic": "Árabe",
+        "russian": "Ruso",
+        "hindi": "Hindi",
+        "japanese": "Japonés",
+        "korean": "Coreano",
+        "tagalog": "Tagalo",
+        "vietnamese": "Vietnamita",
+        "other": "Otro"
+      }
+    }
+  },
   "welcome": {
     "loading": "Cargando Perfil...",
     "backToDashboard": "← Panel",
