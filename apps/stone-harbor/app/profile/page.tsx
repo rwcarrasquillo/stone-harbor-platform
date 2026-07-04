@@ -1259,12 +1259,20 @@ export default function ProfilePage() {
                             type="button"
                             role="radio"
                             aria-checked={active}
-                            onClick={() =>
+                            onClick={() => {
+                              // Instant preview — flip the live theme on
+                              // click, the same setTheme() the header
+                              // ThemeToggle uses (writes cookie +
+                              // localStorage, best-effort DB mirror). The
+                              // setFormData below keeps the field dirty so
+                              // Save still persists it alongside the rest
+                              // of the form.
+                              void setTheme(option);
                               setFormData({
                                 ...formData,
                                 theme_preference: option,
-                              })
-                            }
+                              });
+                            }}
                             className={`flex flex-col items-start gap-1 rounded-none border px-4 py-3 text-left transition ${
                               active
                                 ? "border-[var(--sh-accent-gold)] bg-[var(--sh-accent-gold)]/5"
