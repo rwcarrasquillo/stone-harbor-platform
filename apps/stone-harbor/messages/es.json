@@ -788,12 +788,12 @@
         "subtitle": "Cómo quieres que se vea la dársena.",
         "themeLabel": "Tema",
         "sunlit": {
-          "label": "Claro",
-          "description": "Superficies claras, texto oscuro."
+          "label": "Sol",
+          "description": "La dársena a plena luz."
         },
         "dusk": {
-          "label": "Oscuro",
-          "description": "Superficies oscuras, texto claro."
+          "label": "Ocaso",
+          "description": "La dársena tras las horas."
         }
       }
     },
