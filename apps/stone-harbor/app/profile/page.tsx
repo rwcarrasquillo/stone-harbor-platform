@@ -11,7 +11,7 @@ import { serif, sans } from "@/lib/fonts";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { AnchorMark } from "@/app/components/anchorMark";
 import { HorizonSegment } from "@/app/components/horizonSegment";
-import { useTheme } from "@/app/components/themeProvider";
+import { useTheme, type Theme } from "@/app/components/themeProvider";
 import { UnsavedChangesModal } from "@/app/components/unsavedChangesModal";
 import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
 import { LineageSection } from "@/app/components/lineageSection";
@@ -63,6 +63,7 @@ type ProfileForm = {
   healing_stage: string;
   privacy_level: string;
   avatar_url: string;
+  cover_url: string;
   work: string;
   work_company_name: string;
   work_company_logo_url: string;
@@ -89,6 +90,11 @@ type ProfileForm = {
   // See migration profile_001_known_languages.sql. Defaults to
   // ['english'] on load when null/empty.
   known_languages: string[];
+  // Visual preference — member-level theme. Edited here as a plain
+  // form field for dirty-tracking; on save it's both persisted to
+  // profiles.theme_preference and pushed through ThemeProvider's
+  // setTheme() so the live theme flips without a page reload.
+  theme_preference: Theme;
 };
 
 type FieldErrors = {
@@ -194,6 +200,7 @@ const EMPTY_FORM: ProfileForm = {
   healing_stage: "Clarity",
   privacy_level: "Private",
   avatar_url: "",
+  cover_url: "",
   work: "",
   work_company_name: "",
   work_company_logo_url: "",
@@ -213,12 +220,17 @@ const EMPTY_FORM: ProfileForm = {
   lineage_father_anger: "",
   lineage_pattern_to_leave: "",
   known_languages: ["english"],
+  theme_preference: "sunlit",
 };
 
 export default function ProfilePage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("profile");
+  // Live theme + setter from the provider. `theme` seeds the visual-
+  // preferences radio on load; `setTheme` is fired on save so the
+  // change repaints immediately (it also mirrors cookie + DB).
+  const { theme, setTheme } = useTheme();
 
   const [userId, setUserId] = useState<string | null>(null);
   // Account age for progressive disclosure — the Lineage section is
@@ -241,6 +253,9 @@ export default function ProfilePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
   const [companySuggestions, setCompanySuggestions] = useState<
     CompanySuggestion[]
   >([]);
@@ -252,14 +267,20 @@ export default function ProfilePage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   // Dirty when the form diverges from the last-saved snapshot OR a new
-  // avatar file is staged for upload.
+  // avatar/cover file is staged for upload.
   const isDirty =
-    JSON.stringify(formData) !== savedSnapshot || avatarFile !== null;
+    JSON.stringify(formData) !== savedSnapshot ||
+    avatarFile !== null ||
+    coverFile !== null;
   const unsaved = useUnsavedChangesWarning(isDirty);
 
   const avatarPreview = avatarFile
     ? URL.createObjectURL(avatarFile)
     : formData.avatar_url;
+
+  const coverPreview = coverFile
+    ? URL.createObjectURL(coverFile)
+    : formData.cover_url;
 
   // ───── Auth + load ─────
   useEffect(() => {
@@ -295,7 +316,7 @@ export default function ProfilePage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "email, display_name, username, pronouns, bio, location, healing_stage, privacy_level, avatar_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, interests, favorite_quote, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave, lineage_section_visit_count, known_languages",
+          "email, display_name, username, pronouns, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, interests, favorite_quote, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave, lineage_section_visit_count, known_languages, theme_preference",
         )
         .eq("id", user.id)
         .maybeSingle();
@@ -315,6 +336,7 @@ export default function ProfilePage() {
         healing_stage: data?.healing_stage ?? "Clarity",
         privacy_level: data?.privacy_level ?? "Private",
         avatar_url: data?.avatar_url ?? "",
+        cover_url: data?.cover_url ?? "",
         work: data?.work ?? "",
         work_company_name: data?.work_company_name ?? "",
         work_company_logo_url: data?.work_company_logo_url ?? "",
@@ -339,6 +361,13 @@ export default function ProfilePage() {
           (data?.known_languages as string[]).length > 0
             ? (data?.known_languages as string[])
             : ["english"],
+        // Prefer the stored preference; fall back to the live theme
+        // the provider already reconciled from cookie/DB on mount.
+        theme_preference:
+          data?.theme_preference === "sunlit" ||
+          data?.theme_preference === "dusk"
+            ? (data.theme_preference as Theme)
+            : theme,
       };
 
       setFormData(loaded);
@@ -487,6 +516,38 @@ export default function ProfilePage() {
     return data.publicUrl;
   }
 
+  // ───── Cover upload ─────
+  // Mirrors uploadAvatar exactly: same profile-images bucket, a
+  // cover-${ts} filename under the member's folder, public URL
+  // persisted to profiles.cover_url by saveProfile.
+  async function uploadCover() {
+    if (!coverFile || !userId) return formData.cover_url;
+
+    setUploadingCover(true);
+    const fileExt = coverFile.name.split(".").pop();
+    const filePath = `${userId}/cover-${Date.now()}.${fileExt}`;
+
+    const { error } = await supabase.storage
+      .from("profile-images")
+      .upload(filePath, coverFile, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    if (error) {
+      setUploadingCover(false);
+      fail(t("toasts.error"));
+      return formData.cover_url;
+    }
+
+    const { data } = supabase.storage
+      .from("profile-images")
+      .getPublicUrl(filePath);
+
+    setUploadingCover(false);
+    return data.publicUrl;
+  }
+
   // ───── Birthday string→int ─────
   function parseBirthdayForSave(): {
     birth_month: number | null;
@@ -594,6 +655,7 @@ export default function ProfilePage() {
     }
 
     const avatarUrl = await uploadAvatar();
+    const coverUrl = await uploadCover();
     const birthday = parseBirthdayForSave();
 
     const updatedProfile = {
@@ -607,6 +669,7 @@ export default function ProfilePage() {
       healing_stage: formData.healing_stage,
       privacy_level: formData.privacy_level,
       avatar_url: avatarUrl,
+      cover_url: coverUrl,
       work: formData.work,
       work_company_name: formData.work_company_name,
       work_company_logo_url: formData.work_company_logo_url,
@@ -628,6 +691,7 @@ export default function ProfilePage() {
       lineage_pattern_to_leave:
         formData.lineage_pattern_to_leave.trim() || null,
       known_languages: validated.known_languages,
+      theme_preference: formData.theme_preference,
       updated_at: new Date().toISOString(),
     };
 
@@ -647,16 +711,29 @@ export default function ProfilePage() {
       trackMilestone("first_lineage_entry");
     }
 
+    // Push the chosen theme through the provider so the harbor
+    // repaints in it immediately — same setTheme() the header toggle
+    // uses (it also mirrors cookie + localStorage + cross-device DB).
+    // Guarded so an unchanged selection doesn't spend a needless
+    // write. theme_preference is already persisted via the upsert
+    // above; this call is purely the live sync.
+    if (formData.theme_preference !== theme) {
+      void setTheme(formData.theme_preference);
+    }
+
     // Rebase the dirty baseline onto the freshly-saved state, fold the
-    // uploaded avatar URL back into the form, and stay on the page.
+    // uploaded avatar + cover URLs back into the form, and stay on the
+    // page.
     const persisted: ProfileForm = {
       ...formData,
       avatar_url: avatarUrl,
+      cover_url: coverUrl,
       known_languages: validated.known_languages,
     };
     setFormData(persisted);
     setSavedSnapshot(JSON.stringify(persisted));
     setAvatarFile(null);
+    setCoverFile(null);
     setSaving(false);
     setToast({ tone: "success", text: t("toasts.saved") });
   }
@@ -759,10 +836,55 @@ export default function ProfilePage() {
                   subtitle={t("sections.identity.subtitle")}
                 />
                 <div className="mt-8 space-y-6">
-                  {/* Avatar */}
-                  <div className="flex items-center gap-5">
+                  {/* Cover banner + avatar. The banner spans the column at
+                      a 3:1 ratio; the avatar overlaps its lower edge by
+                      ~40% via a negative top margin so the two read as one
+                      composed unit (the LinkedIn/Facebook convention). Both
+                      live in one wrapper so the negative margin isn't eaten
+                      by the parent's space-y rhythm. */}
+                  <div>
+                    {/* Cover banner — click to upload; warm gradient +
+                        quiet hint when empty. No label, no CTA button; the
+                        hint's presence is the affordance. */}
                     <label
-                      className="group relative h-24 w-24 shrink-0 cursor-pointer overflow-hidden rounded-full border border-[var(--sh-border-subtle)] bg-[#efe8dc]"
+                      className="group relative block aspect-[3/1] w-full cursor-pointer overflow-hidden rounded-md border-[0.5px] border-[var(--sh-border-subtle)]"
+                      aria-label={t("sections.identity.fields.coverEmpty")}
+                    >
+                      {coverPreview ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={coverPreview}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#f3efe7] to-[#e6dfd0]">
+                          <span
+                            className={`${serif.className} text-[10.5px] italic tracking-[0.14em] text-[var(--sh-text-tertiary)]`}
+                          >
+                            {t("sections.identity.fields.coverEmpty")}
+                          </span>
+                        </span>
+                      )}
+                      <span className="absolute inset-x-0 bottom-0 bg-black/45 py-1 text-center text-[9px] font-semibold uppercase tracking-[0.16em] text-white opacity-0 transition-opacity group-hover:opacity-100">
+                        {uploadingCover
+                          ? t("sections.identity.fields.avatarUploading")
+                          : t("sections.identity.fields.avatarChange")}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={(e) =>
+                          setCoverFile(e.target.files?.[0] ?? null)
+                        }
+                        className="hidden"
+                      />
+                    </label>
+
+                    {/* Avatar — lifted onto the banner's lower edge. */}
+                    <div className="-mt-12 flex items-end gap-5 px-1">
+                    <label
+                      className="group relative h-24 w-24 shrink-0 cursor-pointer overflow-hidden rounded-full border-2 border-[var(--sh-bg-page)] bg-[#efe8dc] ring-[0.5px] ring-[var(--sh-border-subtle)]"
                       aria-label={t("sections.identity.fields.avatar")}
                     >
                       {avatarPreview ? (
@@ -796,6 +918,7 @@ export default function ProfilePage() {
                     >
                       {t("sections.identity.fields.avatarHelp")}
                     </p>
+                    </div>
                   </div>
 
                   <TextInput
@@ -1108,19 +1231,83 @@ export default function ProfilePage() {
                 </motion.section>
               )}
 
+              {/* ── Section 6 — Visual preferences (unconditional) ── */}
+              <motion.section
+                {...cascadeFadeUp}
+                transition={cascadeTransition(lineageUnlocked ? 6 : 5)}
+                className="mt-12 border-t border-[var(--sh-border-subtle)] pt-10 md:mt-16"
+              >
+                <SectionHead
+                  header={t("sections.preferences.header")}
+                  subtitle={t("sections.preferences.subtitle")}
+                />
+                <div className="mt-8 space-y-6">
+                  <div>
+                    <FieldLabel>
+                      {t("sections.preferences.themeLabel")}
+                    </FieldLabel>
+                    <div
+                      role="radiogroup"
+                      aria-label={t("sections.preferences.themeLabel")}
+                      className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                    >
+                      {(["sunlit", "dusk"] as const).map((option) => {
+                        const active = formData.theme_preference === option;
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            onClick={() =>
+                              setFormData({
+                                ...formData,
+                                theme_preference: option,
+                              })
+                            }
+                            className={`flex flex-col items-start gap-1 rounded-none border px-4 py-3 text-left transition ${
+                              active
+                                ? "border-[var(--sh-accent-gold)] bg-[var(--sh-accent-gold)]/5"
+                                : "border-[var(--sh-border-medium)] hover:border-[var(--sh-accent-gold)]"
+                            }`}
+                          >
+                            <span
+                              className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${
+                                active
+                                  ? "text-[var(--sh-accent-gold)]"
+                                  : "text-[var(--sh-text-secondary)]"
+                              }`}
+                            >
+                              {t(`sections.preferences.${option}.label`)}
+                            </span>
+                            <span className="text-[12px] italic text-[var(--sh-text-tertiary)]">
+                              {t(
+                                `sections.preferences.${option}.description`,
+                              )}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </motion.section>
+
               {/* ── Save ── */}
               <motion.div
                 {...cascadeFadeUp}
-                transition={cascadeTransition(lineageUnlocked ? 6 : 5)}
+                transition={cascadeTransition(lineageUnlocked ? 7 : 6)}
                 className="mt-12 flex justify-end"
               >
                 <button
                   type="button"
                   onClick={saveProfile}
-                  disabled={!isDirty || saving || uploadingAvatar}
+                  disabled={
+                    !isDirty || saving || uploadingAvatar || uploadingCover
+                  }
                   className={`${sans.className} w-full rounded-none bg-[var(--sh-accent-gold)] px-8 py-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-white shadow-md transition hover:bg-[#8d6432] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto`}
                 >
-                  {saving || uploadingAvatar
+                  {saving || uploadingAvatar || uploadingCover
                     ? t("saving")
                     : t("saveChanges")}
                 </button>
@@ -1130,7 +1317,7 @@ export default function ProfilePage() {
             {/* ── Horizon mark + voice signature ── */}
             <motion.div
               {...cascadeFadeUp}
-              transition={cascadeTransition(lineageUnlocked ? 6 : 5)}
+              transition={cascadeTransition(lineageUnlocked ? 7 : 6)}
             >
               <ProfileHorizonMark signature={t("voiceSignature")} />
             </motion.div>

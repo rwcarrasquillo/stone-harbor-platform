@@ -732,6 +732,7 @@
           "avatarChange": "Change",
           "avatarUploading": "Uploading…",
           "avatarHelp": "A face the harbor recognizes. Optional.",
+          "coverEmpty": "Add a cover, if you want",
           "name": "Name",
           "username": "Username",
           "pronouns": "Pronouns (optional)",
@@ -781,6 +782,19 @@
       "lineage": {
         "header": "Your lineage",
         "subtitle": "The three small threads back. They begin to make themselves known at day 90."
+      },
+      "preferences": {
+        "header": "Visual preferences",
+        "subtitle": "How you want the harbor to look.",
+        "themeLabel": "Theme",
+        "sunlit": {
+          "label": "Sunlit",
+          "description": "Cream surfaces, deep stone text."
+        },
+        "dusk": {
+          "label": "Dusk",
+          "description": "Near-black surfaces, off-white text."
+        }
       }
     },
     "validation": {

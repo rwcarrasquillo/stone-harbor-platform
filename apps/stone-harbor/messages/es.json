@@ -732,6 +732,7 @@
           "avatarChange": "Cambiar",
           "avatarUploading": "Subiendo…",
           "avatarHelp": "Un rostro que la dársena reconoce. Opcional.",
+          "coverEmpty": "Añade una portada, si quieres",
           "name": "Nombre",
           "username": "Usuario",
           "pronouns": "Pronombres (opcional)",
@@ -781,6 +782,19 @@
       "lineage": {
         "header": "Tu linaje",
         "subtitle": "Los tres pequeños hilos hacia atrás. Empiezan a hacerse notar el día 90."
+      },
+      "preferences": {
+        "header": "Preferencias visuales",
+        "subtitle": "Cómo quieres que se vea la dársena.",
+        "themeLabel": "Tema",
+        "sunlit": {
+          "label": "Claro",
+          "description": "Superficies claras, texto oscuro."
+        },
+        "dusk": {
+          "label": "Oscuro",
+          "description": "Superficies oscuras, texto claro."
+        }
       }
     },
     "validation": {
