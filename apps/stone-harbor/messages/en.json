@@ -709,6 +709,177 @@
       "undoFailed": "Couldn't undo that step. Try again."
     }
   },
+  "profile": {
+    "loading": "Opening your profile…",
+    "signOut": "Sign out",
+    "saving": "Saving…",
+    "saveChanges": "Save changes",
+    "unsavedBody": "your profile",
+    "eyebrow": "PROFILE · YOUR PLACE IN THE HARBOR",
+    "title": "How the harbor knows you",
+    "supportLine": "The details you've chosen to share.",
+    "voiceSignature": "The harbor holds what you've entrusted to it.",
+    "toasts": {
+      "saved": "Saved.",
+      "error": "Couldn't save. Try again."
+    },
+    "sections": {
+      "identity": {
+        "header": "What we call you",
+        "subtitle": "How the harbor calls you by name.",
+        "fields": {
+          "avatar": "Photo",
+          "avatarChange": "Change",
+          "avatarUploading": "Uploading…",
+          "avatarHelp": "A face the harbor recognizes. Optional.",
+          "coverEmpty": "Add a cover, if you want",
+          "name": "Name",
+          "username": "Username",
+          "pronouns": "Pronouns (optional)",
+          "email": "Email",
+          "emailSupport": "To change your email, use the \"Forgot password\" flow."
+        }
+      },
+      "dates": {
+        "header": "Dates the harbor keeps",
+        "subtitle": "When the harbor recognizes you, and what you've opted into.",
+        "fields": {
+          "birthday": "Birthday",
+          "month": "Month",
+          "day": "Day",
+          "year": "Year",
+          "birthdaySupport": "Optional. Any part of it.",
+          "acknowledgeBirthday": "Let the harbor mark your birthday week.",
+          "seasonalAcknowledgments": "Let the harbor mark the solstices and equinoxes.",
+          "healingStage": "Healing stage",
+          "healingStageSupport": "The pillar the harbor emphasizes for you now. You can change this anytime."
+        }
+      },
+      "privacy": {
+        "header": "Privacy and language",
+        "subtitle": "Who the harbor can share you with, and in what language.",
+        "fields": {
+          "privacyLevel": "Privacy level",
+          "knownLanguages": "Languages you read"
+        }
+      },
+      "extended": {
+        "header": "What you've chosen to share",
+        "subtitle": "All of this is optional. The harbor asks nothing of what follows.",
+        "fields": {
+          "bio": "Bio",
+          "location": "Where you live now",
+          "hometown": "Where you're from",
+          "work": "Work",
+          "education": "Education",
+          "relationshipStatus": "Relationship status",
+          "website": "Website",
+          "interests": "Interests",
+          "favoriteQuote": "A line you keep coming back to",
+          "workSearching": "Searching…"
+        }
+      },
+      "lineage": {
+        "header": "Your lineage",
+        "subtitle": "The three small threads back. They begin to make themselves known at day 90."
+      },
+      "preferences": {
+        "header": "Visual preferences",
+        "subtitle": "How you want the harbor to look.",
+        "themeLabel": "Theme",
+        "sunlit": {
+          "label": "Sunlit",
+          "description": "Cream surfaces, deep stone text."
+        },
+        "dusk": {
+          "label": "Dusk",
+          "description": "Near-black surfaces, off-white text."
+        }
+      }
+    },
+    "validation": {
+      "usernameTaken": "That username is already in use.",
+      "websiteInvalid": "This doesn't look like a valid URL.",
+      "dateInvalid": "That's not a valid date."
+    },
+    "options": {
+      "relationship": {
+        "Prefer not to say": "Prefer not to say",
+        "Single": "Single",
+        "In a relationship": "In a relationship",
+        "Married": "Married",
+        "Separated": "Separated",
+        "Divorced": "Divorced",
+        "Widowed": "Widowed",
+        "Co-parenting": "Co-parenting",
+        "Complicated": "Complicated",
+        "Healing": "Healing",
+        "Focused on myself": "Focused on myself"
+      },
+      "healingStage": {
+        "Clarity": "Clarity",
+        "Rebuilding": "Rebuilding",
+        "Healing": "Healing",
+        "Growing": "Growing",
+        "Surviving": "Surviving",
+        "Thriving": "Thriving"
+      },
+      "privacy": {
+        "Private": "Private",
+        "Members Only": "Members Only",
+        "Friends Only": "Friends Only",
+        "Public": "Public"
+      },
+      "education": {
+        "Prefer not to say": "Prefer not to say",
+        "High School": "High School",
+        "GED": "GED",
+        "Some College": "Some College",
+        "Associate Degree": "Associate Degree",
+        "Bachelor’s Degree": "Bachelor’s Degree",
+        "Master’s Degree": "Master’s Degree",
+        "MBA": "MBA",
+        "Doctorate / PhD": "Doctorate / PhD",
+        "Trade School": "Trade School",
+        "Technical Certification": "Technical Certification",
+        "Military Training": "Military Training",
+        "Self-Taught": "Self-Taught",
+        "Currently Studying": "Currently Studying",
+        "Other": "Other"
+      },
+      "months": {
+        "January": "January",
+        "February": "February",
+        "March": "March",
+        "April": "April",
+        "May": "May",
+        "June": "June",
+        "July": "July",
+        "August": "August",
+        "September": "September",
+        "October": "October",
+        "November": "November",
+        "December": "December"
+      },
+      "languages": {
+        "english": "English",
+        "spanish": "Spanish",
+        "portuguese": "Portuguese",
+        "french": "French",
+        "italian": "Italian",
+        "german": "German",
+        "mandarin": "Mandarin",
+        "arabic": "Arabic",
+        "russian": "Russian",
+        "hindi": "Hindi",
+        "japanese": "Japanese",
+        "korean": "Korean",
+        "tagalog": "Tagalog",
+        "vietnamese": "Vietnamese",
+        "other": "Other"
+      }
+    }
+  },
   "welcome": {
     "loading": "Loading Profile...",
     "backToDashboard": "← Dashboard",

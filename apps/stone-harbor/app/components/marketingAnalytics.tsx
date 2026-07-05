@@ -26,6 +26,7 @@ const AUTHENTICATED_PATH_PREFIXES = [
   "/messages",
   "/members-blog",
   "/welcome",
+  "/profile",
   "/meditation",
   "/resources",
   "/map",

@@ -126,7 +126,7 @@ export function LineageDoorCard({ userId, lineageDoorSeenAt }: Props) {
             Not today
           </button>
           <Link
-            href="/welcome#lineage"
+            href="/profile#lineage"
             onClick={markSeen}
             className="inline-block rounded-none bg-[var(--sh-accent-gold)] px-7 py-3 text-xs font-bold uppercase tracking-[0.28em] text-white shadow-md transition hover:bg-[#8d6432]"
           >
