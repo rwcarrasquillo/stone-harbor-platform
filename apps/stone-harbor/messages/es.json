@@ -788,11 +788,11 @@
         "subtitle": "Cómo quieres que se vea la dársena.",
         "themeLabel": "Tema",
         "sunlit": {
-          "label": "Sol",
+          "label": "Sunlit",
           "description": "La dársena a plena luz."
         },
         "dusk": {
-          "label": "Ocaso",
+          "label": "Dusk",
           "description": "La dársena tras las horas."
         }
       }
