@@ -11,6 +11,7 @@ import { serif, sans } from "@/lib/fonts";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { AnchorMark } from "@/app/components/anchorMark";
 import { HorizonSegment } from "@/app/components/horizonSegment";
+import { HairlineLens } from "@/app/components/hairlineLens";
 import { useTheme, type Theme } from "@/app/components/themeProvider";
 import { UnsavedChangesModal } from "@/app/components/unsavedChangesModal";
 import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
@@ -1078,7 +1079,7 @@ export default function ProfilePage() {
                     <FieldLabel>
                       {t("sections.privacy.fields.knownLanguages")}
                     </FieldLabel>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-x-6 gap-y-5 pt-1">
                       {knownLanguageOptions.map((code) => {
                         const active = formData.known_languages.includes(code);
                         return (
@@ -1097,13 +1098,23 @@ export default function ProfilePage() {
                                 };
                               })
                             }
-                            className={`border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] transition ${
+                            className={`group relative px-1 pb-2 pt-1 text-sm transition-colors focus:outline-none ${
                               active
-                                ? "border-[var(--sh-accent-gold)] bg-[var(--sh-accent-gold)] text-white"
-                                : "border-[var(--sh-border-subtle)] text-[var(--sh-text-secondary)] hover:border-[var(--sh-accent-gold)] hover:text-[var(--sh-accent-gold)]"
+                                ? "text-[var(--sh-text-primary)]"
+                                : "text-[var(--sh-text-secondary)] hover:text-[var(--sh-accent-gold)]"
                             }`}
                           >
                             {t(`options.languages.${code}`)}
+                            <span
+                              className={`pointer-events-none absolute inset-0 transition-opacity duration-300 ${
+                                active
+                                  ? "opacity-100"
+                                  : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+                              }`}
+                            >
+                              <HairlineLens position="top" theme={theme} />
+                              <HairlineLens position="bottom" theme={theme} />
+                            </span>
                           </button>
                         );
                       })}
@@ -1450,7 +1461,7 @@ function FieldError({ children }: { children: React.ReactNode }) {
 }
 
 function inputClasses(isDusk: boolean) {
-  return `w-full rounded-none border px-4 py-3 text-sm transition focus:border-[var(--sh-accent-gold)] focus:outline-none ${
+  return `w-full rounded-none border px-4 py-3 text-sm transition focus:outline-none ${
     isDusk
       ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-stone-500"
       : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-secondary)]"
@@ -1475,12 +1486,18 @@ function TextInput({
   return (
     <div>
       <FieldLabel>{label}</FieldLabel>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={inputClasses(isDusk)}
-      />
+      <div className="group relative">
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={inputClasses(isDusk)}
+        />
+        <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100">
+          <HairlineLens position="top" theme={theme} />
+          <HairlineLens position="bottom" theme={theme} />
+        </div>
+      </div>
       {error && <FieldError>{error}</FieldError>}
     </div>
   );
@@ -1502,13 +1519,19 @@ function TextArea({
   return (
     <div>
       <FieldLabel>{label}</FieldLabel>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={4}
-        className={`${inputClasses(isDusk)} leading-relaxed`}
-      />
+      <div className="group relative">
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          rows={4}
+          className={`${inputClasses(isDusk)} leading-relaxed`}
+        />
+        <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100">
+          <HairlineLens position="top" theme={theme} />
+          <HairlineLens position="bottom" theme={theme} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -1577,17 +1600,23 @@ function BareSelect({
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={`h-[46px] w-full appearance-none rounded-none border px-4 py-3 text-sm font-medium transition focus:border-[var(--sh-accent-gold)] focus:outline-none ${
-        isDusk
-          ? "border-white/15 bg-black/40 text-stone-100"
-          : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-secondary)]"
-      }`}
-    >
-      {children}
-    </select>
+    <div className="group relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`h-[46px] w-full appearance-none rounded-none border px-4 py-3 text-sm font-medium transition focus:outline-none ${
+          isDusk
+            ? "border-white/15 bg-black/40 text-stone-100"
+            : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-secondary)]"
+        }`}
+      >
+        {children}
+      </select>
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100">
+        <HairlineLens position="top" theme={theme} />
+        <HairlineLens position="bottom" theme={theme} />
+      </div>
+    </div>
   );
 }
 

@@ -789,11 +789,11 @@
         "themeLabel": "Theme",
         "sunlit": {
           "label": "Sunlit",
-          "description": "Cream surfaces, deep stone text."
+          "description": "The harbor at full light."
         },
         "dusk": {
           "label": "Dusk",
-          "description": "Near-black surfaces, off-white text."
+          "description": "The harbor after the hours."
         }
       }
     },
