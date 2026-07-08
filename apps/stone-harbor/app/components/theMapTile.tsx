@@ -16,12 +16,10 @@ import { supabase } from "@/lib/supabaseClient";
  *   • Complete, no chapter  → "Assemble your Operating Manual"
  *   • Chapter generated     → "Open your Operating Manual"
  *
- * Locale handling: the dashboard itself is English-only for now, but
- * the Map lives under the [locale] segment. We read the NEXT_LOCALE
- * cookie (set by next-intl's middleware when the member chooses
- * Spanish on a public page) and route to the matching locale. This
- * keeps a Spanish-preferring member's experience consistent even
- * though the dashboard doesn't yet localize itself.
+ * Locale handling: The Map is now a Phase-2 root surface at /map (no
+ * [locale] segment). It resolves the member's locale from the
+ * NEXT_LOCALE cookie at request time, so the tile links to the bare
+ * /map paths and the destination renders in the member's language.
  */
 
 type MapState = {
@@ -31,20 +29,11 @@ type MapState = {
   chapters: Array<{ chapterNumber: number }>;
 };
 
-function readLocaleCookie(): "en" | "es" {
-  if (typeof document === "undefined") return "en";
-  const m = /(?:^|;\s*)NEXT_LOCALE=([^;]+)/.exec(document.cookie);
-  const v = m?.[1];
-  return v === "es" ? "es" : "en";
-}
-
 export function TheMapTile() {
   const [state, setState] = useState<MapState | null>(null);
   const [loading, setLoading] = useState(true);
-  const [locale, setLocale] = useState<"en" | "es">("en");
 
   useEffect(() => {
-    setLocale(readLocaleCookie());
     void load();
   }, []);
 
@@ -87,7 +76,7 @@ export function TheMapTile() {
         body:
           "Read on the days that ask for it. The harbor remembers what you wrote.",
         cta: "Open the manual",
-        href: `/${locale}/map/operating-manual`,
+        href: `/map/operating-manual`,
       };
     }
     if (complete) {
@@ -97,7 +86,7 @@ export function TheMapTile() {
         body:
           "Chapter 1 of your Operating Manual is waiting to be assembled. Five seconds, then it's yours.",
         cta: "Assemble Chapter 1",
-        href: `/${locale}/map`,
+        href: `/map`,
       };
     }
     if (inProgress) {
@@ -107,7 +96,7 @@ export function TheMapTile() {
         body:
           "Pick up where you left off. The next short session is waiting.",
         cta: "Continue your map",
-        href: `/${locale}/map`,
+        href: `/map`,
       };
     }
     return {
@@ -116,7 +105,7 @@ export function TheMapTile() {
       body:
         "Three short sessions, then a personal document you keep — your Operating Manual. The Map is for clarity, not diagnosis.",
       cta: "Begin your map",
-      href: `/${locale}/map/begin`,
+      href: `/map/begin`,
     };
   })();
 

@@ -1187,12 +1187,11 @@ function RoomsCarousel({
     },
     {
       key: "map",
-      // /map lives at app/[locale]/map/page.tsx — a Phase 1 route that
-      // requires the locale segment in the URL. Bare /map doesn't
-      // resolve (it isn't in PHASE_2_PAGES, and Next.js can't match
-      // [locale]/page.tsx because "map" isn't a configured locale).
-      // Always emit the locale-prefixed path.
-      href: `/${locale}/map`,
+      // /map is a Phase 2 root route (app/map/page.tsx, no locale
+      // segment; locale resolves from the NEXT_LOCALE cookie). "map" is
+      // in the middleware PHASE_2_PAGES set, so /en/map canonicalizes
+      // to /map. Emit the bare path like every other harbor surface.
+      href: `/map`,
       eyebrow: locale === "es" ? "El Mapa" : "The Map",
       name: locale === "es" ? "Tu Manual" : "Operating Manual",
       tagline:

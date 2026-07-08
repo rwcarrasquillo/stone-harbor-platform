@@ -7,8 +7,8 @@ import { routing } from "@/i18n/routing";
  *
  * Stone Harbor uses a hybrid routing model:
  *   - Phase 1 pages live under app/[locale]/* and carry an explicit
- *     locale segment in the URL (e.g. /en/login, /es/map). next-intl
- *     handles these.
+ *     locale segment in the URL (e.g. /en/login). next-intl handles
+ *     these.
  *   - Phase 2 pages live at the root (/dashboard, /journal, etc.) and
  *     resolve locale at request time from the NEXT_LOCALE cookie,
  *     read in i18n/request.ts. No locale segment in the URL.
@@ -38,6 +38,7 @@ const PHASE_2_PAGES = new Set([
   "roadmap",
   "welcome",
   "profile",
+  "map",
   "settle-in",
   "meditation",
   "vent",

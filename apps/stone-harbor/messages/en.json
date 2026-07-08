@@ -1177,5 +1177,126 @@
       "transition": "When you're ready —",
       "enter": "Step into the harbor →"
     }
+  },
+  "map": {
+    "brandCrumb": "Map",
+    "signOut": "Sign out",
+    "loading": "Opening The Map…",
+    "hub": {
+      "eyebrow": "The Map",
+      "title": "Finding the ground beneath you.",
+      "supportLine": "The Map is a slow walk through how you are wired, what you actually care about, and what is pulling at you right now. Three short sessions, then a personal document you keep — your Operating Manual.",
+      "cta": {
+        "begin": "Begin your map",
+        "continue": "Continue your map",
+        "assemble": "Assemble your Operating Manual",
+        "open": "Open your Operating Manual"
+      },
+      "generatingLine": "The harbor is writing.",
+      "notesHeader": "How this works",
+      "notes": [
+        "Each session is short — about five minutes.",
+        "You can stop and come back anytime. The map waits.",
+        "Anything you write is private. Nothing is shared without your asking.",
+        "The Map is for clarity, not diagnosis. It will never tell you what is wrong with you."
+      ],
+      "voiceSignature": "The harbor waits alongside you."
+    },
+    "begin": {
+      "eyebrow": "Before we begin",
+      "title": "A few quiet words.",
+      "body": [
+        "The Map is not a test. There are no right answers. Nothing you write here is shared with anyone — not other members, not the team, not your employer if you have one. It is yours.",
+        "We will move through three short sessions today. Five or so minutes each. Take a breath between them if you want. The map waits.",
+        "What you will get at the end is a personal document — your Operating Manual — written in your specific situation. Not a diagnosis. Not a label. A description that, on the right day, is worth re-reading."
+      ],
+      "crisis": "If at any point things feel sharper than this page can hold, 988 is one tap away — call or text. The harbor will still be here.",
+      "consentLabel": "By beginning, I understand that The Map is for clarity, not diagnosis, and that I can stop at any time.",
+      "cta": {
+        "begin": "Begin",
+        "notNow": "Not now"
+      },
+      "beginning": "Beginning…",
+      "signInError": "Sign in to continue.",
+      "voiceSignature": "The harbor waits alongside you."
+    },
+    "week": {
+      "submit": "Continue",
+      "submitting": "Continuing…",
+      "back": "Back to the map",
+      "notLive": "Coming with the next chapter.",
+      "notLiveBody": "Weeks 2 and 3 unlock as the engine grows. For now, finishing Week 1 produces the first chapter of your Operating Manual.",
+      "weekLabel": "Week {n}",
+      "preferNotToSay": "Prefer not to say",
+      "signInError": "Sign in to continue.",
+      "voiceSignature": "The harbor waits alongside you.",
+      "modules": {
+        "1.1": {
+          "eyebrow": "Module 1.1",
+          "title": "Where you are, lately.",
+          "intro": "We start with where you actually are. Not where you were, not where you're trying to be — just where you are, this week. Four short questions. You can skip any of them. This will come back around every so often, so we can both see how the ground shifts.",
+          "scaleHeader": "Over the past two weeks, how often have you been bothered by…",
+          "scale": [
+            { "value": 0, "label": "Not at all" },
+            { "value": 1, "label": "Several days" },
+            { "value": 2, "label": "More than half" },
+            { "value": 3, "label": "Nearly every day" }
+          ]
+        },
+        "1.2": {
+          "eyebrow": "Module 1.2",
+          "title": "How you are wired.",
+          "intro": "Some parts of you have been steady for years. Long before any storm. We're going to name a few of those steady parts — not so you can be put in a box, but so the rest of what we look at has somewhere honest to start.",
+          "scaleHeader": "How well does this describe you?",
+          "scale": [
+            { "value": 1, "label": "Not at all" },
+            { "value": 2, "label": "A little" },
+            { "value": 3, "label": "Somewhat" },
+            { "value": 4, "label": "Mostly" },
+            { "value": 5, "label": "Strongly" }
+          ]
+        },
+        "1.3": {
+          "eyebrow": "Module 1.3",
+          "title": "What you actually care about.",
+          "intro": "Underneath what you do is what you actually care about. Sometimes those line up. Often they don't — especially right now, while everything is being rearranged. We're going to name what matters to you, not what you've been told should matter.",
+          "scaleHeader": "How much is this like you?",
+          "scale": [
+            { "value": 1, "label": "Not like me" },
+            { "value": 2, "label": "A little" },
+            { "value": 3, "label": "Somewhat" },
+            { "value": 4, "label": "Mostly" },
+            { "value": 5, "label": "Very" },
+            { "value": 6, "label": "Strongly" }
+          ]
+        },
+        "1.4": {
+          "eyebrow": "Module 1.4",
+          "title": "What's pulling you forward.",
+          "intro": "There are three things every man needs to feel like himself. Real choice in what he does. The sense that he is good at something. And connection to people who matter to him. When those three are met, you feel like you. When one is starving, you feel it — even if you can't name which one.",
+          "scaleHeader": "How true is this for you right now?",
+          "scale": [
+            { "value": 1, "label": "Untrue" },
+            { "value": 2, "label": "Slightly" },
+            { "value": 3, "label": "Somewhat" },
+            { "value": 4, "label": "Mostly" },
+            { "value": 5, "label": "Completely" }
+          ]
+        }
+      }
+    },
+    "operatingManual": {
+      "eyebrow": "Operating Manual",
+      "title": "Chapter 1 — How You Are Wired",
+      "notReadyEyebrow": "Preparing",
+      "notReady": "Your Operating Manual is not ready yet.",
+      "notReadyBody": "Finish Week 1 of The Map first, then come back. The first chapter will be waiting.",
+      "onlyOtherLang": "Your Operating Manual was written in Spanish. You can generate the English version from the same Map session — it takes about 20 seconds.",
+      "generateInThis": "Generate in English",
+      "generating": "Writing your manual…",
+      "generateFailed": "Something went wrong generating your manual. Please try again, or come back later.",
+      "back": "Back to the map",
+      "voiceSignature": "This document is for you. Re-read it on the days that ask for it."
+    }
   }
 }
