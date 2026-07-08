@@ -13,7 +13,6 @@ import { HorizonSegment } from "@/app/components/horizonSegment";
 import { HairlineLens } from "@/app/components/hairlineLens";
 import { useTheme } from "@/app/components/themeProvider";
 import { InactivityGate } from "@/app/components/inactivityGate";
-import { LanguagePicker } from "@/app/components/languagePicker";
 import { supabase } from "@/lib/supabaseClient";
 
 /**
@@ -127,7 +126,6 @@ function MapHeader() {
       </Link>
 
       <nav className="flex items-center gap-6">
-        <LanguagePicker />
         <button
           type="button"
           onClick={signOut}
