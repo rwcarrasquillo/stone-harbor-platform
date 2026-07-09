@@ -30,12 +30,14 @@ import { CrisisFooter } from "./crisisFooter";
  *   trailing sibling. No CSS tricks required.
  *
  * Visibility rules:
- *   - Public/auth/wizard surfaces (/, /login, /register, /forgot-*,
- *     /reset-*, /terms, /privacy, /about, /start-here,
+ *   - Auth, informational, and locked-out surfaces (/, /login,
+ *     /register, /forgot-*, /reset-*, /terms, /privacy, /about,
  *     /onboarding, /suspended, /offline) — NO footer; those pages
  *     have their own footer treatment (LanguagePicker, marketing
- *     wordmark, etc.) and don't need the 988 banner.
- *   - Authenticated surfaces — show the standard footer.
+ *     wordmark, etc.) or are states where 988 can't function.
+ *   - Every other member-facing surface — including /start-here and
+ *     the Map wizard surfaces — shows the standard footer. See the
+ *     HIDDEN_PREFIXES comment below for the reasoning.
  *
  * Note on the `amplify988` variant:
  *   The dashboard previously rendered the footer with `amplify988`
@@ -60,6 +62,16 @@ import { CrisisFooter } from "./crisisFooter";
 // footer is a persistent anchor for any moment the member needs to
 // reach 988 immediately, regardless of what they've answered.
 // Belt-and-suspenders — 2026-07-09 founder directive.
+//
+// /start-here is excluded from this list for the same reason, and it
+// applies there even more strongly than on the authenticated wizard
+// surfaces: it's the pre-auth healing quiz whose answer options are
+// distress signals ("I feel angry", "I feel overwhelmed"), and a
+// visitor may have arrived precisely because they're in acute distress.
+//
+// /onboarding stays listed but is moot — it's a server-component shim
+// that redirects to /settle-in, so no footer renders either way. Kept
+// as self-documenting configuration.
 const HIDDEN_PREFIXES = [
   "/login",
   "/register",
@@ -68,7 +80,6 @@ const HIDDEN_PREFIXES = [
   "/terms",
   "/privacy",
   "/about",
-  "/start-here",
   "/onboarding",
   "/suspended",
   "/offline",
