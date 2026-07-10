@@ -1,24 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale } from "next-intl";
 import { supabase } from "@/lib/supabaseClient";
 import { CrisisModal } from "@/app/components/crisisModal";
+import { HairlineLens } from "@/app/components/hairlineLens";
+import { useTheme } from "@/app/components/themeProvider";
+import { MapActionButton } from "./MapChrome";
 
 /**
- * Stone Harbor — Eidos module renderer.
+ * Stone Harbor — Eidos module renderer (harbor-vocabulary composition).
  *
- * Generic UI for a single Eidos instrument: header copy, items, a
- * scale of N chips for each item, and a submit button that posts the
- * responses to /api/map/respond.
+ * The interactive body of a single Eidos instrument: a numbered item
+ * list, a row of response chips per item, and a submit affordance that
+ * POSTs to /api/map/respond. The module's eyebrow / title / intro now
+ * live in the page's anchor strip (see week/[n]/page.tsx), so this
+ * component renders only the items + submit + crisis modal.
  *
- * The component is voice-neutral and depends only on what the engine
- * exports plus the consumer-passed strings. It does NOT import from
- * lib/eidos (server-side concern) — it takes the prepared item list
- * as a prop.
+ * Voice-neutral: depends only on what the engine exports plus the
+ * consumer-passed strings. Does NOT import from lib/eidos (server-side
+ * concern) — it takes the prepared item list as a prop.
  *
- * On successful submit, the onComplete callback fires with the
- * scored result so the parent page can advance.
+ * Chip treatment matches the post-SH-93 /profile known_languages field:
+ * bare sentence-case labels, no borders or fills, paired HairlineLens
+ * as the selected/hover/focus signal.
+ *
+ * On successful submit the onComplete callback fires with the scored
+ * result so the parent page can advance. A safety-eval flag holds the
+ * advance behind the CrisisModal until the member acknowledges it.
  */
 
 export type ModuleItem = {
@@ -35,12 +43,6 @@ export type ModuleScaleOption = {
 };
 
 type Props = {
-  /** Eyebrow above the title — e.g. "MODULE 1.2" */
-  eyebrow: string;
-  /** Module title in the page's voice. */
-  title: string;
-  /** One paragraph framing the module — Stone Harbor voice. */
-  intro: string;
   /** Instrument id matching the engine's InstrumentId union. */
   instrumentId: "phq2gad2" | "bfi10" | "schwartz" | "bpnsfs12";
   /** Items in the order they should be presented. */
@@ -49,35 +51,40 @@ type Props = {
   scale: ReadonlyArray<ModuleScaleOption>;
   /** Allow individual items to be skipped (renders a "prefer not to say"). */
   allowSkip?: boolean;
-  /** Label for the submit button — locale-aware copy belongs to the parent. */
+  /** Label for the submit button. */
   submitLabel: string;
   /** Submitting state label. */
   submittingLabel: string;
+  /** Localized "prefer not to say" chip label. */
+  preferNotToSayLabel: string;
+  /** Localized "sign in to continue" error. */
+  signInError: string;
   /** Called once the responses are accepted by the server. */
   onComplete: (scored: unknown) => void;
 };
 
 export function ModuleRenderer({
-  eyebrow,
-  title,
-  intro,
   instrumentId,
   items,
   scale,
   allowSkip,
   submitLabel,
   submittingLabel,
+  preferNotToSayLabel,
+  signInError,
   onComplete,
 }: Props) {
-  const locale = useLocale();
+  const { theme } = useTheme();
   const [responses, setResponses] = useState<Record<string, number | null>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Crisis modal state. The API's safety eval result lives here
-  // briefly between submission and the user's acknowledgment of the
-  // resources. Once dismissed, we run the parent's onComplete so the
-  // session can advance.
-  const [crisisLevel, setCrisisLevel] = useState<"elevated" | "severe" | null>(null);
+  // Crisis modal state. The API's safety eval result lives here briefly
+  // between submission and the user's acknowledgment of the resources.
+  // Once dismissed, we run the parent's onComplete so the session can
+  // advance.
+  const [crisisLevel, setCrisisLevel] = useState<
+    "elevated" | "severe" | null
+  >(null);
   const [pendingScored, setPendingScored] = useState<unknown>(null);
 
   function setResponse(itemId: string, value: number | null) {
@@ -93,10 +100,12 @@ export function ModuleRenderer({
     setSubmitting(true);
     setError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) {
-        setError(locale === "es" ? "Inicia sesión para continuar." : "Sign in to continue.");
+        setError(signInError);
         setSubmitting(false);
         return;
       }
@@ -119,10 +128,10 @@ export function ModuleRenderer({
         setSubmitting(false);
         return;
       }
-      // If the server's safety eval returned something concerning,
-      // hold the advance until the user dismisses the crisis modal.
-      // This keeps the resources screen from being scrolled past as
-      // the next module renders behind it.
+      // If the server's safety eval returned something concerning, hold
+      // the advance until the user dismisses the crisis modal. This
+      // keeps the resources screen from being scrolled past as the next
+      // module renders behind it.
       const safetyLevel = json?.safety?.level;
       if (safetyLevel === "elevated" || safetyLevel === "severe") {
         setPendingScored(json.scored);
@@ -145,63 +154,68 @@ export function ModuleRenderer({
   }
 
   return (
-    <section className="relative z-10 mx-auto max-w-2xl px-5 py-12 md:px-8 md:py-20">
-      {/* Eyebrow + Title */}
-      <p className="text-[10px] font-bold uppercase tracking-[0.36em] text-[#c4934e]">
-        {eyebrow}
-      </p>
-      <h1 className="mt-3 font-serif text-4xl font-medium leading-tight text-stone-100 md:text-5xl">
-        {title}
-      </h1>
-
-      {/* Intro paragraph */}
-      <p className="mt-6 max-w-prose text-base leading-relaxed text-stone-300 md:text-lg">
-        {intro}
-      </p>
-
-      <div className="mt-10 h-px w-16 bg-[#c4934e]" />
-
+    <div>
       {/* Items */}
-      <ol className="mt-10 space-y-10">
+      <ol className="space-y-10">
         {items.map((item, idx) => (
           <li key={item.id} className="space-y-3">
-            <p className="text-sm font-semibold uppercase tracking-[0.26em] text-stone-500">
+            <p className="text-sm text-[var(--sh-text-tertiary)]">
               {String(idx + 1).padStart(2, "0")}
             </p>
-            <p className="text-base leading-relaxed text-stone-200 md:text-lg">
+            <p className="text-base leading-relaxed text-[var(--sh-text-primary)] md:text-lg">
               {item.text}
             </p>
-            <div className="flex flex-wrap gap-2 pt-2">
+            <div className="flex flex-wrap gap-x-6 gap-y-5 pt-1">
               {scale.map((opt) => {
-                const selected = responses[item.id] === opt.value;
+                const active = responses[item.id] === opt.value;
                 return (
                   <button
                     key={`${item.id}-${opt.value ?? "skip"}`}
                     type="button"
+                    aria-pressed={active}
                     onClick={() => setResponse(item.id, opt.value)}
-                    aria-pressed={selected}
-                    className={`rounded-none border px-3 py-2 text-xs font-bold uppercase tracking-[0.22em] transition ${
-                      selected
-                        ? "border-[#c4934e] bg-[#c4934e] text-black"
-                        : "border-white/20 bg-white/[0.05] text-stone-300 hover:border-[#c4934e]/60 hover:text-[#c4934e]"
+                    className={`group relative px-1 pb-2 pt-1 text-sm transition-colors focus:outline-none ${
+                      active
+                        ? "text-[var(--sh-text-primary)]"
+                        : "text-[var(--sh-text-secondary)] hover:text-[var(--sh-accent-gold)]"
                     }`}
                   >
                     {opt.label}
+                    <span
+                      className={`pointer-events-none absolute inset-0 transition-opacity duration-300 ${
+                        active
+                          ? "opacity-100"
+                          : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+                      }`}
+                    >
+                      <HairlineLens position="top" theme={theme} />
+                      <HairlineLens position="bottom" theme={theme} />
+                    </span>
                   </button>
                 );
               })}
               {allowSkip && (
                 <button
                   type="button"
-                  onClick={() => setResponse(item.id, null)}
                   aria-pressed={responses[item.id] === null}
-                  className={`rounded-none border px-3 py-2 text-xs font-bold uppercase tracking-[0.22em] transition ${
+                  onClick={() => setResponse(item.id, null)}
+                  className={`group relative px-1 pb-2 pt-1 text-sm transition-colors focus:outline-none ${
                     responses[item.id] === null
-                      ? "border-stone-400 bg-stone-700 text-white"
-                      : "border-white/10 bg-transparent text-stone-500 hover:border-white/30 hover:text-stone-300"
+                      ? "text-[var(--sh-text-primary)]"
+                      : "text-[var(--sh-text-tertiary)] hover:text-[var(--sh-accent-gold)]"
                   }`}
                 >
-                  {locale === "es" ? "Prefiero no decir" : "Prefer not to say"}
+                  {preferNotToSayLabel}
+                  <span
+                    className={`pointer-events-none absolute inset-0 transition-opacity duration-300 ${
+                      responses[item.id] === null
+                        ? "opacity-100"
+                        : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+                    }`}
+                  >
+                    <HairlineLens position="top" theme={theme} />
+                    <HairlineLens position="bottom" theme={theme} />
+                  </span>
                 </button>
               )}
             </div>
@@ -211,16 +225,15 @@ export function ModuleRenderer({
 
       {/* Submit */}
       <div className="mt-12 flex flex-col items-start gap-3">
-        <button
-          type="button"
-          disabled={!allAnswered || submitting}
+        <MapActionButton
+          label={submitLabel}
+          loadingLabel={submittingLabel}
           onClick={submit}
-          className="rounded-none border border-[#c4934e] bg-[#a9793d] px-8 py-4 text-xs font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_10px_35px_rgba(0,0,0,0.4)] transition hover:bg-[#8d6432] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {submitting ? submittingLabel : submitLabel}
-        </button>
+          loading={submitting}
+          disabled={!allAnswered}
+        />
         {error && (
-          <p className="text-sm text-red-300" role="alert">
+          <p className="text-sm text-[#b14a3a]" role="alert">
             {error}
           </p>
         )}
@@ -230,6 +243,6 @@ export function ModuleRenderer({
           elevated or severe. The user must acknowledge before the
           session advances. */}
       <CrisisModal level={crisisLevel} onDismiss={handleCrisisDismiss} />
-    </section>
+    </div>
   );
 }

@@ -30,12 +30,14 @@ import { CrisisFooter } from "./crisisFooter";
  *   trailing sibling. No CSS tricks required.
  *
  * Visibility rules:
- *   - Public/auth/wizard surfaces (/, /login, /register, /forgot-*,
- *     /reset-*, /terms, /privacy, /about, /start-here,
+ *   - Auth, informational, and locked-out surfaces (/, /login,
+ *     /register, /forgot-*, /reset-*, /terms, /privacy, /about,
  *     /onboarding, /suspended, /offline) — NO footer; those pages
  *     have their own footer treatment (LanguagePicker, marketing
- *     wordmark, etc.) and don't need the 988 banner.
- *   - Authenticated surfaces — show the standard footer.
+ *     wordmark, etc.) or are states where 988 can't function.
+ *   - Every other member-facing surface — including /start-here and
+ *     the Map wizard surfaces — shows the standard footer. See the
+ *     HIDDEN_PREFIXES comment below for the reasoning.
  *
  * Note on the `amplify988` variant:
  *   The dashboard previously rendered the footer with `amplify988`
@@ -47,18 +49,29 @@ import { CrisisFooter } from "./crisisFooter";
  *   consistency across pages.
  */
 
-// Prefixes where the crisis footer should NOT render. These have
-// their own footer treatments OR are mid-wizard surfaces where any
-// extra band would crack the containment.
+// Prefixes where the crisis footer should NOT render. These are
+// pre-authenticated or locked-out surfaces where the 988 anchor is
+// either handled differently (auth-flow footer with its own
+// treatment) or doesn't make sense (offline state can't reach 988;
+// suspended state is a locked notice, not an active member surface).
 //
-// On the Map: only the wizard surfaces (/map/begin, /map/week/[n])
-// are hidden — those expose the BFI-10 / BPNSFS-12 instruments and
-// surface a Crisis Modal in-flow instead of the 988 banner. The hub
-// (/map) and the reader (/map/operating-manual) are passive destinations
-// equivalent to /dashboard or /journal and should keep the footer +
-// anchor like every other authenticated page. An earlier blanket
-// "/map" entry suppressed both, which was the cause of the
-// 2026-05-31 consistency complaint.
+// Every authenticated member-facing surface — including the Map
+// wizard surfaces (/map/begin, /map/week/[n]) — carries the crisis
+// footer. The in-flow CrisisModal on the wizard surfaces responds to
+// specific distress signals in the member's answers; the crisis
+// footer is a persistent anchor for any moment the member needs to
+// reach 988 immediately, regardless of what they've answered.
+// Belt-and-suspenders — 2026-07-09 founder directive.
+//
+// /start-here is excluded from this list for the same reason, and it
+// applies there even more strongly than on the authenticated wizard
+// surfaces: it's the pre-auth healing quiz whose answer options are
+// distress signals ("I feel angry", "I feel overwhelmed"), and a
+// visitor may have arrived precisely because they're in acute distress.
+//
+// /onboarding stays listed but is moot — it's a server-component shim
+// that redirects to /settle-in, so no footer renders either way. Kept
+// as self-documenting configuration.
 const HIDDEN_PREFIXES = [
   "/login",
   "/register",
@@ -67,12 +80,9 @@ const HIDDEN_PREFIXES = [
   "/terms",
   "/privacy",
   "/about",
-  "/start-here",
   "/onboarding",
   "/suspended",
   "/offline",
-  "/map/begin",
-  "/map/week",
   // Public marketing surfaces (/, /en, /es) handle their own footer
   // via the LanguagePicker component. We still hide here because the
   // root path "/" needs to be excluded explicitly below.
