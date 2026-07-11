@@ -4,110 +4,82 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Volume2, VolumeX } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { serif, sans } from "@/lib/fonts";
+
 /**
- * Image sets per question and result. The /nature/* paths are
- * sourced from Unsplash via scripts/fetch-unsplash-nature.mjs.
- * Legacy /*.png paths remain as fallbacks until the new images
- * land in public/nature/.
+ * Pillar keys. These are data-model identifiers used across the app —
+ * they route the assessment to a result and are NOT display strings.
+ * The copy that a member actually reads lives in messages/{en,es}.json
+ * under the `startHere` namespace, keyed by these same identifiers.
+ */
+type Pillar = "clarity" | "calm" | "strength" | "purpose";
+
+const PILLARS: Pillar[] = ["clarity", "calm", "strength", "purpose"];
+
+/**
+ * Per-question structure: the i18n key, the image set, and the pillar
+ * each option scores toward. The /nature/* paths are sourced from
+ * Unsplash via scripts/fetch-unsplash-nature.mjs.
+ *
+ * Options are listed in PILLARS order and their markers ("01".."04")
+ * are positional, so the numbering stays stable across locales.
  */
 const questions = [
   {
-    question: "What feels most true right now?",
-    subtitle:
-      "Your first honest answer is often the doorway to your real starting point.",
+    key: "q1",
     images: [
       "/nature/alpine-lake-trees-mountains.jpg",
       "/nature/sunrise-mountain-lake-icy-rocks.jpg",
       "/nature/lake-mountain-alps.jpg",
     ],
-    imageLabel: "Still Waters",
-    options: [
-      { label: "I feel confused", path: "clarity", marker: "01" },
-      { label: "I feel overwhelmed", path: "calm", marker: "02" },
-      { label: "I feel angry", path: "strength", marker: "03" },
-      { label: "I am ready to rebuild", path: "purpose", marker: "04" },
-    ],
   },
   {
-    question: "What do you need first?",
-    subtitle:
-      "Healing becomes stronger when you identify what your mind and body are truly asking for.",
+    key: "q2",
     images: [
       "/nature/misty-forest-sunrise-soft-light.jpg",
       "/nature/misty-forest-dark-trees-fog.jpg",
       "/nature/misty-forest-warm-sunlight.jpg",
     ],
-    imageLabel: "Forest Path",
-    options: [
-      { label: "Understanding what happened", path: "clarity", marker: "01" },
-      { label: "Emotional steadiness", path: "calm", marker: "02" },
-      { label: "Boundaries and discipline", path: "strength", marker: "03" },
-      { label: "Direction and meaning", path: "purpose", marker: "04" },
-    ],
   },
   {
-    question: "What would help you most today?",
-    subtitle: "Momentum begins when your next step feels aligned, not forced.",
+    key: "q3",
     images: [
       "/nature/coastal-cliff-serene-sunset.jpg",
       "/nature/ocean-cliff-foggy-day.jpg",
       "/nature/coastal-portugal-beach-cliffs.jpg",
     ],
-    imageLabel: "Distant Light",
-    options: [
-      { label: "A clear explanation", path: "clarity", marker: "01" },
-      { label: "A grounding exercise", path: "calm", marker: "02" },
-      { label: "A rebuilding plan", path: "strength", marker: "03" },
-      { label: "A next-chapter roadmap", path: "purpose", marker: "04" },
-    ],
   },
 ];
 
-const results = {
+const results: Record<Pillar, { images: string[] }> = {
   clarity: {
-    title: "Your path begins with Clarity.",
-    text: "You need understanding first — naming patterns, separating truth from distortion, and rebuilding trust in your own perception.",
-    accent: "Understand. Name. See clearly.",
     images: [
       "/nature/alpine-lake-trees-mountains.jpg",
       "/nature/sunrise-mountain-lake-icy-rocks.jpg",
       "/nature/lake-mountain-alps.jpg",
     ],
-    imageLabel: "Clarity",
   },
   calm: {
-    title: "Your path begins with Calm.",
-    text: "Your nervous system needs steadiness first — grounding, breathing, emotional regulation, and internal safety.",
-    accent: "Breathe. Stabilize. Recenter.",
     images: [
       "/nature/trees-lake-mountain-daytime.jpg",
       "/nature/alpine-lake-trees-mountains.jpg",
       "/nature/small-town-lake-mountains.jpg",
     ],
-    imageLabel: "Calm",
   },
   strength: {
-    title: "Your path begins with Strength.",
-    text: "You are ready to restore boundaries, confidence, discipline, and the structure that supports a stronger self.",
-    accent: "Rebuild. Protect. Rise.",
     images: [
       "/nature/misty-forest-dark-trees-fog.jpg",
       "/nature/misty-forest-warm-sunlight.jpg",
       "/nature/ocean-cliff-foggy-day.jpg",
     ],
-    imageLabel: "Strength",
   },
   purpose: {
-    title: "Your path begins with Purpose.",
-    text: "You are ready for direction, identity, and meaning — transforming pain into a new chapter.",
-    accent: "Aim. Build. Become.",
     images: [
       "/nature/coastal-cliff-serene-sunset.jpg",
       "/nature/ocean-cliff-santa-cruz.jpg",
       "/nature/coastal-portugal-beach-cliffs.jpg",
     ],
-    imageLabel: "Purpose",
   },
 };
 
@@ -120,6 +92,7 @@ const results = {
 const IMAGE_ROTATION_MS = 12000;
 
 export default function StartHerePage() {
+  const t = useTranslations("startHere");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
   const [step, setStep] = useState(0);
@@ -174,11 +147,9 @@ export default function StartHerePage() {
     });
   }
 
-  const resultKey = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0] as
-    | "clarity"
-    | "calm"
-    | "strength"
-    | "purpose";
+  const resultKey = Object.entries(scores).sort(
+    (a, b) => b[1] - a[1],
+  )[0][0] as Pillar;
 
   const result = results[resultKey];
 
@@ -189,12 +160,10 @@ export default function StartHerePage() {
    * member always sees the "primary" image first when they arrive at
    * a new section.
    */
-  const activeImages = isComplete
-    ? result.images
-    : questions[step].images;
+  const activeImages = isComplete ? result.images : questions[step].images;
   const activeLabel = isComplete
-    ? result.imageLabel
-    : questions[step].imageLabel;
+    ? t(`results.${resultKey}.imageLabel`)
+    : t(`questions.${questions[step].key}.imageLabel`);
 
   const [imageIndex, setImageIndex] = useState(0);
   const imageCount = activeImages.length;
@@ -227,7 +196,7 @@ export default function StartHerePage() {
           href="/"
           className="mb-4 inline-block text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d] md:mb-8 md:text-sm md:tracking-[0.35em]"
         >
-          ← Stone Harbor
+          {t("brandBack")}
         </Link>
 
         {/* Mobile order: image first (so it's visible above the fold), then card.
@@ -355,7 +324,7 @@ export default function StartHerePage() {
               <h2
                 className={`${serif.className} text-lg font-medium leading-tight md:text-2xl lg:text-4xl`}
               >
-                Begin with one honest answer.
+                {t("imageCaption")}
               </h2>
             </div>
 
@@ -380,7 +349,7 @@ export default function StartHerePage() {
             <button
               onClick={toggleSound}
               className="absolute bottom-3 right-3 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-white/15 text-white shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-2xl transition duration-300 hover:scale-110 hover:bg-white/25 lg:bottom-8 lg:right-8 lg:h-14 lg:w-14"
-              aria-label={soundOn ? "Mute Nature Sounds" : "Play Nature Sounds"}
+              aria-label={soundOn ? t("audio.playing") : t("audio.muted")}
             >
               {soundOn ? (
                 <Volume2 className="h-4 w-4 lg:h-6 lg:w-6" />
@@ -403,11 +372,14 @@ export default function StartHerePage() {
                 <div className="mb-5 flex flex-col gap-3 md:mb-10 md:flex-row md:items-center md:justify-between md:gap-6">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d] md:text-sm md:tracking-[0.35em]">
-                      Recovery Assessment
+                      {t("eyebrow")}
                     </p>
 
                     <p className="mt-1 text-xs uppercase tracking-[0.22em] text-stone-500 md:mt-2 md:text-sm md:tracking-[0.25em]">
-                      Question {step + 1} of {questions.length}
+                      {t("questionProgress", {
+                        current: step + 1,
+                        total: questions.length,
+                      })}
                     </p>
                   </div>
 
@@ -426,18 +398,18 @@ export default function StartHerePage() {
                 <h1
                   className={`${serif.className} max-w-5xl text-2xl font-medium leading-tight md:text-7xl`}
                 >
-                  {questions[step].question}
+                  {t(`questions.${questions[step].key}.question`)}
                 </h1>
 
                 <p className="mt-3 max-w-3xl text-sm leading-relaxed text-stone-600 md:mt-6 md:text-xl">
-                  {questions[step].subtitle}
+                  {t(`questions.${questions[step].key}.subtitle`)}
                 </p>
 
                 <div className="mt-5 grid gap-2.5 md:mt-12 md:gap-4">
-                  {questions[step].options.map((option, index) => (
+                  {PILLARS.map((pillar, index) => (
                     <motion.button
-                      key={option.label}
-                      onClick={() => choose(option.path)}
+                      key={pillar}
+                      onClick={() => choose(pillar)}
                       initial={{ opacity: 0, y: 18 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.08 }}
@@ -445,11 +417,13 @@ export default function StartHerePage() {
                     >
                       <div className="flex items-center gap-3 md:gap-5">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#a9793d]/40 bg-white/70 text-xs font-bold text-[#a9793d] md:h-11 md:w-11 md:text-sm">
-                          {option.marker}
+                          {String(index + 1).padStart(2, "0")}
                         </span>
 
                         <span className="text-sm font-semibold md:text-xl">
-                          {option.label}
+                          {t(
+                            `questions.${questions[step].key}.options.${pillar}`,
+                          )}
                         </span>
                       </div>
 
@@ -469,21 +443,21 @@ export default function StartHerePage() {
                 className="rounded-[2rem] border border-white/50 bg-white/75 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.08)] backdrop-blur-2xl md:rounded-[3rem] md:p-14"
               >
                 <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d] md:text-sm md:tracking-[0.35em]">
-                  Your Stone Harbor Path
+                  {t("resultEyebrow")}
                 </p>
 
                 <h1
                   className={`${serif.className} mt-3 max-w-5xl text-3xl font-medium leading-tight md:mt-6 md:text-7xl`}
                 >
-                  {result.title}
+                  {t(`results.${resultKey}.title`)}
                 </h1>
 
                 <p className="mt-4 text-sm font-semibold uppercase tracking-[0.22em] text-[#a9793d] md:mt-8 md:text-xl md:tracking-[0.25em]">
-                  {result.accent}
+                  {t(`results.${resultKey}.accent`)}
                 </p>
 
                 <p className="mt-4 max-w-3xl text-sm leading-relaxed text-stone-600 md:mt-8 md:text-xl">
-                  {result.text}
+                  {t(`results.${resultKey}.text`)}
                 </p>
 
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row md:mt-12 md:gap-5">
@@ -491,14 +465,14 @@ export default function StartHerePage() {
                     href="/register"
                     className="rounded-full bg-[#a9793d] px-6 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] md:px-10 md:py-5 md:text-sm md:tracking-[0.25em]"
                   >
-                    Continue Forward
+                    {t("cta.continue")}
                   </Link>
 
                   <button
                     onClick={resetAssessment}
                     className="rounded-full border border-stone-400 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:bg-stone-100 md:px-10 md:py-5 md:text-sm md:tracking-[0.25em]"
                   >
-                    Retake Assessment
+                    {t("cta.retake")}
                   </button>
                 </div>
               </motion.div>
