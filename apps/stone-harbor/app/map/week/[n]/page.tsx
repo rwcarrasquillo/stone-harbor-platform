@@ -30,6 +30,22 @@ import {
 
 type WeekModuleId = "1.1" | "1.2" | "1.3" | "1.4";
 
+/**
+ * The i18n key for a module's copy.
+ *
+ * The module ids ("1.1"…) are data-model identifiers: they come back from
+ * the session state machine and are persisted with every response, so they
+ * are not ours to rename. But next-intl reserves "." as its key-nesting
+ * separator, so a message key literally named "1.1" makes it throw
+ * INVALID_KEY on every request. The messages therefore key modules as
+ * "1_1"… and we translate the id at the boundary (SH-99).
+ */
+type ModuleI18nKey = "1_1" | "1_2" | "1_3" | "1_4";
+
+function moduleI18nKey(id: WeekModuleId): ModuleI18nKey {
+  return id.replace(".", "_") as ModuleI18nKey;
+}
+
 type ModuleMeta = {
   eyebrow: string;
   title: string;
@@ -144,8 +160,8 @@ export default function MapWeekPage() {
     return <MapLoading label={t("loading")} />;
   }
 
-  const modules = t.raw("week.modules") as Record<WeekModuleId, ModuleMeta>;
-  const moduleMeta = modules[currentModuleId];
+  const modules = t.raw("week.modules") as Record<ModuleI18nKey, ModuleMeta>;
+  const moduleMeta = modules[moduleI18nKey(currentModuleId)];
   const items = itemsByModule[currentModuleId];
   const instrumentId =
     currentModuleId === "1.1"

@@ -1231,7 +1231,7 @@
       "signInError": "Sign in to continue.",
       "voiceSignature": "The harbor waits alongside you.",
       "modules": {
-        "1.1": {
+        "1_1": {
           "eyebrow": "Module 1.1",
           "title": "Where you are, lately.",
           "intro": "We start with where you actually are. Not where you were, not where you're trying to be — just where you are, this week. Four short questions. You can skip any of them. This will come back around every so often, so we can both see how the ground shifts.",
@@ -1243,7 +1243,7 @@
             { "value": 3, "label": "Nearly every day" }
           ]
         },
-        "1.2": {
+        "1_2": {
           "eyebrow": "Module 1.2",
           "title": "How you are wired.",
           "intro": "Some parts of you have been steady for years. Long before any storm. We're going to name a few of those steady parts — not so you can be put in a box, but so the rest of what we look at has somewhere honest to start.",
@@ -1256,7 +1256,7 @@
             { "value": 5, "label": "Strongly" }
           ]
         },
-        "1.3": {
+        "1_3": {
           "eyebrow": "Module 1.3",
           "title": "What you actually care about.",
           "intro": "Underneath what you do is what you actually care about. Sometimes those line up. Often they don't — especially right now, while everything is being rearranged. We're going to name what matters to you, not what you've been told should matter.",
@@ -1270,7 +1270,7 @@
             { "value": 6, "label": "Strongly" }
           ]
         },
-        "1.4": {
+        "1_4": {
           "eyebrow": "Module 1.4",
           "title": "What's pulling you forward.",
           "intro": "There are three things every man needs to feel like himself. Real choice in what he does. The sense that he is good at something. And connection to people who matter to him. When those three are met, you feel like you. When one is starving, you feel it — even if you can't name which one.",
