@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { requireUser, serviceClient, err } from "../_helpers";
 import {
   generateChapter1,
-  type EidosLocale,
   type Bfi10Scores,
   type SchwartzScores,
   type BpnsfsScores,
@@ -12,48 +11,103 @@ import { retrieveChunks, formatChunksForPrompt } from "@stone-harbor/knowledge";
 /**
  * POST /api/map/generate-chapter
  *
- * Generate (or regenerate) Operating Manual Chapter N for the
- * caller, in one or more languages. Phase 1 only supports chapter 1.
+ * Generate (or regenerate) Operating Manual Chapter N for the caller,
+ * in both languages. Phase 1 only supports chapter 1.
  *
  * Pipeline (per call):
  *   1. Auth gate.
  *   2. Read the caller's layer scores from eidos_layer_scores.
- *   3. Read the active eidos.chapter1 prompt template (once).
- *   4. Retrieve grounding chunks from the knowledge corpus (once;
- *      the retrieval query is language-agnostic).
- *   5. For each requested language:
- *      a. Call lib/eidos to assemble the language-specific inputs.
- *      b. Substitute {{vars}} in the template.
- *      c. Call the AI provider (Anthropic primary, OpenAI fallback,
- *         stub if neither key is configured).
- *      d. Persist the row to eidos_chapters (unique on
- *         user_id+chapter_number+language).
- *   6. Return an array of per-language results.
+ *   3. Read the two prompt templates + AI provider config (once).
+ *   4. Retrieve grounding chunks from the knowledge corpus (once).
+ *   5. Step A — generate the canonical chapter in ENGLISH via the
+ *      eidos.chapter1 template. Persist the `en` row.
+ *   6. Step B — translate that exact English body into Spanish via the
+ *      eidos.chapter1.translate.es template. Persist the `es` row.
+ *
+ * Why generate-then-translate rather than generate-twice (SH-97):
+ *
+ *   The previous implementation ran an independent generation per
+ *   language. That produced two bugs, both seen in the SH-96 smoke on
+ *   2026-07-09: the model sometimes ignored the `Language` directive and
+ *   wrote Spanish prose into the `en` row; and even when the language was
+ *   right, the two chapters diverged, so a member toggling the language
+ *   switch found a materially different chapter — different opening line,
+ *   different metaphors, different examples — rather than his own chapter
+ *   in another language.
+ *
+ *   Deriving the Spanish from the English body makes the two rows the same
+ *   chapter by construction. This mirrors the letters library's
+ *   translate-blog-post flow (SH-95 / PR #55).
+ *
+ * Both language rows are always written. The request's `languages` field
+ * is still accepted for backward compatibility but no longer selects what
+ * gets produced: generating `es` alone is not meaningful under this
+ * pipeline, since the Spanish chapter is defined as a translation of the
+ * English one and so the English generation has to run either way.
+ *
+ * Provider routing matches the letters library — admin_settings
+ * .ai_primary_provider with runtime failover to .ai_fallback_provider, and
+ * per-task model selection from admin_settings.ai_models. There is no stub
+ * path: if both providers fail the route returns 502 and persists nothing,
+ * so placeholder text can never reach the database.
  *
  * Body:
  *   {
  *     chapterNumber?: 1,
- *     // Preferred: multi-language array. Defaults to ["en","es"] so
- *     // members get both versions on a single "Assemble" click. The
- *     // pattern lets a caller request a single language for
- *     // backfill scenarios — e.g. an existing member with only the
- *     // Spanish chapter clicking "Generate in English" from
- *     // /map/operating-manual.
- *     languages?: ("en" | "es")[],
- *     // Legacy single-language form. Honored when `languages` is
- *     // absent; ignored when both are provided.
- *     language?: "en" | "es",
- *     memberName?: string
+ *     memberName?: string,
+ *     languages?: ("en" | "es")[],  // accepted, ignored (see above)
+ *     language?: "en" | "es"        // legacy, accepted, ignored
  *   }
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type Provider = "anthropic" | "openai";
+type Task = "eidos.chapter1.generate" | "eidos.chapter1.translate";
+
 type Body = {
   chapterNumber?: 1;
-  languages?: EidosLocale[];
-  language?: EidosLocale;
   memberName?: string;
+};
+
+/** Used when admin_settings.ai_models has no entry for the task. */
+const MODEL_FALLBACKS: Record<Provider, string> = {
+  anthropic: "claude-sonnet-4-6",
+  openai: "gpt-4o",
+};
+
+/**
+ * Provider config, read once per request from admin_settings (id = 1).
+ *
+ * ai_models and ai_pricing are jsonb COLUMNS on admin_settings, not tables:
+ * { task: { provider: model } } and { model: rates } respectively. Same
+ * source the letters and psychologist edge functions read.
+ */
+type AiConfig = {
+  primary: Provider;
+  fallback: Provider;
+  models: Record<string, Partial<Record<Provider, string>>>;
+  pricing: Record<
+    string,
+    { input_per_million?: number; output_per_million?: number }
+  >;
+};
+
+type ProviderResult = {
+  body: string;
+  provider: Provider;
+  model: string;
+  tokensIn: number;
+  tokensOut: number;
+  cachedTokens: number;
+  latencyMs: number;
+};
+
+type Call = {
+  systemPrompt: string;
+  userPrompt: string;
+  temperature: number;
+  maxTokens: number;
 };
 
 export async function POST(req: Request) {
@@ -63,26 +117,6 @@ export async function POST(req: Request) {
   const body = ((await req.json().catch(() => ({}))) ?? {}) as Body;
   const chapterNumber = body.chapterNumber ?? 1;
   const memberName = (body.memberName ?? "").slice(0, 80);
-
-  // Resolve which languages to generate:
-  //   1. `languages` array wins when present (preferred form).
-  //   2. Legacy single `language` field is honored for backward compat.
-  //   3. Default to both ["en","es"] so a new member gets a complete
-  //      Manual on a single Assemble click — Stone Harbor is a bilingual
-  //      product, and the cost difference is roughly $0.02/member.
-  const requestedLanguages: EidosLocale[] = (() => {
-    if (Array.isArray(body.languages) && body.languages.length > 0) {
-      // Filter to valid locales + dedupe while preserving order.
-      const valid = body.languages.filter(
-        (l): l is EidosLocale => l === "en" || l === "es",
-      );
-      return Array.from(new Set(valid));
-    }
-    if (body.language === "es" || body.language === "en") {
-      return [body.language];
-    }
-    return ["en", "es"];
-  })();
 
   if (chapterNumber !== 1) {
     return err(400, "unsupported_chapter", "Phase 1 only supports chapter 1.");
@@ -112,50 +146,56 @@ export async function POST(req: Request) {
     );
   }
 
-  // ---- 2) Pull the active prompt template ----
-  const { data: tmpl, error: tmplErr } = await svc
-    .from("prompt_templates")
-    .select("system_prompt, user_prompt_template, temperature, max_tokens")
-    .eq("slug", "eidos.chapter1")
-    .maybeSingle();
-  if (tmplErr) return err(500, "prompt_fetch_failed", tmplErr.message);
-  if (!tmpl) {
+  // ---- 2) Prompt templates: generation + translation ----
+  const chapterTmpl = await loadPromptTemplate(svc, "eidos.chapter1");
+  if (!chapterTmpl) {
     return err(
       500,
       "prompt_missing",
       "eidos.chapter1 template is not seeded — run migration eidos_002.",
     );
   }
+  const translateTmpl = await loadPromptTemplate(
+    svc,
+    "eidos.chapter1.translate.es",
+  );
+  if (!translateTmpl) {
+    return err(
+      500,
+      "prompt_missing",
+      "eidos.chapter1.translate.es template is not seeded — run migration eidos_003.",
+    );
+  }
 
-  // ---- 3) Retrieve grounding material ONCE (language-agnostic) ----
-  // The retrieval query uses the member's starved-need and top-values
-  // signal regardless of locale — the knowledge corpus is English-
-  // language but the resulting chunks are semantic anchors, not
-  // verbatim text. We do this once and reuse across both language
-  // generations so we don't pay 2x for retrieval. Failure is non-
-  // fatal: empty grounding still produces a coherent chapter.
-  const primaryLangInputs = generateChapter1({
+  // ---- 3) Provider config ----
+  const cfg = await loadAiConfig(svc);
+
+  // ---- 4) Assemble the ENGLISH inputs ----
+  // The engine localizes copy and labels, but we only ever ask it for `en`.
+  // Spanish comes from translating the English body downstream, so the
+  // engine's `es` path is intentionally not called here.
+  const { inputs } = generateChapter1({
     traits,
     values,
     motivation,
     memberName,
-    language: requestedLanguages[0],
-  }).inputs;
+    language: "en",
+  });
 
+  // ---- 5) Retrieve grounding material (non-fatal on failure) ----
+  // The corpus is English-language and the retrieval query is built from the
+  // member's starved-need and top-values signal. Failure is non-fatal: empty
+  // grounding still produces a coherent chapter.
   let groundingMaterial = "";
   try {
-    const starved = (primaryLangInputs as Record<string, unknown>).starved_need;
-    const topValues = (primaryLangInputs as Record<string, unknown>).top_values;
+    const record = inputs as unknown as Record<string, unknown>;
     const retrievalQuery = [
       "How a man in transition tends to function, what he values, and what tends to feel starved",
-      `Starved need right now: ${starved}.`,
-      `Strongest values: ${topValues}.`,
+      `Starved need right now: ${record.starved_need}.`,
+      `Strongest values: ${record.top_values}.`,
     ].join(" ");
 
-    const chunks = await retrieveChunks(svc, {
-      query: retrievalQuery,
-      topK: 4,
-    });
+    const chunks = await retrieveChunks(svc, { query: retrievalQuery, topK: 4 });
     groundingMaterial = formatChunksForPrompt(chunks);
   } catch (e) {
     console.warn(
@@ -164,171 +204,265 @@ export async function POST(req: Request) {
     );
   }
 
-  // ---- 4) Choose AI provider ONCE (Anthropic > OpenAI > stub) ----
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  const openaiKey = process.env.OPENAI_API_KEY;
-
-  // ---- 5) Loop over languages: substitute, call, persist ----
-  type LanguageResult = {
-    language: EidosLocale;
-    body: string;
-    model: string;
-    tokensIn: number;
-    tokensOut: number;
+  // ============================================================
+  // Step A — canonical English generation
+  // ============================================================
+  const inputsWithGrounding: Record<string, unknown> = {
+    ...(inputs as unknown as Record<string, unknown>),
+    grounding_material: groundingMaterial,
   };
-  const results: LanguageResult[] = [];
 
-  for (const language of requestedLanguages) {
-    // Build language-specific inputs (the engine localizes copy + labels).
-    const { inputs } = generateChapter1({
-      traits,
-      values,
-      motivation,
-      memberName,
-      language,
+  let english: ProviderResult;
+  try {
+    english = await runWithFailover(svc, cfg, "eidos.chapter1.generate", {
+      systemPrompt: substitute(
+        chapterTmpl.system_prompt ?? "",
+        inputsWithGrounding,
+      ),
+      userPrompt: substitute(
+        chapterTmpl.user_prompt_template ?? "",
+        inputsWithGrounding,
+      ),
+      temperature: chapterTmpl.temperature ?? 0.6,
+      maxTokens: chapterTmpl.max_tokens ?? 1200,
     });
-    const inputsWithGrounding: Record<string, unknown> = {
-      ...(inputs as unknown as Record<string, unknown>),
-      grounding_material: groundingMaterial,
-    };
-    const systemPrompt = substitute(
-      tmpl.system_prompt ?? "",
-      inputsWithGrounding,
+  } catch (e) {
+    return err(
+      502,
+      "provider_failed",
+      `[en] ${e instanceof Error ? e.message : "all providers failed"}`,
     );
-    const userPrompt = substitute(
-      tmpl.user_prompt_template ?? "",
-      inputsWithGrounding,
-    );
-
-    let body_text: string;
-    let model: string;
-    let tokensIn = 0;
-    let tokensOut = 0;
-    let provider: "anthropic" | "openai" | "stub" = "stub";
-    const callStart = Date.now();
-
-    if (anthropicKey) {
-      try {
-        const resp = await callAnthropic({
-          apiKey: anthropicKey,
-          systemPrompt,
-          userPrompt,
-          temperature: tmpl.temperature ?? 0.6,
-          maxTokens: tmpl.max_tokens ?? 1200,
-        });
-        body_text = resp.body;
-        model = resp.model;
-        tokensIn = resp.tokensIn;
-        tokensOut = resp.tokensOut;
-        provider = "anthropic";
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "Anthropic call failed";
-        void logUsage(svc, {
-          provider: "anthropic",
-          model: "claude-sonnet-4-6",
-          task: "eidos.chapter1",
-          calledFrom: "member.api.map.generate-chapter",
-          tokensIn: 0,
-          tokensOut: 0,
-          latencyMs: Date.now() - callStart,
-          error: msg,
-        });
-        return err(502, "provider_failed", `[${language}] ${msg}`);
-      }
-    } else if (openaiKey) {
-      try {
-        const resp = await callOpenAI({
-          apiKey: openaiKey,
-          systemPrompt,
-          userPrompt,
-          temperature: tmpl.temperature ?? 0.6,
-          maxTokens: tmpl.max_tokens ?? 1200,
-        });
-        body_text = resp.body;
-        model = resp.model;
-        tokensIn = resp.tokensIn;
-        tokensOut = resp.tokensOut;
-        provider = "openai";
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "OpenAI call failed";
-        void logUsage(svc, {
-          provider: "openai",
-          model: "gpt-4o",
-          task: "eidos.chapter1",
-          calledFrom: "member.api.map.generate-chapter",
-          tokensIn: 0,
-          tokensOut: 0,
-          latencyMs: Date.now() - callStart,
-          error: msg,
-        });
-        return err(502, "provider_failed", `[${language}] ${msg}`);
-      }
-    } else {
-      body_text = stubChapter(inputs);
-      model = "stub/no-api-key";
-      tokensIn = userPrompt.length;
-      tokensOut = body_text.length;
-      provider = "stub";
-    }
-
-    // Log usage per language so /analytics shows the real spend.
-    void logUsage(svc, {
-      provider,
-      model,
-      task: "eidos.chapter1",
-      calledFrom: "member.api.map.generate-chapter",
-      tokensIn,
-      tokensOut,
-      latencyMs: Date.now() - callStart,
-    });
-
-    // Persist to eidos_chapters. The (user_id, chapter_number,
-    // language) unique constraint lets us upsert per language.
-    const { error: insertErr } = await svc
-      .from("eidos_chapters")
-      .upsert(
-        {
-          user_id: gate.userId,
-          chapter_number: chapterNumber,
-          language,
-          body: body_text,
-          inputs: inputs as unknown as Record<string, unknown>,
-          model,
-          tokens_in: tokensIn,
-          tokens_out: tokensOut,
-          generated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,chapter_number,language" },
-      );
-    if (insertErr) {
-      return err(
-        500,
-        "chapter_persist_failed",
-        `[${language}] ${insertErr.message}`,
-      );
-    }
-
-    results.push({ language, body: body_text, model, tokensIn, tokensOut });
   }
 
-  // Response includes the primary language (first in the request) as
-  // a convenience for the existing UI, plus the full results array so
-  // a future UI can present a "your manual is now ready in both EN
-  // and ES" confirmation.
-  const primary = results[0];
+  void logUsage(svc, cfg, {
+    provider: english.provider,
+    model: english.model,
+    task: "eidos.chapter1.generate",
+    tokensIn: english.tokensIn,
+    tokensOut: english.tokensOut,
+    cachedTokens: english.cachedTokens,
+    latencyMs: english.latencyMs,
+  });
+
+  const enErr = await persistChapter(svc, {
+    userId: gate.userId,
+    chapterNumber,
+    language: "en",
+    body: english.body,
+    inputs: inputs as unknown as Record<string, unknown>,
+    result: english,
+  });
+  if (enErr) return err(500, "chapter_persist_failed", `[en] ${enErr}`);
+
+  // ============================================================
+  // Step B — Spanish translation of the English body
+  // ============================================================
+  //
+  // The English row is committed by this point. If the translation fails we
+  // return 502 with partialSuccess — a member reading in `en` sees his
+  // chapter; a member reading in `es` sees the not-ready state and can hit
+  // Assemble again, which re-runs both steps and upserts over the same rows.
+  let spanish: ProviderResult;
+  try {
+    spanish = await runWithFailover(svc, cfg, "eidos.chapter1.translate", {
+      systemPrompt: translateTmpl.system_prompt ?? "",
+      userPrompt: substitute(translateTmpl.user_prompt_template ?? "", {
+        english_body: english.body,
+      }),
+      temperature: translateTmpl.temperature ?? 0.3,
+      maxTokens: translateTmpl.max_tokens ?? 1400,
+    });
+  } catch (e) {
+    return NextResponse.json(
+      {
+        error: "translation_failed",
+        detail: e instanceof Error ? e.message : "all providers failed",
+        partialSuccess: true,
+        languages: ["en"],
+      },
+      { status: 502 },
+    );
+  }
+
+  void logUsage(svc, cfg, {
+    provider: spanish.provider,
+    model: spanish.model,
+    task: "eidos.chapter1.translate",
+    tokensIn: spanish.tokensIn,
+    tokensOut: spanish.tokensOut,
+    cachedTokens: spanish.cachedTokens,
+    latencyMs: spanish.latencyMs,
+  });
+
+  // The `es` row records that it is derived rather than independently
+  // generated. Keeping the English inputs under `derived_from` means the
+  // Spanish row is still traceable back to the scores behind it.
+  const esErr = await persistChapter(svc, {
+    userId: gate.userId,
+    chapterNumber,
+    language: "es",
+    body: spanish.body,
+    inputs: {
+      source_language: "en",
+      derived_from: inputs as unknown as Record<string, unknown>,
+    },
+    result: spanish,
+  });
+  if (esErr) return err(500, "chapter_persist_failed", `[es] ${esErr}`);
+
   return NextResponse.json({
     ok: true,
     chapterNumber,
-    language: primary.language,
-    body: primary.body,
-    model: primary.model,
-    results,
+    languages: ["en", "es"],
   });
 }
 
 // ============================================================
-// helpers
+// AI provider plumbing
 // ============================================================
+
+/**
+ * Run a task against the admin-configured primary provider, falling back to
+ * the secondary on any failure — a 5xx, a rate limit, a missing API key, or
+ * a response that doesn't look like a chapter.
+ *
+ * Each failed attempt is written to ai_usage_log with its error, so the
+ * admin AI panel shows failover events rather than hiding them. Throws only
+ * when BOTH providers fail.
+ */
+async function runWithFailover(
+  svc: ReturnType<typeof serviceClient>,
+  cfg: AiConfig,
+  task: Task,
+  call: Call,
+): Promise<ProviderResult> {
+  try {
+    return await tryProvider(cfg.primary, cfg, task, call);
+  } catch (primaryErr) {
+    const msg = messageOf(primaryErr);
+    console.warn(
+      `[map/generate-chapter] ${task}: primary ${cfg.primary} failed, trying ${cfg.fallback}:`,
+      msg,
+    );
+    void logUsage(svc, cfg, {
+      provider: cfg.primary,
+      model: modelFor(cfg, task, cfg.primary),
+      task,
+      tokensIn: 0,
+      tokensOut: 0,
+      cachedTokens: 0,
+      latencyMs: 0,
+      error: msg,
+    });
+
+    try {
+      return await tryProvider(cfg.fallback, cfg, task, call);
+    } catch (fallbackErr) {
+      const fbMsg = messageOf(fallbackErr);
+      void logUsage(svc, cfg, {
+        provider: cfg.fallback,
+        model: modelFor(cfg, task, cfg.fallback),
+        task,
+        tokensIn: 0,
+        tokensOut: 0,
+        cachedTokens: 0,
+        latencyMs: 0,
+        error: fbMsg,
+      });
+      throw new Error(
+        `both providers failed — ${cfg.primary}: ${msg} | ${cfg.fallback}: ${fbMsg}`,
+      );
+    }
+  }
+}
+
+async function tryProvider(
+  provider: Provider,
+  cfg: AiConfig,
+  task: Task,
+  call: Call,
+): Promise<ProviderResult> {
+  const apiKey =
+    provider === "anthropic"
+      ? process.env.ANTHROPIC_API_KEY
+      : process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error(`no_key_for_${provider}`);
+
+  const model = modelFor(cfg, task, provider);
+  const result =
+    provider === "anthropic"
+      ? await callAnthropic({ apiKey, model, ...call })
+      : await callOpenAI({ apiKey, model, ...call });
+
+  // A provider can answer 200 with an empty body or a refusal. Treat that as
+  // a failure so failover fires and a non-chapter never reaches the DB.
+  assertLooksLikeChapter(result.body, provider, model);
+
+  return { ...result, provider };
+}
+
+/**
+ * Chapter 1 is 600–900 words, and a translation of one runs similar. Under
+ * ~400 characters means an empty response, a truncation, or a refusal —
+ * none of which belong in eidos_chapters.
+ */
+function assertLooksLikeChapter(
+  body: string,
+  provider: Provider,
+  model: string,
+): void {
+  const trimmed = body.trim();
+  if (trimmed.length < 400) {
+    throw new Error(
+      `${provider}/${model} returned an unusable body (${trimmed.length} chars): ${
+        trimmed.slice(0, 120) || "(empty)"
+      }`,
+    );
+  }
+}
+
+/** admin_settings.ai_models is { task: { provider: model } }. */
+function modelFor(cfg: AiConfig, task: Task, provider: Provider): string {
+  return cfg.models[task]?.[provider] ?? MODEL_FALLBACKS[provider];
+}
+
+function messageOf(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
+async function loadAiConfig(
+  svc: ReturnType<typeof serviceClient>,
+): Promise<AiConfig> {
+  const { data } = await svc
+    .from("admin_settings")
+    .select("ai_primary_provider, ai_fallback_provider, ai_models, ai_pricing")
+    .eq("id", 1)
+    .maybeSingle();
+
+  return {
+    primary: (data?.ai_primary_provider as Provider) ?? "anthropic",
+    fallback: (data?.ai_fallback_provider as Provider) ?? "openai",
+    models: (data?.ai_models ?? {}) as AiConfig["models"],
+    pricing: (data?.ai_pricing ?? {}) as AiConfig["pricing"],
+  };
+}
+
+async function loadPromptTemplate(
+  svc: ReturnType<typeof serviceClient>,
+  slug: string,
+): Promise<{
+  system_prompt: string | null;
+  user_prompt_template: string | null;
+  temperature: number | null;
+  max_tokens: number | null;
+} | null> {
+  const { data } = await svc
+    .from("prompt_templates")
+    .select("system_prompt, user_prompt_template, temperature, max_tokens")
+    .eq("slug", slug)
+    .maybeSingle();
+  return data ?? null;
+}
 
 function substitute(template: string, vars: Record<string, unknown>): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_, key) => {
@@ -337,14 +471,11 @@ function substitute(template: string, vars: Record<string, unknown>): string {
   });
 }
 
-async function callAnthropic(opts: {
-  apiKey: string;
-  systemPrompt: string;
-  userPrompt: string;
-  temperature: number;
-  maxTokens: number;
-}): Promise<{ body: string; model: string; tokensIn: number; tokensOut: number }> {
-  const model = "claude-sonnet-4-6";
+type CallOpts = Call & { apiKey: string; model: string };
+type CallResult = Omit<ProviderResult, "provider">;
+
+async function callAnthropic(opts: CallOpts): Promise<CallResult> {
+  const start = Date.now();
   const resp = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -353,7 +484,7 @@ async function callAnthropic(opts: {
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      model,
+      model: opts.model,
       max_tokens: opts.maxTokens,
       temperature: opts.temperature,
       system: opts.systemPrompt,
@@ -361,37 +492,29 @@ async function callAnthropic(opts: {
     }),
   });
   if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`Anthropic ${resp.status}: ${text.slice(0, 300)}`);
+    throw new Error(
+      `Anthropic ${resp.status}: ${(await resp.text()).slice(0, 300)}`,
+    );
   }
   const json = await resp.json();
-  const body =
-    json?.content?.[0]?.text?.trim?.() ??
-    json?.content?.map?.((p: { text?: string }) => p.text ?? "")?.join("") ??
-    "";
-  const tokensIn = json?.usage?.input_tokens ?? 0;
-  const tokensOut = json?.usage?.output_tokens ?? 0;
-  return { body, model, tokensIn, tokensOut };
+  const body: string = ((json?.content ?? []) as { text?: string }[])
+    .map((p) => p.text ?? "")
+    .join("")
+    .trim();
+  return {
+    body,
+    model: opts.model,
+    tokensIn: json?.usage?.input_tokens ?? 0,
+    tokensOut: json?.usage?.output_tokens ?? 0,
+    cachedTokens:
+      (json?.usage?.cache_read_input_tokens ?? 0) +
+      (json?.usage?.cache_creation_input_tokens ?? 0),
+    latencyMs: Date.now() - start,
+  };
 }
 
-/**
- * OpenAI fallback for chapter generation. Hits Chat Completions
- * with gpt-4o (strong reasoning, good prose, supports the same
- * system+user message shape the prompt template assumes). Used
- * when ANTHROPIC_API_KEY is not set but OPENAI_API_KEY is.
- *
- * Cost reference: gpt-4o is ~$2.50/M input, ~$10/M output. A
- * chapter is ~3000 input + ~1000 output tokens → roughly $0.018
- * per chapter, same ballpark as Anthropic Sonnet.
- */
-async function callOpenAI(opts: {
-  apiKey: string;
-  systemPrompt: string;
-  userPrompt: string;
-  temperature: number;
-  maxTokens: number;
-}): Promise<{ body: string; model: string; tokensIn: number; tokensOut: number }> {
-  const model = "gpt-4o";
+async function callOpenAI(opts: CallOpts): Promise<CallResult> {
+  const start = Date.now();
   const resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -399,7 +522,7 @@ async function callOpenAI(opts: {
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      model,
+      model: opts.model,
       temperature: opts.temperature,
       max_tokens: opts.maxTokens,
       messages: [
@@ -409,95 +532,108 @@ async function callOpenAI(opts: {
     }),
   });
   if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`OpenAI ${resp.status}: ${text.slice(0, 300)}`);
+    throw new Error(
+      `OpenAI ${resp.status}: ${(await resp.text()).slice(0, 300)}`,
+    );
   }
   const json = await resp.json();
-  const body = (json?.choices?.[0]?.message?.content ?? "").trim();
-  const tokensIn = json?.usage?.prompt_tokens ?? 0;
-  const tokensOut = json?.usage?.completion_tokens ?? 0;
-  return { body, model, tokensIn, tokensOut };
+  return {
+    body: (json?.choices?.[0]?.message?.content ?? "").trim(),
+    model: opts.model,
+    tokensIn: json?.usage?.prompt_tokens ?? 0,
+    tokensOut: json?.usage?.completion_tokens ?? 0,
+    cachedTokens: json?.usage?.prompt_tokens_details?.cached_tokens ?? 0,
+    latencyMs: Date.now() - start,
+  };
+}
+
+// ============================================================
+// Persistence
+// ============================================================
+
+/**
+ * Upsert one language row. The (user_id, chapter_number, language) unique
+ * constraint makes a regenerate overwrite in place. Returns an error
+ * message, or null on success.
+ */
+async function persistChapter(
+  svc: ReturnType<typeof serviceClient>,
+  row: {
+    userId: string;
+    chapterNumber: number;
+    language: "en" | "es";
+    body: string;
+    inputs: Record<string, unknown>;
+    result: ProviderResult;
+  },
+): Promise<string | null> {
+  const { error } = await svc.from("eidos_chapters").upsert(
+    {
+      user_id: row.userId,
+      chapter_number: row.chapterNumber,
+      language: row.language,
+      body: row.body,
+      inputs: row.inputs,
+      model: row.result.model,
+      tokens_in: row.result.tokensIn,
+      tokens_out: row.result.tokensOut,
+      generated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,chapter_number,language" },
+  );
+  return error ? error.message : null;
 }
 
 /**
- * Fire-and-forget write to ai_usage_log. Mirrors the admin app's
- * helper at stone-harbor-admin/lib/ai.ts so the admin /security AI
- * panel reflects Eidos chapter generations alongside blog drafts
- * and daily quotes. admin_id is null for member-driven calls; the
- * `called_from` field identifies the source.
+ * Fire-and-forget write to ai_usage_log, so the admin /security AI panel
+ * reflects Eidos chapter generations alongside blog drafts and quotes.
+ * admin_id is null for member-driven calls; `called_from` identifies the
+ * source. Errors are swallowed — an analytics hiccup must never block a
+ * chapter that was actually produced.
  *
- * Errors are swallowed so an analytics hiccup never blocks the
- * actual chapter being returned to the member.
+ * Pricing comes from admin_settings.ai_pricing, a jsonb column keyed by
+ * model. The previous implementation queried a nonexistent `ai_pricing`
+ * TABLE, so every Chapter 1 row logged estimated_cost_usd = 0.
  */
 async function logUsage(
   svc: ReturnType<typeof serviceClient>,
+  cfg: AiConfig,
   row: {
-    provider: "anthropic" | "openai" | "stub";
+    provider: Provider;
     model: string;
-    task: string;
-    calledFrom: string;
+    task: Task;
     tokensIn: number;
     tokensOut: number;
+    cachedTokens: number;
     latencyMs: number;
     error?: string | null;
   },
 ): Promise<void> {
   try {
-    // Estimated cost is computed against ai_pricing if a matching row
-    // exists for this provider/model combination. If not, store 0 —
-    // pricing rows can be backfilled later by the admin and the
-    // historical token counts remain accurate.
-    const { data: priceRow } = await svc
-      .from("ai_pricing")
-      .select("input_per_million, output_per_million")
-      .eq("provider", row.provider)
-      .eq("model", row.model)
-      .maybeSingle();
-    const inputCost = priceRow
-      ? (row.tokensIn / 1_000_000) * (priceRow.input_per_million ?? 0)
+    const rates = cfg.pricing[row.model];
+    const estimatedCost = rates
+      ? Number(
+          (
+            (row.tokensIn / 1_000_000) * (rates.input_per_million ?? 0) +
+            (row.tokensOut / 1_000_000) * (rates.output_per_million ?? 0)
+          ).toFixed(6),
+        )
       : 0;
-    const outputCost = priceRow
-      ? (row.tokensOut / 1_000_000) * (priceRow.output_per_million ?? 0)
-      : 0;
-    const estimatedCost = Number((inputCost + outputCost).toFixed(6));
 
     await svc.from("ai_usage_log").insert({
       provider: row.provider,
       model: row.model,
       task: row.task,
       admin_id: null,
-      called_from: row.calledFrom,
+      called_from: "member.api.map.generate-chapter",
       input_tokens: row.tokensIn,
       output_tokens: row.tokensOut,
-      cached_tokens: 0,
+      cached_tokens: row.cachedTokens,
       estimated_cost_usd: estimatedCost,
       latency_ms: row.latencyMs,
       error: row.error ?? null,
     });
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error("[map/generate-chapter] usage log write failed:", e);
   }
-}
-
-/**
- * Stub used when ANTHROPIC_API_KEY is not configured. Returns a
- * recognizable placeholder so the UI flow can be tested. NOT
- * production output.
- */
-function stubChapter(inputs: Record<string, unknown>): string {
-  return `[Operating Manual — Chapter 1 (STUB)]
-
-Configure ANTHROPIC_API_KEY in .env.local to generate the real chapter.
-
-Inputs assembled for the prompt:
-
-- language: ${inputs.language}
-- member_name: ${inputs.member_name || "(empty)"}
-- trait_summary: ${inputs.trait_summary}
-- top_values: ${inputs.top_values}
-- starved_need: ${inputs.starved_need}
-- values_context: ${inputs.values_context}
-- motivation_context: ${inputs.motivation_context}
-`.trim();
 }
