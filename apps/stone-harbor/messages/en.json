@@ -1298,5 +1298,81 @@
       "back": "Back to the map",
       "voiceSignature": "This document is for you. Re-read it on the days that ask for it."
     }
+  },
+  "startHere": {
+    "brandBack": "← Stone Harbor",
+    "eyebrow": "Recovery Assessment",
+    "questionProgress": "Question {current} of {total}",
+    "imageCaption": "Begin with one honest answer.",
+    "audio": {
+      "muted": "Play Nature Sounds",
+      "playing": "Mute Nature Sounds"
+    },
+    "questions": {
+      "q1": {
+        "question": "What feels most true right now?",
+        "subtitle": "Your first honest answer is often the doorway to your real starting point.",
+        "imageLabel": "Still Waters",
+        "options": {
+          "clarity": "I feel confused",
+          "calm": "I feel overwhelmed",
+          "strength": "I feel angry",
+          "purpose": "I am ready to rebuild"
+        }
+      },
+      "q2": {
+        "question": "What do you need first?",
+        "subtitle": "Healing becomes stronger when you identify what your mind and body are truly asking for.",
+        "imageLabel": "Forest Path",
+        "options": {
+          "clarity": "Understanding what happened",
+          "calm": "Emotional steadiness",
+          "strength": "Boundaries and discipline",
+          "purpose": "Direction and meaning"
+        }
+      },
+      "q3": {
+        "question": "What would help you most today?",
+        "subtitle": "Momentum begins when your next step feels aligned, not forced.",
+        "imageLabel": "Distant Light",
+        "options": {
+          "clarity": "A clear explanation",
+          "calm": "A grounding exercise",
+          "strength": "A rebuilding plan",
+          "purpose": "A next-chapter roadmap"
+        }
+      }
+    },
+    "resultEyebrow": "Your Stone Harbor Path",
+    "results": {
+      "clarity": {
+        "title": "Your path begins with Clarity.",
+        "text": "You need understanding first — naming patterns, separating truth from distortion, and rebuilding trust in your own perception.",
+        "accent": "Understand. Name. See clearly.",
+        "imageLabel": "Clarity"
+      },
+      "calm": {
+        "title": "Your path begins with Calm.",
+        "text": "Your nervous system needs steadiness first — grounding, breathing, emotional regulation, and internal safety.",
+        "accent": "Breathe. Stabilize. Recenter.",
+        "imageLabel": "Calm"
+      },
+      "strength": {
+        "title": "Your path begins with Strength.",
+        "text": "You are ready to restore boundaries, confidence, discipline, and the structure that supports a stronger self.",
+        "accent": "Rebuild. Protect. Rise.",
+        "imageLabel": "Strength"
+      },
+      "purpose": {
+        "title": "Your path begins with Purpose.",
+        "text": "You are ready for direction, identity, and meaning — transforming pain into a new chapter.",
+        "accent": "Aim. Build. Become.",
+        "imageLabel": "Purpose"
+      }
+    },
+    "cta": {
+      "continue": "Continue Forward",
+      "retake": "Retake Assessment"
+    }
   }
 }

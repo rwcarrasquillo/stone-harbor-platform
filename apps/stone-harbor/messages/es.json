@@ -1298,5 +1298,81 @@
       "back": "Volver al mapa",
       "voiceSignature": "Este documento es para ti. Reléelo los días que lo pidan."
     }
+  },
+  "startHere": {
+    "brandBack": "← Stone Harbor",
+    "eyebrow": "Evaluación de Recuperación",
+    "questionProgress": "Pregunta {current} de {total}",
+    "imageCaption": "Comienza con una respuesta honesta.",
+    "audio": {
+      "muted": "Reproducir sonidos de naturaleza",
+      "playing": "Silenciar sonidos de naturaleza"
+    },
+    "questions": {
+      "q1": {
+        "question": "¿Qué se siente más cierto en este momento?",
+        "subtitle": "Tu primera respuesta honesta suele ser la puerta a tu verdadero punto de partida.",
+        "imageLabel": "Aguas Quietas",
+        "options": {
+          "clarity": "Me siento confundido",
+          "calm": "Me siento abrumado",
+          "strength": "Me siento enojado",
+          "purpose": "Estoy listo para reconstruir"
+        }
+      },
+      "q2": {
+        "question": "¿Qué necesitas primero?",
+        "subtitle": "La sanación se fortalece cuando reconoces lo que tu mente y tu cuerpo realmente te están pidiendo.",
+        "imageLabel": "Sendero del Bosque",
+        "options": {
+          "clarity": "Comprender lo que sucedió",
+          "calm": "Estabilidad emocional",
+          "strength": "Límites y disciplina",
+          "purpose": "Dirección y sentido"
+        }
+      },
+      "q3": {
+        "question": "¿Qué te ayudaría más hoy?",
+        "subtitle": "El impulso empieza cuando tu siguiente paso se siente alineado, no forzado.",
+        "imageLabel": "Luz Distante",
+        "options": {
+          "clarity": "Una explicación clara",
+          "calm": "Un ejercicio de arraigo",
+          "strength": "Un plan para reconstruir",
+          "purpose": "Un mapa hacia el próximo capítulo"
+        }
+      }
+    },
+    "resultEyebrow": "Tu camino en Stone Harbor",
+    "results": {
+      "clarity": {
+        "title": "Tu camino comienza con Claridad.",
+        "text": "Necesitas comprensión primero — nombrar los patrones, separar la verdad de la distorsión, y reconstruir la confianza en tu propia percepción.",
+        "accent": "Comprende. Nombra. Ve con claridad.",
+        "imageLabel": "Claridad"
+      },
+      "calm": {
+        "title": "Tu camino comienza con Calma.",
+        "text": "Tu sistema nervioso necesita estabilidad primero — arraigo, respiración, regulación emocional, y seguridad interna.",
+        "accent": "Respira. Estabiliza. Recentra.",
+        "imageLabel": "Calma"
+      },
+      "strength": {
+        "title": "Tu camino comienza con Fortaleza.",
+        "text": "Estás listo para restaurar límites, confianza, disciplina, y la estructura que sostiene a un yo más fuerte.",
+        "accent": "Reconstruye. Protege. Álzate.",
+        "imageLabel": "Fortaleza"
+      },
+      "purpose": {
+        "title": "Tu camino comienza con Propósito.",
+        "text": "Estás listo para dirección, identidad, y sentido — transformando el dolor en un nuevo capítulo.",
+        "accent": "Apunta. Construye. Sé.",
+        "imageLabel": "Propósito"
+      }
+    },
+    "cta": {
+      "continue": "Sigue adelante",
+      "retake": "Repetir la evaluación"
+    }
   }
 }
