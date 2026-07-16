@@ -74,7 +74,13 @@ export function AnchorMark({
           <circle cx="32" cy="14" r="1.7" fill="black" />
         </mask>
       </defs>
-      <g fill={fill} mask={`url(#${maskId})`}>
+      {/* `fill` goes through `style`, not the presentation attribute, so
+          callers can pass a CSS custom property — style={{fill: "var(…)"}}
+          resolves, whereas fill="var(…)" as an attribute is not reliably
+          supported. Callers now pass var(--sh-accent-gold) instead of
+          recomputing the theme's gold hex (SH-100 Wave 1). Plain hex
+          strings still work exactly as before. */}
+      <g style={{ fill }} mask={`url(#${maskId})`}>
         {/* Outer ring */}
         <circle cx="32" cy="14" r="4" />
         {/* Vertical shaft — default height 38 (from favicon's 29 → 34 →

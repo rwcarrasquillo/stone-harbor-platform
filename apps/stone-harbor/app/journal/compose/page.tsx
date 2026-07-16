@@ -2022,7 +2022,7 @@ export default function JournalPage() {
                     <AnchorMark
                       size={20}
                       shaftHeight={42}
-                      fill={isDusk ? "#c4934e" : "#a9793d"}
+                      fill="var(--sh-accent-gold)"
                     />
                   </motion.div>
                   <div

@@ -317,7 +317,6 @@ export default function LineagePage() {
 function LineageHorizonMark({ voiceSignature }: { voiceSignature: string }) {
   const { theme } = useTheme();
   const goldRgb = theme === "sunlit" ? "169,121,61" : "196,147,78";
-  const goldHex = theme === "sunlit" ? "#a9793d" : "#c4934e";
   const lineShadow =
     theme === "sunlit"
       ? "0 1px 0 rgba(60,40,15,0.18)"
@@ -354,7 +353,7 @@ function LineageHorizonMark({ voiceSignature }: { voiceSignature: string }) {
           }}
           style={{ transformOrigin: "center" }}
         >
-          <AnchorMark size={20} shaftHeight={42} fill={goldHex} />
+          <AnchorMark size={20} shaftHeight={42} fill="var(--sh-accent-gold)" />
         </motion.div>
 
         <div
