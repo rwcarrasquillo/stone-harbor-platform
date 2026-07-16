@@ -1738,7 +1738,6 @@ function CenteredHorizonMark() {
   const { theme } = useTheme();
   const t = useTranslations("journal");
   const goldRgb = theme === "sunlit" ? "169,121,61" : "196,147,78";
-  const goldHex = theme === "sunlit" ? "#a9793d" : "#c4934e";
   const filterShadow =
     theme === "sunlit"
       ? "drop-shadow(0 0.5px 0 rgba(60,40,15,0.18))"
@@ -1773,7 +1772,7 @@ function CenteredHorizonMark() {
           }}
           style={{ transformOrigin: "center" }}
         >
-          <AnchorMark size={20} shaftHeight={42} fill={goldHex} />
+          <AnchorMark size={20} shaftHeight={42} fill="var(--sh-accent-gold)" />
         </motion.div>
         <HorizonSegment
           direction="right"
@@ -2020,7 +2019,6 @@ function EntryTailpiece() {
   // Gold core: deeper on sunlit (so it reads on cream without a halo),
   // brighter on dusk (so the halo can lift it off near-black).
   const goldRgb = theme === "sunlit" ? "169,121,61" : "196,147,78";
-  const goldHex = theme === "sunlit" ? "#a9793d" : "#c4934e";
 
   // Shadow model:
   //   sunlit → 1px-offset dark ink impression (letterpress)
@@ -2174,7 +2172,7 @@ function EntryTailpiece() {
           }}
           style={{ transformOrigin: "center" }}
         >
-          <AnchorMark size={20} shaftHeight={42} fill={goldHex} />
+          <AnchorMark size={20} shaftHeight={42} fill="var(--sh-accent-gold)" />
         </motion.div>
         <div
           aria-hidden="true"

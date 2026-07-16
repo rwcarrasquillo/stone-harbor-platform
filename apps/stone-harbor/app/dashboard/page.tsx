@@ -1038,7 +1038,6 @@ export default function DashboardCenteredPage() {
 function CenteredHorizonMark() {
   const { theme } = useTheme();
   const goldRgb = theme === "sunlit" ? "169,121,61" : "196,147,78";
-  const goldHex = theme === "sunlit" ? "#a9793d" : "#c4934e";
   const filterShadow =
     theme === "sunlit"
       ? "drop-shadow(0 0.5px 0 rgba(60,40,15,0.18))"
@@ -1065,7 +1064,7 @@ function CenteredHorizonMark() {
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           style={{ transformOrigin: "center" }}
         >
-          <AnchorMark size={20} shaftHeight={42} fill={goldHex} />
+          <AnchorMark size={20} shaftHeight={42} fill="var(--sh-accent-gold)" />
         </motion.div>
         <HorizonSegment
           direction="right"

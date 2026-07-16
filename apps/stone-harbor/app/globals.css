@@ -69,6 +69,32 @@
 
   --sh-accent-gold: #a9793d;    /* gold-deep, reads on light */
   --sh-accent-gold-bright: #c4934e;
+
+  /* --- Added by SH-100 Wave 1 (foundation) ------------------------- */
+
+  /* Semantic colors. Previously hard-coded at call sites. */
+  --sh-danger: #b14a3a;
+  --sh-moss: #586558;
+
+  /* Theme-explicit gold pair. Prefer --sh-accent-gold, which already
+     switches on data-theme. Reach for these only where a specific
+     theme's gold is needed regardless of the active theme (e.g. a
+     canvas fill, or a shadow that must stay gold-bright on Dusk even
+     when the element's accent is moss). */
+  --sh-accent-gold-sunlit: #a9793d;
+  --sh-accent-gold-dusk: #c4934e;
+
+  /* RGB triplets, for rgba() composition where a hex can't be used.
+     --sh-hairline-rgb is the theme-switching one that HairlineLens
+     consumes; the -sunlit/-dusk pair backs it and is available for
+     theme-explicit cases. */
+  --sh-hairline-rgb-sunlit: 169, 121, 61;
+  --sh-hairline-rgb-dusk: 196, 147, 78;
+  --sh-hairline-rgb: var(--sh-hairline-rgb-sunlit);
+
+  /* Warm hover surface. Defined here so Wave 2 can adopt it; nothing
+     consumes it yet. */
+  --sh-bg-card-tinted-hover: #efe8dc;
 }
 
 [data-theme="dusk"] {
@@ -87,6 +113,18 @@
 
   --sh-accent-gold: #c4934e;    /* brighter gold, reads on dark */
   --sh-accent-gold-bright: #d8b07b;
+
+  /* --- Added by SH-100 Wave 1 (foundation) ------------------------- */
+
+  /* Proposed Dusk values — founder tunes during smoke if visually off.
+     Nothing consumes --sh-danger or --sh-moss yet, so a change here is
+     free until Wave 2 adopts them. */
+  --sh-danger: #d16049;
+  --sh-moss: #7d8a7a;
+
+  --sh-hairline-rgb: var(--sh-hairline-rgb-dusk);
+
+  --sh-bg-card-tinted-hover: rgba(255, 255, 255, 0.08);
 }
 
 /* Apply the page background + primary text color to the body so
