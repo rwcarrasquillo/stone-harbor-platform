@@ -584,7 +584,7 @@ export default function RoadmapPage() {
                 className={`border p-8 text-[var(--sh-text-secondary)] ${
                   isDusk
                     ? "border-white/10 bg-black/30 backdrop-blur-sm"
-                    : "border-[var(--sh-border-subtle)] bg-white"
+                    : "border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)]"
                 }`}
               >
                 {t("emptyStage")}
@@ -651,7 +651,7 @@ export default function RoadmapPage() {
                         )
                       }
                       className={`relative p-5 transition md:p-6 ${
-                        isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-white"
+                        isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-[var(--sh-bg-card-tinted)]"
                       }`}
                       style={{
                         border: `1px solid ${
@@ -854,7 +854,7 @@ function MobileStepList({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className={`relative p-5 ${
-          isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-white"
+          isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-[var(--sh-bg-card-tinted)]"
         }`}
         style={{
           border: `1px solid ${

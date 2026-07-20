@@ -313,7 +313,7 @@ function LetterCard({
   // tinted to the letter's pillar accent.
   const baseClass = isDusk
     ? "group relative block flex h-full min-h-[420px] flex-col bg-black/30 backdrop-blur-sm transition hover:bg-white/[0.06] text-left w-full"
-    : "group relative block flex h-full min-h-[420px] flex-col bg-white transition hover:bg-[#fdfaf3] text-left w-full";
+    : "group relative block flex h-full min-h-[420px] flex-col bg-[var(--sh-bg-card-tinted)] transition hover:bg-[var(--sh-bg-card-tinted-hover)] text-left w-full";
   const borderStyle = {
     border: isDusk ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e7e5e4",
   };
@@ -425,7 +425,7 @@ function HeroLetter({
         className={`group relative grid overflow-hidden transition md:grid-cols-[1.05fr_0.95fr] ${
           isDusk
             ? "bg-black/30 backdrop-blur-sm hover:bg-white/[0.06]"
-            : "bg-white hover:bg-[#fdfaf3]"
+            : "bg-[var(--sh-bg-card-tinted)] hover:bg-[var(--sh-bg-card-tinted-hover)]"
         }`}
         style={{
           border: isDusk
@@ -837,7 +837,7 @@ export default function NewMembersBlogPage() {
                 className={`border p-10 text-center ${
                   isDusk
                     ? "border-white/10 bg-black/30 backdrop-blur-sm"
-                    : "border-[var(--sh-border-subtle)] bg-white"
+                    : "border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)]"
                 }`}
               >
                 <p
@@ -927,7 +927,7 @@ export default function NewMembersBlogPage() {
                             className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
                               isDusk
                                 ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
-                                : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-primary)] hover:bg-[#f8f4ed]"
+                                : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-primary)] hover:bg-[var(--sh-bg-card-tinted-hover)]"
                             }`}
                           >
                             <ChevronLeft size={14} strokeWidth={1.8} />
@@ -942,7 +942,7 @@ export default function NewMembersBlogPage() {
                             className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
                               isDusk
                                 ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
-                                : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-primary)] hover:bg-[#f8f4ed]"
+                                : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-primary)] hover:bg-[var(--sh-bg-card-tinted-hover)]"
                             }`}
                           >
                             <ChevronRight size={14} strokeWidth={1.8} />
@@ -1088,7 +1088,7 @@ export default function NewMembersBlogPage() {
             className={`relative w-full max-w-3xl shadow-[0_30px_120px_rgba(0,0,0,0.45)] ${
               isDusk
                 ? "border border-white/10 bg-[#0f0c0a] backdrop-blur-md"
-                : "bg-white"
+                : "bg-[var(--sh-bg-card-tinted)]"
             }`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1098,7 +1098,7 @@ export default function NewMembersBlogPage() {
               className={`absolute right-4 top-4 z-10 border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] transition hover:border-[var(--sh-accent-gold)] ${
                 isDusk
                   ? "border-white/15 bg-white/[0.06] text-[var(--sh-text-secondary)]"
-                  : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-secondary)]"
+                  : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-secondary)]"
               }`}
             >
               {t("closeReader")}

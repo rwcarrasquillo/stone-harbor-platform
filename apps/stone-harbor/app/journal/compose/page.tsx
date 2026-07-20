@@ -1930,7 +1930,7 @@ export default function JournalPage() {
                           className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors ${
                             isSelected
                               ? "bg-[rgba(196,147,78,0.08)]"
-                              : "hover:bg-white/[0.02]"
+                              : theme === "sunlit" ? "hover:bg-[var(--sh-bg-card-tinted-hover)]" : "hover:bg-white/[0.02]"
                           }`}
                         >
                           <span

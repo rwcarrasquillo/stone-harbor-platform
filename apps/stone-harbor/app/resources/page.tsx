@@ -493,7 +493,7 @@ export default function ResourcesPage() {
                                 className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
                                   isDusk
                                     ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
-                                    : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-primary)] hover:bg-[#f8f4ed]"
+                                    : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-primary)] hover:bg-[var(--sh-bg-card-tinted-hover)]"
                                 }`}
                               >
                                 <ChevronLeft size={14} strokeWidth={1.8} />
@@ -508,7 +508,7 @@ export default function ResourcesPage() {
                                 className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
                                   isDusk
                                     ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
-                                    : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-primary)] hover:bg-[#f8f4ed]"
+                                    : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-primary)] hover:bg-[var(--sh-bg-card-tinted-hover)]"
                                 }`}
                               >
                                 <ChevronRight size={14} strokeWidth={1.8} />

@@ -983,7 +983,7 @@ export default function MessagesPage() {
                       className={`flex max-h-72 flex-col overflow-y-auto ${
                         isDusk
                           ? "border border-white/10 bg-[#1a1614]"
-                          : "border border-[var(--sh-border-medium)] bg-white"
+                          : "border border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)]"
                       }`}
                     >
                       {memberResults.map((member) => (
@@ -1777,7 +1777,7 @@ function ConversationCard({
 }) {
   const activeBg =
     active && theme === "sunlit" ? "bg-[rgba(196,147,78,0.045)]" : "";
-  const hoverBg = !active ? "hover:bg-white/[0.02]" : "";
+  const hoverBg = !active ? (theme === "sunlit" ? "hover:bg-[var(--sh-bg-card-tinted-hover)]" : "hover:bg-white/[0.02]") : "";
 
   // Has unread messages from the other member? Drives three signals:
   //   - Gold ring around the avatar (ringVariant="gold")

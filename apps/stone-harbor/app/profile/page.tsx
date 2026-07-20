@@ -1463,7 +1463,7 @@ function inputClasses(isDusk: boolean) {
   return `w-full rounded-none border px-4 py-3 text-sm transition focus:outline-none ${
     isDusk
       ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-stone-500"
-      : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-secondary)]"
+      : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-secondary)]"
   }`;
 }
 
@@ -1606,7 +1606,7 @@ function BareSelect({
         className={`h-[46px] w-full appearance-none rounded-none border px-4 py-3 text-sm font-medium transition focus:outline-none ${
           isDusk
             ? "border-white/15 bg-black/40 text-stone-100"
-            : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-secondary)]"
+            : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-secondary)]"
         }`}
       >
         {children}
@@ -1703,7 +1703,7 @@ function CompanyInput({
         className={`flex items-center rounded-none border ${
           isDusk
             ? "border-white/15 bg-black/40"
-            : "border-[var(--sh-border-medium)] bg-white"
+            : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)]"
         }`}
       >
         {(logoUrl || domain) && (
@@ -1745,7 +1745,7 @@ function CompanyInput({
           className={`absolute z-50 mt-2 max-h-72 w-full overflow-y-auto border shadow-xl ${
             isDusk
               ? "border-white/10 bg-[#1a1614]"
-              : "border-[var(--sh-border-subtle)] bg-white"
+              : "border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)]"
           }`}
         >
           {suggestions.map((company) => (
