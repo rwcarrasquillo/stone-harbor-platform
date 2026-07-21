@@ -278,7 +278,7 @@ export function BrotherhoodPairing({ userId }: Props) {
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-none bg-[var(--sh-accent-gold)] px-7 py-3 text-xs font-bold uppercase tracking-[0.28em] text-white shadow-md transition hover:bg-[#8d6432] disabled:opacity-60"
+              className="rounded-none bg-[var(--sh-accent-gold)] px-7 py-3 text-xs font-bold uppercase tracking-[0.28em] text-white shadow-md transition hover:bg-[var(--sh-accent-gold-deep-hover)] disabled:opacity-60"
             >
               {submitting ? "Joining..." : "Pair me with a brother"}
             </button>

@@ -1087,6 +1087,7 @@ export default function NewMembersBlogPage() {
             transition={{ duration: 0.3 }}
             className={`relative w-full max-w-3xl shadow-[0_30px_120px_rgba(0,0,0,0.45)] ${
               isDusk
+                // eslint-disable-next-line no-restricted-syntax -- bespoke Dusk surface: near-black card fill, no token
                 ? "border border-white/10 bg-[#0f0c0a] backdrop-blur-md"
                 : "bg-[var(--sh-bg-card-tinted)]"
             }`}

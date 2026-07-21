@@ -223,6 +223,7 @@ export function StoryInvitationCard({ userId, userEmail }: Props) {
         className={`relative overflow-hidden rounded-none border px-4 py-6 shadow-[0_10px_30px_rgba(0,0,0,0.05)] md:px-10 md:py-10 ${
           isDusk
             ? "border-white/10 bg-black/30 backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.4)]"
+            // eslint-disable-next-line no-restricted-syntax -- bespoke Sunlit cream gradient, no token
             : "border-stone-200 bg-gradient-to-br from-[#f6f0e6] via-[#f1ebde] to-[#ece4d3]"
         }`}
       >
@@ -259,6 +260,7 @@ export function StoryInvitationCard({ userId, userEmail }: Props) {
               className={`group inline-flex items-center justify-center border px-6 py-3 text-[11px] font-bold uppercase tracking-[0.24em] transition-all duration-300 md:px-8 md:py-3 md:tracking-[0.28em] ${
                 isDusk
                   ? "border-[var(--sh-accent-gold-dusk)] bg-[var(--sh-accent-gold-dusk)] text-stone-900 hover:bg-[var(--sh-accent-gold-sunlit)]"
+                  // eslint-disable-next-line no-restricted-syntax -- bespoke Sunlit gold hover, no token
                   : "border-[var(--sh-accent-gold-sunlit)] bg-[var(--sh-accent-gold-sunlit)] text-stone-50 hover:bg-[#8a6230]"
               }`}
             >

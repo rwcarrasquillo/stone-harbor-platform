@@ -140,7 +140,7 @@ export function TheMapTile() {
           </p>
           <Link
             href={href}
-            className="mt-6 inline-block rounded-none border border-[var(--sh-accent-gold-dusk)] bg-[var(--sh-accent-gold-sunlit)] px-6 py-3 text-xs font-bold uppercase tracking-[0.25em] text-white transition hover:bg-[#8d6432]"
+            className="mt-6 inline-block rounded-none border border-[var(--sh-accent-gold-dusk)] bg-[var(--sh-accent-gold-sunlit)] px-6 py-3 text-xs font-bold uppercase tracking-[0.25em] text-white transition hover:bg-[var(--sh-accent-gold-deep-hover)]"
           >
             {cta}
           </Link>

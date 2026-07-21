@@ -982,6 +982,7 @@ export default function MessagesPage() {
                     <div
                       className={`flex max-h-72 flex-col overflow-y-auto ${
                         isDusk
+                          // eslint-disable-next-line no-restricted-syntax -- bespoke Dusk surface: near-black panel fill, no token
                           ? "border border-white/10 bg-[#1a1614]"
                           : "border border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)]"
                       }`}
@@ -1732,6 +1733,7 @@ function Avatar({
       : "border border-[var(--sh-border-subtle)]";
   return (
     <div
+      // eslint-disable-next-line no-restricted-syntax -- bespoke always-light avatar fill, no token
       className={`flex ${sizeClass} shrink-0 items-center justify-center overflow-hidden rounded-full ${borderClass} bg-[#efe8dc]`}
     >
       {profile?.avatar_url ? (

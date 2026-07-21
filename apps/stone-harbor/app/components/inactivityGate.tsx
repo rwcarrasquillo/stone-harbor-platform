@@ -147,6 +147,7 @@ export function InactivityGate() {
             transition={{ duration: 0.35 }}
             className={`w-full max-w-md border-l-[3px] px-6 py-6 shadow-2xl ${
               isDusk
+                // eslint-disable-next-line no-restricted-syntax -- bespoke Dusk surface: near-black card fill deepens contrast on dark, no token
                 ? "border-[var(--sh-accent-gold-dusk)] bg-[#0f0c0a]"
                 : "border-[var(--sh-accent-gold-sunlit)] bg-[var(--sh-bg-card-tinted)]"
             }`}
@@ -181,8 +182,9 @@ export function InactivityGate() {
                 onClick={dismissWarning}
                 className={`px-6 py-3 text-[11px] font-bold uppercase tracking-[0.22em] transition ${
                   isDusk
+                    // eslint-disable-next-line no-restricted-syntax -- bespoke Dusk gold hover, no token
                     ? "bg-[var(--sh-accent-gold-dusk)] text-stone-900 hover:bg-[#d4a974]"
-                    : "bg-[var(--sh-accent-gold-sunlit)] text-white hover:bg-[#8d6432]"
+                    : "bg-[var(--sh-accent-gold-sunlit)] text-white hover:bg-[var(--sh-accent-gold-deep-hover)]"
                 }`}
               >
                 Stay Here

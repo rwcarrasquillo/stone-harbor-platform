@@ -118,6 +118,7 @@ export function PreviewDayBadge() {
     <div
       role="status"
       aria-label="Stone Harbor preview mode"
+      // eslint-disable-next-line no-restricted-syntax -- bespoke always-dark surface: preview badge stays near-black in both themes
       className="pointer-events-auto fixed bottom-4 left-4 z-[60] max-w-[280px] border border-[var(--sh-accent-gold)] bg-[#1a1614] p-3 text-white shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
       style={{ backdropFilter: "blur(6px)" }}
     >

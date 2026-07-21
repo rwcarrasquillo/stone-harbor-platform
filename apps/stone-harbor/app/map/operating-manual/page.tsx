@@ -197,7 +197,7 @@ export default function OperatingManualPage() {
             loading={generating}
           />
           {generateError && (
-            <p className={`${sans.className} text-sm text-[#b14a3a]`}>
+            <p className={`${sans.className} text-sm text-[var(--sh-danger)]`}>
               {generateError}
             </p>
           )}

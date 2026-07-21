@@ -543,6 +543,7 @@ export default function DashboardCenteredPage() {
               className={`${sans.className} group flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--sh-text-tertiary)] transition-colors hover:text-[var(--sh-accent-gold)]`}
               aria-label={c.nav.editProfile}
             >
+              {/* eslint-disable-next-line no-restricted-syntax -- bespoke always-light avatar fill, no token */}
               <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--sh-border-subtle)] bg-[#efe8dc] transition-colors group-hover:border-[var(--sh-accent-gold)]">
                 {profile?.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element

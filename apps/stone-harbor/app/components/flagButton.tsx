@@ -186,6 +186,7 @@ export function FlagButton({
               exit={{ y: 20, opacity: 0 }}
               transition={{ duration: 0.25 }}
               onClick={(e) => e.stopPropagation()}
+              // eslint-disable-next-line no-restricted-syntax -- bespoke always-light modal fill, no token
               className="w-full max-w-lg overflow-hidden border border-stone-200 bg-[#f8f4ed] shadow-2xl"
             >
               <div
@@ -227,6 +228,7 @@ export function FlagButton({
                         key={opt.value}
                         className={`flex cursor-pointer items-start gap-3 border bg-white px-4 py-3 transition ${
                           reason === opt.value
+                            // eslint-disable-next-line no-restricted-syntax -- bespoke selected-state cream fill, no token
                             ? "border-[var(--sh-accent-gold-sunlit)] bg-[#f8f0e3]"
                             : "border-stone-200 hover:border-stone-400"
                         }`}
@@ -275,7 +277,7 @@ export function FlagButton({
                     <button
                       onClick={submitFlag}
                       disabled={submitting || !reason}
-                      className="bg-[var(--sh-accent-gold-sunlit)] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] disabled:opacity-50"
+                      className="bg-[var(--sh-accent-gold-sunlit)] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[var(--sh-accent-gold-deep-hover)] disabled:opacity-50"
                     >
                       {submitting ? "Sending…" : "Send Report"}
                     </button>

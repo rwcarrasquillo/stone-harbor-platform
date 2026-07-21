@@ -55,6 +55,7 @@ export function Toast({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.35 }}
+            // eslint-disable-next-line no-restricted-syntax -- bespoke always-light toast fill, no token
             className="pointer-events-auto max-w-md border-l-[3px] bg-[#f8f4ed] px-5 py-4 shadow-[0_18px_50px_rgba(0,0,0,0.18)] backdrop-blur"
             style={{ borderLeftColor: accent }}
           >

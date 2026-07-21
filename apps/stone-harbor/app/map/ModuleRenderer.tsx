@@ -233,7 +233,7 @@ export function ModuleRenderer({
           disabled={!allAnswered}
         />
         {error && (
-          <p className="text-sm text-[#b14a3a]" role="alert">
+          <p className="text-sm text-[var(--sh-danger)]" role="alert">
             {error}
           </p>
         )}

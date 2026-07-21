@@ -114,6 +114,7 @@ export function CrisisModal({ level, onDismiss, onPause }: Props) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
+            // eslint-disable-next-line no-restricted-syntax -- bespoke always-dark surface: crisis modal stays near-black in both themes
             className="relative w-full max-w-xl border-t border-[var(--sh-accent-gold-dusk)] bg-[#0A0A0B] px-6 py-8 md:border md:px-10 md:py-12"
           >
             {/* Warm radial wash so the modal reads as a soft holding

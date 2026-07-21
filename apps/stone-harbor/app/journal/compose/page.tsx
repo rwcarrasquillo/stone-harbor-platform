@@ -84,7 +84,7 @@ const moodOptions = [
   // psychologically apt — sadness should read as the heavier emotion.
   { value: "sad", label: "Sad", color: "#3e5670" },
   { value: "hopeful", label: "Hopeful", color: "#c4934e" },
-  { value: "strong", label: "Strong", color: "#8d6432" },
+  { value: "strong", label: "Strong", color: "var(--sh-accent-gold-deep-hover)" },
 ] as const;
 
 function moodColor(value: string | null | undefined) {
@@ -159,7 +159,7 @@ const DESKTOP_MOODS: Record<string, DesktopMoodTints> = {
   sad:      { dot: "#3e5670", labelDusk: "#95b5d4", labelSunlit: "#3e5670" },
   grounded: { dot: "#586558", labelDusk: "#b0c4b0", labelSunlit: "#4a5648" },
   hopeful:  { dot: "#c4934e", labelDusk: "#e8c896", labelSunlit: "#a9793d" },
-  strong:   { dot: "#8d6432", labelDusk: "#d4a974", labelSunlit: "#7a5226" },
+  strong:   { dot: "var(--sh-accent-gold-deep-hover)", labelDusk: "#d4a974", labelSunlit: "#7a5226" },
   confused: { dot: "#9c8a6e", labelDusk: "#d4c5a9", labelSunlit: "#776654" },
   angry:    { dot: "#a05a3c", labelDusk: "#e8997a", labelSunlit: "#8c4a2e" },
   scared:   { dot: "#7d6ca2", labelDusk: "#bdaedb", labelSunlit: "#5e4d83" },
@@ -1058,6 +1058,7 @@ export default function JournalPage() {
                   className={`mb-8 border-l-2 px-4 py-4 md:mb-10 md:px-5 md:py-5 ${
                     isDusk
                       ? "border-[var(--sh-accent-gold-dusk)] bg-black/20"
+                      // eslint-disable-next-line no-restricted-syntax -- bespoke Sunlit cream fill, no token
                       : "border-[var(--sh-accent-gold-sunlit)] bg-[#f6f0e6]"
                   }`}
                 >
@@ -1327,8 +1328,10 @@ export default function JournalPage() {
               <button
                 type="submit"
                 disabled={saving || !content.trim()}
-                className="group relative w-full overflow-hidden rounded-none border border-[#f4d7a1]/50 bg-[var(--sh-accent-gold-sunlit)] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.18)] transition duration-300 hover:scale-[1.02] hover:bg-[#8d6432] disabled:opacity-60 disabled:hover:scale-100"
+                // eslint-disable-next-line no-restricted-syntax -- bespoke gold border, no token
+                className="group relative w-full overflow-hidden rounded-none border border-[#f4d7a1]/50 bg-[var(--sh-accent-gold-sunlit)] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.18)] transition duration-300 hover:scale-[1.02] hover:bg-[var(--sh-accent-gold-deep-hover)] disabled:opacity-60 disabled:hover:scale-100"
               >
+                {/* eslint-disable-next-line no-restricted-syntax -- bespoke gold gradient, no token */}
                 <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
                 <span className="relative z-10">
                   {saving ? t("savingDots") : t("save")}
@@ -1530,7 +1533,7 @@ export default function JournalPage() {
                             onChange={(e) =>
                               setEditingDraftTitle(e.target.value)
                             }
-                            className={`w-full rounded-none border px-4 py-2 text-sm outline-none transition focus:ring-2 focus:ring-[#586558]/30 ${
+                            className={`w-full rounded-none border px-4 py-2 text-sm outline-none transition focus:ring-2 focus:ring-[var(--sh-moss)]/30 ${
                               isDusk
                                 ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-white/30 focus:border-[var(--sh-accent-gold-dusk)]"
                                 : "border-stone-300 bg-[var(--sh-bg-card-tinted)] text-stone-800 placeholder:text-stone-400 focus:border-[var(--sh-accent-gold-sunlit)]"
@@ -1542,7 +1545,7 @@ export default function JournalPage() {
                             value={editingDraft}
                             onChange={(e) => setEditingDraft(e.target.value)}
                             rows={Math.max(4, Math.min(12, editingDraft.split("\n").length + 1))}
-                            className={`w-full resize-none rounded-none border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#586558]/30 ${
+                            className={`w-full resize-none rounded-none border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[var(--sh-moss)]/30 ${
                               isDusk
                                 ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-white/30 focus:border-[var(--sh-accent-gold-dusk)]"
                                 : "border-stone-300 bg-[var(--sh-bg-card-tinted)] text-stone-800 placeholder:text-stone-400 focus:border-[var(--sh-accent-gold-sunlit)]"
@@ -1563,7 +1566,7 @@ export default function JournalPage() {
                             <button
                               onClick={() => saveEditingEntry(entry)}
                               disabled={savingEdit || !editingDraft.trim()}
-                              className="rounded-none border border-[var(--sh-accent-gold)] bg-[var(--sh-accent-gold-sunlit)] px-5 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:bg-[#8d6432] disabled:opacity-60"
+                              className="rounded-none border border-[var(--sh-accent-gold)] bg-[var(--sh-accent-gold-sunlit)] px-5 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:bg-[var(--sh-accent-gold-deep-hover)] disabled:opacity-60"
                             >
                               {savingEdit ? t("savingEdit") : t("saveEdit")}
                             </button>

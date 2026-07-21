@@ -859,6 +859,7 @@ export default function ProfilePage() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
+                        // eslint-disable-next-line no-restricted-syntax -- bespoke always-light avatar gradient, no token
                         <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#f3efe7] to-[#e6dfd0]">
                           <span
                             className={`${serif.className} text-[10.5px] italic tracking-[0.14em] text-[var(--sh-text-tertiary)]`}
@@ -885,6 +886,7 @@ export default function ProfilePage() {
                     {/* Avatar — lifted onto the banner's lower edge. */}
                     <div className="-mt-12 flex items-end gap-5 px-1">
                     <label
+                      // eslint-disable-next-line no-restricted-syntax -- bespoke always-light avatar fill, no token
                       className="group relative h-24 w-24 shrink-0 cursor-pointer overflow-hidden rounded-full border-2 border-[var(--sh-bg-page)] bg-[#efe8dc] ring-[0.5px] ring-[var(--sh-border-subtle)]"
                       aria-label={t("sections.identity.fields.avatar")}
                     >
@@ -1324,7 +1326,7 @@ export default function ProfilePage() {
                   disabled={
                     !isDirty || saving || uploadingAvatar || uploadingCover
                   }
-                  className={`${sans.className} w-full rounded-none bg-[var(--sh-accent-gold)] px-8 py-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-white shadow-md transition hover:bg-[#8d6432] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto`}
+                  className={`${sans.className} w-full rounded-none bg-[var(--sh-accent-gold)] px-8 py-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-white shadow-md transition hover:bg-[var(--sh-accent-gold-deep-hover)] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto`}
                 >
                   {saving || uploadingAvatar || uploadingCover
                     ? t("saving")
@@ -1455,7 +1457,7 @@ function FieldSupport({ children }: { children: React.ReactNode }) {
 
 function FieldError({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mt-2 text-[11px] font-semibold text-[#b14a3a]">{children}</p>
+    <p className="mt-2 text-[11px] font-semibold text-[var(--sh-danger)]">{children}</p>
   );
 }
 
@@ -1744,6 +1746,7 @@ function CompanyInput({
         <div
           className={`absolute z-50 mt-2 max-h-72 w-full overflow-y-auto border shadow-xl ${
             isDusk
+              // eslint-disable-next-line no-restricted-syntax -- bespoke Dusk surface: near-black dropdown fill, no token
               ? "border-white/10 bg-[#1a1614]"
               : "border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)]"
           }`}
@@ -1756,7 +1759,7 @@ function CompanyInput({
               className={`flex w-full items-center gap-3 rounded-none border-b px-4 py-3 text-left transition ${
                 isDusk
                   ? "border-white/5 hover:bg-white/5"
-                  : "border-stone-100 hover:bg-[#f3efe7]"
+                  : "border-stone-100 hover:bg-[var(--sh-bg-page)]"
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}

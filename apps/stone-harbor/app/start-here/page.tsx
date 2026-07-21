@@ -463,7 +463,7 @@ export default function StartHerePage() {
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row md:mt-12 md:gap-5">
                   <Link
                     href="/register"
-                    className="rounded-full bg-[var(--sh-accent-gold-sunlit)] px-6 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] md:px-10 md:py-5 md:text-sm md:tracking-[0.25em]"
+                    className="rounded-full bg-[var(--sh-accent-gold-sunlit)] px-6 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[var(--sh-accent-gold-deep-hover)] md:px-10 md:py-5 md:text-sm md:tracking-[0.25em]"
                   >
                     {t("cta.continue")}
                   </Link>
