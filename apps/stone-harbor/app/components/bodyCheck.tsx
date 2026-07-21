@@ -123,6 +123,7 @@ export function BodyCheck({ open, onClose, onContinue }: Props) {
             className={`relative w-full max-w-md border p-8 ${
               isDusk
                 ? "border-white/10 bg-black/40 backdrop-blur-md"
+                // eslint-disable-next-line no-restricted-syntax -- bespoke Sunlit cream fill, no token
                 : "border-[var(--sh-border-subtle)] bg-[#fbf8f1]"
             }`}
             onClick={(e) => e.stopPropagation()}
@@ -291,7 +292,7 @@ export function BodyCheck({ open, onClose, onContinue }: Props) {
               <button
                 type="button"
                 onClick={handleContinue}
-                className="rounded-none bg-[var(--sh-accent-gold)] px-7 py-3 text-xs font-bold uppercase tracking-[0.28em] text-white shadow-md transition hover:bg-[#8d6432]"
+                className="rounded-none bg-[var(--sh-accent-gold)] px-7 py-3 text-xs font-bold uppercase tracking-[0.28em] text-white shadow-md transition hover:bg-[var(--sh-accent-gold-deep-hover)]"
               >
                 Continue
               </button>

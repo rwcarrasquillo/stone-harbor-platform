@@ -144,8 +144,8 @@ export function FlagButton({
         title={done ? "Already reported" : "Report this"}
         className={
           variant === "icon"
-            ? `inline-flex h-7 w-7 items-center justify-center rounded-none border border-transparent text-stone-400 transition hover:border-stone-300 hover:text-[#a9793d] disabled:opacity-40 ${className}`
-            : `text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500 transition hover:text-[#a9793d] disabled:opacity-40 ${className}`
+            ? `inline-flex h-7 w-7 items-center justify-center rounded-none border border-transparent text-stone-400 transition hover:border-stone-300 hover:text-[var(--sh-accent-gold-sunlit)] disabled:opacity-40 ${className}`
+            : `text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500 transition hover:text-[var(--sh-accent-gold-sunlit)] disabled:opacity-40 ${className}`
         }
       >
         {variant === "icon" ? (
@@ -186,13 +186,14 @@ export function FlagButton({
               exit={{ y: 20, opacity: 0 }}
               transition={{ duration: 0.25 }}
               onClick={(e) => e.stopPropagation()}
+              // eslint-disable-next-line no-restricted-syntax -- bespoke always-light modal fill, no token
               className="w-full max-w-lg overflow-hidden border border-stone-200 bg-[#f8f4ed] shadow-2xl"
             >
               <div
                 className="border-l-[3px] px-6 py-5"
                 style={{ borderLeftColor: "#a9793d" }}
               >
-                <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[#a9793d]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-accent-gold-sunlit)]">
                   Report Content
                 </p>
                 <h2 className="mt-2 text-xl font-medium text-stone-900">
@@ -209,7 +210,7 @@ export function FlagButton({
                   </p>
                   <button
                     onClick={reset}
-                    className="mt-6 border border-stone-300 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d]"
+                    className="mt-6 border border-stone-300 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[var(--sh-accent-gold-sunlit)]"
                   >
                     Close
                   </button>
@@ -227,7 +228,8 @@ export function FlagButton({
                         key={opt.value}
                         className={`flex cursor-pointer items-start gap-3 border bg-white px-4 py-3 transition ${
                           reason === opt.value
-                            ? "border-[#a9793d] bg-[#f8f0e3]"
+                            // eslint-disable-next-line no-restricted-syntax -- bespoke selected-state cream fill, no token
+                            ? "border-[var(--sh-accent-gold-sunlit)] bg-[#f8f0e3]"
                             : "border-stone-200 hover:border-stone-400"
                         }`}
                       >
@@ -237,7 +239,7 @@ export function FlagButton({
                           value={opt.value}
                           checked={reason === opt.value}
                           onChange={() => setReason(opt.value)}
-                          className="mt-1 h-4 w-4 accent-[#a9793d]"
+                          className="mt-1 h-4 w-4 accent-[var(--sh-accent-gold-sunlit)]"
                         />
                         <span className="flex-1">
                           <span className="block text-sm font-semibold text-stone-800">
@@ -261,7 +263,7 @@ export function FlagButton({
                       rows={3}
                       maxLength={1000}
                       placeholder="Anything else the moderator should know."
-                      className="w-full border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 focus:border-[#a9793d] focus:outline-none"
+                      className="w-full border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 focus:border-[var(--sh-accent-gold-sunlit)] focus:outline-none"
                     />
                   </label>
 
@@ -275,13 +277,13 @@ export function FlagButton({
                     <button
                       onClick={submitFlag}
                       disabled={submitting || !reason}
-                      className="bg-[#a9793d] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] disabled:opacity-50"
+                      className="bg-[var(--sh-accent-gold-sunlit)] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[var(--sh-accent-gold-deep-hover)] disabled:opacity-50"
                     >
                       {submitting ? "Sending…" : "Send Report"}
                     </button>
                     <button
                       onClick={reset}
-                      className="border border-stone-300 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d]"
+                      className="border border-stone-300 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[var(--sh-accent-gold-sunlit)]"
                     >
                       Cancel
                     </button>

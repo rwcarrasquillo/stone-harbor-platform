@@ -384,7 +384,7 @@ export default function ResourcesPage() {
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
-                  className="h-20 w-20 rounded-full border border-[#c4934e]/30"
+                  className="h-20 w-20 rounded-full border border-[var(--sh-accent-gold-dusk)]/30"
                   style={{
                     background:
                       "radial-gradient(circle, rgba(196,147,78,0.20) 0%, rgba(196,147,78,0.04) 70%, transparent 100%)",
@@ -493,7 +493,7 @@ export default function ResourcesPage() {
                                 className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
                                   isDusk
                                     ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
-                                    : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-primary)] hover:bg-[#f8f4ed]"
+                                    : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-primary)] hover:bg-[var(--sh-bg-card-tinted-hover)]"
                                 }`}
                               >
                                 <ChevronLeft size={14} strokeWidth={1.8} />
@@ -508,7 +508,7 @@ export default function ResourcesPage() {
                                 className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
                                   isDusk
                                     ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
-                                    : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-primary)] hover:bg-[#f8f4ed]"
+                                    : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-primary)] hover:bg-[var(--sh-bg-card-tinted-hover)]"
                                 }`}
                               >
                                 <ChevronRight size={14} strokeWidth={1.8} />

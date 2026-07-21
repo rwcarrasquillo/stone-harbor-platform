@@ -113,7 +113,7 @@ export function UnsavedChangesModal({
             ref={stayButtonRef}
             data-testid="unsaved-changes-stay"
             onClick={onStay}
-            className="rounded-none border border-[var(--sh-accent-gold)] bg-[var(--sh-accent-gold)] px-5 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] md:text-sm"
+            className="rounded-none border border-[var(--sh-accent-gold)] bg-[var(--sh-accent-gold)] px-5 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[var(--sh-accent-gold-deep-hover)] md:text-sm"
           >
             Stay on page
           </button>

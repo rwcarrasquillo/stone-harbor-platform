@@ -318,7 +318,7 @@ export default function RoadmapPage() {
           <motion.div
             animate={{ scale: [1, 1.18, 1], opacity: [0.6, 0.95, 0.6] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="h-24 w-24 rounded-full border border-[#c4934e]/30"
+            className="h-24 w-24 rounded-full border border-[var(--sh-accent-gold-dusk)]/30"
             style={{
               background:
                 "radial-gradient(circle, rgba(196,147,78,0.20) 0%, rgba(196,147,78,0.04) 70%, transparent 100%)",
@@ -584,7 +584,7 @@ export default function RoadmapPage() {
                 className={`border p-8 text-[var(--sh-text-secondary)] ${
                   isDusk
                     ? "border-white/10 bg-black/30 backdrop-blur-sm"
-                    : "border-[var(--sh-border-subtle)] bg-white"
+                    : "border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)]"
                 }`}
               >
                 {t("emptyStage")}
@@ -651,7 +651,7 @@ export default function RoadmapPage() {
                         )
                       }
                       className={`relative p-5 transition md:p-6 ${
-                        isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-white"
+                        isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-[var(--sh-bg-card-tinted)]"
                       }`}
                       style={{
                         border: `1px solid ${
@@ -854,7 +854,7 @@ function MobileStepList({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className={`relative p-5 ${
-          isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-white"
+          isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-[var(--sh-bg-card-tinted)]"
         }`}
         style={{
           border: `1px solid ${

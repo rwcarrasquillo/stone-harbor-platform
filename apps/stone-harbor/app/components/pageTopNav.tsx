@@ -73,17 +73,17 @@ export function PageTopNav({
           href={backHref}
           className="group flex flex-col leading-none no-underline"
         >
-          <span className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d] transition group-hover:text-[#8d6432]">
+          <span className="text-base font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold-sunlit)] transition group-hover:text-[var(--sh-accent-gold-deep-hover)]">
             ← {backLabel}
           </span>
-          <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70">
+          <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[var(--sh-accent-gold-sunlit)]/70">
             {backEyebrow}
           </span>
         </Link>
         {wordmarkHref ? (
           <Link
             href={wordmarkHref}
-            className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)] transition hover:text-[#a9793d]"
+            className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)] transition hover:text-[var(--sh-accent-gold-sunlit)]"
           >
             {wordmark}
           </Link>

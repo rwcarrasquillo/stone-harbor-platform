@@ -109,7 +109,7 @@ export function SubMoods({ mood, value, onChange }: Props) {
                   ? "border-[var(--sh-accent-gold)] text-[var(--sh-accent-gold)]"
                   : isDusk
                     ? "border-white/15 bg-white/[0.03] text-white/55 hover:text-white/80"
-                    : "border-[var(--sh-border-medium)] bg-[#f8f4ed] text-[var(--sh-text-tertiary)] hover:text-[var(--sh-text-secondary)]"
+                    : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-tertiary)] hover:text-[var(--sh-text-secondary)]"
               }`}
               aria-pressed={active}
             >

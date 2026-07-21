@@ -1287,7 +1287,7 @@ export default function JournalPage() {
                           className={`flex items-center gap-1 rounded-full px-2 py-0.5 transition-colors ${
                             isSelected
                               ? "bg-[rgba(196,147,78,0.08)]"
-                              : "hover:bg-white/[0.02]"
+                              : theme === "sunlit" ? "hover:bg-[var(--sh-bg-card-tinted-hover)]" : "hover:bg-white/[0.02]"
                           }`}
                         >
                           <span
@@ -2235,7 +2235,7 @@ function EntryCard({
   // enough to work in both themes.
   const activeBg =
     active && theme === "sunlit" ? "bg-[rgba(196,147,78,0.045)]" : "";
-  const hoverBg = !active ? "hover:bg-white/[0.02]" : "";
+  const hoverBg = !active ? (theme === "sunlit" ? "hover:bg-[var(--sh-bg-card-tinted-hover)]" : "hover:bg-white/[0.02]") : "";
 
   const dateStamp = formatEntryDate(entry.created_at, locale, tDate);
   const titleText = entry.title?.trim() || untitledLabel;

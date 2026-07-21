@@ -84,6 +84,12 @@
   --sh-accent-gold-sunlit: #a9793d;
   --sh-accent-gold-dusk: #c4934e;
 
+  /* Deep gold hover. Theme-invariant by design — the darker gold reads
+     the same on both themes' hover surfaces, so it lives in :root only
+     and Dusk inherits it unchanged. Adopted by Wave 2 (§1) to retire the
+     12 static #8d6432 call sites. */
+  --sh-accent-gold-deep-hover: #8d6432;
+
   /* RGB triplets, for rgba() composition where a hex can't be used.
      --sh-hairline-rgb is the theme-switching one that HairlineLens
      consumes; the -sunlit/-dusk pair backs it and is available for

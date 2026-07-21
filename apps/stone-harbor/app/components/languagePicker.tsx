@@ -99,8 +99,8 @@ export function LanguagePicker() {
               disabled={isPending}
               className={`transition ${
                 code === locale
-                  ? "text-[#c4934e]"
-                  : "text-stone-400 hover:text-[#c4934e]"
+                  ? "text-[var(--sh-accent-gold-dusk)]"
+                  : "text-stone-400 hover:text-[var(--sh-accent-gold-dusk)]"
               }`}
             >
               {t(code as "en" | "es")}

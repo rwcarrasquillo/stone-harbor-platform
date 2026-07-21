@@ -114,7 +114,8 @@ export function CrisisModal({ level, onDismiss, onPause }: Props) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="relative w-full max-w-xl border-t border-[#c4934e] bg-[#0A0A0B] px-6 py-8 md:border md:px-10 md:py-12"
+            // eslint-disable-next-line no-restricted-syntax -- bespoke always-dark surface: crisis modal stays near-black in both themes
+            className="relative w-full max-w-xl border-t border-[var(--sh-accent-gold-dusk)] bg-[#0A0A0B] px-6 py-8 md:border md:px-10 md:py-12"
           >
             {/* Warm radial wash so the modal reads as a soft holding
                 surface, not a clinical alert box. */}
@@ -127,7 +128,7 @@ export function CrisisModal({ level, onDismiss, onPause }: Props) {
               }}
             />
             <div className="relative">
-              <p className="text-[10px] font-bold uppercase tracking-[0.36em] text-[#c4934e]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.36em] text-[var(--sh-accent-gold-dusk)]">
                 {level === "severe" ? t.eyebrowSevere : t.eyebrowElevated}
               </p>
               <h2
@@ -140,7 +141,7 @@ export function CrisisModal({ level, onDismiss, onPause }: Props) {
                 {level === "severe" ? t.bodySevere : t.bodyElevated}
               </p>
 
-              <div className="mt-8 h-px w-16 bg-[#c4934e]" />
+              <div className="mt-8 h-px w-16 bg-[var(--sh-accent-gold-dusk)]" />
 
               <section className="mt-8">
                 <p className="text-[10px] font-bold uppercase tracking-[0.36em] text-stone-400">
@@ -149,7 +150,7 @@ export function CrisisModal({ level, onDismiss, onPause }: Props) {
                 <ul className="mt-4 space-y-3">
                   {t.resources.map((r) => (
                     <li key={r.region} className="text-sm leading-relaxed text-stone-200 md:text-base">
-                      <span className="font-semibold text-[#c4934e]">{r.region}</span>
+                      <span className="font-semibold text-[var(--sh-accent-gold-dusk)]">{r.region}</span>
                       <span className="mx-2 text-stone-500">·</span>
                       <span>{r.text}</span>
                     </li>
@@ -169,7 +170,7 @@ export function CrisisModal({ level, onDismiss, onPause }: Props) {
                       onPause();
                       onDismiss();
                     }}
-                    className="rounded-none border border-[#c4934e] px-6 py-3 text-xs font-bold uppercase tracking-[0.25em] text-[#c4934e] transition hover:bg-[#c4934e] hover:text-black"
+                    className="rounded-none border border-[var(--sh-accent-gold-dusk)] px-6 py-3 text-xs font-bold uppercase tracking-[0.25em] text-[var(--sh-accent-gold-dusk)] transition hover:bg-[var(--sh-accent-gold-dusk)] hover:text-black"
                   >
                     {t.pauseLabel}
                   </button>

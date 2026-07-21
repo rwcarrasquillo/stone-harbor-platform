@@ -266,7 +266,7 @@ export default function MeditationPage() {
           lives at meditation.eyebrow still — left untouched for any
           other surface that uses it (dashboard tile, etc.). */}
       <section className="relative z-20 flex flex-1 flex-col items-center justify-center px-6 pb-16 text-center">
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#c4934e] md:mb-6 md:text-[11px]">
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold-dusk)] md:mb-6 md:text-[11px]">
           {t("centeredEyebrow")}
         </p>
         <p
@@ -302,7 +302,7 @@ export default function MeditationPage() {
               onClick={() => setPattern(BREATH_PATTERNS.box)}
               className={`px-3 py-1 transition ${
                 !isLongExhale
-                  ? "text-[#c4934e]"
+                  ? "text-[var(--sh-accent-gold-dusk)]"
                   : "text-white/40 hover:text-white/60"
               }`}
               aria-pressed={!isLongExhale}
@@ -315,7 +315,7 @@ export default function MeditationPage() {
               onClick={() => setPattern(BREATH_PATTERNS.longExhale)}
               className={`px-3 py-1 transition ${
                 isLongExhale
-                  ? "text-[#c4934e]"
+                  ? "text-[var(--sh-accent-gold-dusk)]"
                   : "text-white/40 hover:text-white/60"
               }`}
               aria-pressed={isLongExhale}

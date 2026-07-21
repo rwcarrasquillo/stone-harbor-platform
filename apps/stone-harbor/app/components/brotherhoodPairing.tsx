@@ -252,7 +252,7 @@ export function BrotherhoodPairing({ userId }: Props) {
               className={`w-full border px-4 py-3 text-sm transition focus:border-[var(--sh-accent-gold)] focus:outline-none ${
                 isDusk
                   ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-stone-500"
-                  : "border-[var(--sh-border-medium)] bg-[#f8f4ed] text-[var(--sh-text-primary)]"
+                  : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-primary)]"
               }`}
             />
           </div>
@@ -267,7 +267,7 @@ export function BrotherhoodPairing({ userId }: Props) {
               className={`w-full border px-4 py-3 text-sm transition focus:border-[var(--sh-accent-gold)] focus:outline-none ${
                 isDusk
                   ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-stone-500"
-                  : "border-[var(--sh-border-medium)] bg-[#f8f4ed] text-[var(--sh-text-primary)]"
+                  : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-primary)]"
               }`}
             />
           </div>
@@ -278,7 +278,7 @@ export function BrotherhoodPairing({ userId }: Props) {
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-none bg-[var(--sh-accent-gold)] px-7 py-3 text-xs font-bold uppercase tracking-[0.28em] text-white shadow-md transition hover:bg-[#8d6432] disabled:opacity-60"
+              className="rounded-none bg-[var(--sh-accent-gold)] px-7 py-3 text-xs font-bold uppercase tracking-[0.28em] text-white shadow-md transition hover:bg-[var(--sh-accent-gold-deep-hover)] disabled:opacity-60"
             >
               {submitting ? "Joining..." : "Pair me with a brother"}
             </button>
@@ -356,7 +356,7 @@ export function BrotherhoodPairing({ userId }: Props) {
 
       <div
         className={`mt-6 border-l-[3px] px-5 py-4 ${
-          isDusk ? "bg-white/[0.03]" : "bg-[#f8f4ed]"
+          isDusk ? "bg-white/[0.03]" : "bg-[var(--sh-bg-card-tinted)]"
         }`}
         style={{ borderLeftColor: "var(--sh-accent-gold)" }}
       >

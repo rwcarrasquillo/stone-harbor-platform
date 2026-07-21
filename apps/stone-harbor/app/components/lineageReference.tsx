@@ -81,6 +81,7 @@ export function LineageReference({ references, onDismiss }: Props) {
             className={`relative border-l-[3px] p-5 ${
               isDusk
                 ? "border-l-[var(--sh-accent-gold)] bg-black/30 backdrop-blur-sm"
+                // eslint-disable-next-line no-restricted-syntax -- bespoke Sunlit cream fill, no token
                 : "border-l-[var(--sh-accent-gold)] bg-[#fbf6ec]"
             }`}
             role="note"

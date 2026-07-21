@@ -204,7 +204,7 @@ export function RotatingNatureBackdrop({
             <span
               key={i}
               className={`h-1 rounded-full transition-all duration-700 ${
-                i === index ? "w-4 bg-[#c4934e]" : "w-1 bg-white/30"
+                i === index ? "w-4 bg-[var(--sh-accent-gold-dusk)]" : "w-1 bg-white/30"
               }`}
             />
           ))}

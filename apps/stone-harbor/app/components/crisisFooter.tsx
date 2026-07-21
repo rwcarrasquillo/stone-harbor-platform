@@ -64,7 +64,7 @@ export function CrisisFooter({ amplify988 = false }: Props) {
       className={`relative z-10 w-full border-t px-4 py-3 backdrop-blur-sm md:px-6 md:py-4 ${
         isDusk
           ? "border-white/10 bg-black/60"
-          : "border-stone-200 bg-[#efe8dc]/70"
+          : "border-stone-200 bg-[var(--sh-bg-card-tinted-hover)]/70"
       }`}
     >
       {/* Crisis line — single centered column. The 988 number itself
@@ -82,7 +82,7 @@ export function CrisisFooter({ amplify988 = false }: Props) {
         </p>
         {amplify988 && (
           <p
-            className={`${serif.className} mt-2 text-base italic leading-snug text-[#a9793d]`}
+            className={`${serif.className} mt-2 text-base italic leading-snug text-[var(--sh-accent-gold-sunlit)]`}
           >
             {t("amplify")}
           </p>

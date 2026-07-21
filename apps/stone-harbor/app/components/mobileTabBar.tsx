@@ -121,6 +121,7 @@ export function MobileTabBar() {
       // /messages sets `body[data-mobile-thread-overlay="true"]`
       // (Messenger thread overlay) — the in-panel "← Conversations"
       // link replaces the bar's back affordance there.
+      // eslint-disable-next-line no-restricted-syntax -- bespoke always-dark surface: mobile tab bar stays near-black in both themes
       className="messenger-overlay-hidden sm:hidden fixed inset-x-0 bottom-0 z-40 border-t border-stone-800 bg-[#0A0A0B]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0A0A0B]/80"
       // Respect iOS home-indicator safe area
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0)" }}
@@ -136,7 +137,7 @@ export function MobileTabBar() {
                 aria-current={active ? "page" : undefined}
                 className={`flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
                   active
-                    ? "text-[#c4934e]"
+                    ? "text-[var(--sh-accent-gold-dusk)]"
                     : "text-stone-500 hover:text-stone-200"
                 }`}
               >

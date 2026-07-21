@@ -142,7 +142,7 @@ export default function MapBeginPage() {
 
         {error && (
           <p
-            className={`${sans.className} mt-4 text-sm text-[#b14a3a]`}
+            className={`${sans.className} mt-4 text-sm text-[var(--sh-danger)]`}
             role="alert"
           >
             {error}
