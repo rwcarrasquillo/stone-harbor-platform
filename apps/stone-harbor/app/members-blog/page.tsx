@@ -751,7 +751,7 @@ export default function NewMembersBlogPage() {
           <motion.div
             animate={{ scale: [1, 1.18, 1], opacity: [0.6, 0.95, 0.6] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="h-24 w-24 rounded-full border border-[#c4934e]/30"
+            className="h-24 w-24 rounded-full border border-[var(--sh-accent-gold-dusk)]/30"
             style={{
               background:
                 "radial-gradient(circle, rgba(196,147,78,0.20) 0%, rgba(196,147,78,0.04) 70%, transparent 100%)",

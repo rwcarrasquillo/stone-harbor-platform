@@ -812,7 +812,7 @@ export default function MessagesPage() {
           <motion.div
             animate={{ scale: [1, 1.18, 1], opacity: [0.6, 0.95, 0.6] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="h-24 w-24 rounded-full border border-[#c4934e]/30"
+            className="h-24 w-24 rounded-full border border-[var(--sh-accent-gold-dusk)]/30"
             style={{
               background:
                 "radial-gradient(circle, rgba(196,147,78,0.20) 0%, rgba(196,147,78,0.04) 70%, transparent 100%)",
@@ -1524,14 +1524,14 @@ export default function MessagesPage() {
                       opacity: breathPhase === "inhale" ? 0.95 : 0.55,
                     }}
                     transition={{ duration: 4, ease: "easeInOut" }}
-                    className="mb-10 flex h-28 w-28 items-center justify-center rounded-full border border-[#c4934e]/40"
+                    className="mb-10 flex h-28 w-28 items-center justify-center rounded-full border border-[var(--sh-accent-gold-dusk)]/40"
                     style={{
                       background:
                         "radial-gradient(circle, rgba(196,147,78,0.20) 0%, rgba(196,147,78,0.04) 70%, transparent 100%)",
                     }}
                   >
                     <span
-                      className={`${serif.className} text-sm italic text-[#a9793d]`}
+                      className={`${serif.className} text-sm italic text-[var(--sh-accent-gold-sunlit)]`}
                     >
                       {breathPhase === "inhale"
                         ? t("empty.inhale")
@@ -1742,7 +1742,7 @@ function Avatar({
           className="h-full w-full object-cover"
         />
       ) : (
-        <AnchorIcon size={iconSize} strokeWidth={1.4} className="text-[#a9793d]" />
+        <AnchorIcon size={iconSize} strokeWidth={1.4} className="text-[var(--sh-accent-gold-sunlit)]" />
       )}
     </div>
   );

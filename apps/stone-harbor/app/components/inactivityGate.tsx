@@ -147,13 +147,13 @@ export function InactivityGate() {
             transition={{ duration: 0.35 }}
             className={`w-full max-w-md border-l-[3px] px-6 py-6 shadow-2xl ${
               isDusk
-                ? "border-[#c4934e] bg-[#0f0c0a]"
-                : "border-[#a9793d] bg-[#f8f4ed]"
+                ? "border-[var(--sh-accent-gold-dusk)] bg-[#0f0c0a]"
+                : "border-[var(--sh-accent-gold-sunlit)] bg-[var(--sh-bg-card-tinted)]"
             }`}
           >
             <p
               className={`text-[10px] font-bold uppercase tracking-[0.32em] ${
-                isDusk ? "text-[#c4934e]" : "text-[#a9793d]"
+                isDusk ? "text-[var(--sh-accent-gold-dusk)]" : "text-[var(--sh-accent-gold-sunlit)]"
               }`}
             >
               Are You Still Here?
@@ -181,8 +181,8 @@ export function InactivityGate() {
                 onClick={dismissWarning}
                 className={`px-6 py-3 text-[11px] font-bold uppercase tracking-[0.22em] transition ${
                   isDusk
-                    ? "bg-[#c4934e] text-stone-900 hover:bg-[#d4a974]"
-                    : "bg-[#a9793d] text-white hover:bg-[#8d6432]"
+                    ? "bg-[var(--sh-accent-gold-dusk)] text-stone-900 hover:bg-[#d4a974]"
+                    : "bg-[var(--sh-accent-gold-sunlit)] text-white hover:bg-[#8d6432]"
                 }`}
               >
                 Stay Here
@@ -192,8 +192,8 @@ export function InactivityGate() {
                 onClick={signOutNow}
                 className={`border bg-transparent px-6 py-3 text-[11px] font-bold uppercase tracking-[0.22em] transition ${
                   isDusk
-                    ? "border-white/20 text-stone-200 hover:border-[#c4934e]"
-                    : "border-stone-300 bg-white text-stone-700 hover:border-[#a9793d]"
+                    ? "border-white/20 text-stone-200 hover:border-[var(--sh-accent-gold-dusk)]"
+                    : "border-stone-300 bg-white text-stone-700 hover:border-[var(--sh-accent-gold-sunlit)]"
                 }`}
               >
                 Sign Out

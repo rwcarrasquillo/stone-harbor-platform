@@ -185,7 +185,7 @@ export default function StartHerePage() {
 
   return (
     <main
-      className={`${sans.className} relative min-h-screen overflow-hidden bg-[#f3efe7] text-stone-900`}
+      className={`${sans.className} relative min-h-screen overflow-hidden bg-[var(--sh-bg-page)] text-stone-900`}
     >
       <audio ref={audioRef} src="/shimmering-breeze.mp3" preload="auto" />
 
@@ -194,7 +194,7 @@ export default function StartHerePage() {
       <section className="relative z-10 mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-10">
         <Link
           href="/"
-          className="mb-4 inline-block text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d] md:mb-8 md:text-sm md:tracking-[0.35em]"
+          className="mb-4 inline-block text-xs font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold-sunlit)] md:mb-8 md:text-sm md:tracking-[0.35em]"
         >
           {t("brandBack")}
         </Link>
@@ -337,7 +337,7 @@ export default function StartHerePage() {
                     key={idx}
                     className={`h-1 rounded-full transition-all duration-700 ${
                       idx === imageIndex
-                        ? "w-5 bg-[#c4934e]"
+                        ? "w-5 bg-[var(--sh-accent-gold-dusk)]"
                         : "w-1 bg-white/40"
                     }`}
                     aria-hidden="true"
@@ -371,7 +371,7 @@ export default function StartHerePage() {
               >
                 <div className="mb-5 flex flex-col gap-3 md:mb-10 md:flex-row md:items-center md:justify-between md:gap-6">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d] md:text-sm md:tracking-[0.35em]">
+                    <p className="text-xs font-bold uppercase tracking-[0.3em] text-[var(--sh-accent-gold-sunlit)] md:text-sm md:tracking-[0.35em]">
                       {t("eyebrow")}
                     </p>
 
@@ -385,7 +385,7 @@ export default function StartHerePage() {
 
                   <div className="h-2 w-full max-w-xs overflow-hidden rounded-full bg-stone-200 md:h-3">
                     <motion.div
-                      className="h-full rounded-full bg-[#a9793d]"
+                      className="h-full rounded-full bg-[var(--sh-accent-gold-sunlit)]"
                       initial={{ width: 0 }}
                       animate={{
                         width: `${((step + 1) / questions.length) * 100}%`,
@@ -413,10 +413,10 @@ export default function StartHerePage() {
                       initial={{ opacity: 0, y: 18 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.08 }}
-                      className="group flex items-center justify-between rounded-[1.25rem] border border-stone-200 bg-[#f8f4ed]/90 px-4 py-3.5 text-left transition duration-300 hover:-translate-y-1 hover:border-[#a9793d] hover:bg-white hover:shadow-xl md:rounded-[2rem] md:px-6 md:py-6"
+                      className="group flex items-center justify-between rounded-[1.25rem] border border-stone-200 bg-[var(--sh-bg-card-tinted)]/90 px-4 py-3.5 text-left transition duration-300 hover:-translate-y-1 hover:border-[var(--sh-accent-gold-sunlit)] hover:bg-white hover:shadow-xl md:rounded-[2rem] md:px-6 md:py-6"
                     >
                       <div className="flex items-center gap-3 md:gap-5">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#a9793d]/40 bg-white/70 text-xs font-bold text-[#a9793d] md:h-11 md:w-11 md:text-sm">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--sh-accent-gold-sunlit)]/40 bg-white/70 text-xs font-bold text-[var(--sh-accent-gold-sunlit)] md:h-11 md:w-11 md:text-sm">
                           {String(index + 1).padStart(2, "0")}
                         </span>
 
@@ -427,7 +427,7 @@ export default function StartHerePage() {
                         </span>
                       </div>
 
-                      <span className="text-xl text-stone-400 transition group-hover:translate-x-2 group-hover:text-[#a9793d] md:text-2xl">
+                      <span className="text-xl text-stone-400 transition group-hover:translate-x-2 group-hover:text-[var(--sh-accent-gold-sunlit)] md:text-2xl">
                         →
                       </span>
                     </motion.button>
@@ -442,7 +442,7 @@ export default function StartHerePage() {
                 transition={{ duration: 0.8 }}
                 className="rounded-[2rem] border border-white/50 bg-white/75 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.08)] backdrop-blur-2xl md:rounded-[3rem] md:p-14"
               >
-                <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d] md:text-sm md:tracking-[0.35em]">
+                <p className="text-xs font-bold uppercase tracking-[0.3em] text-[var(--sh-accent-gold-sunlit)] md:text-sm md:tracking-[0.35em]">
                   {t("resultEyebrow")}
                 </p>
 
@@ -452,7 +452,7 @@ export default function StartHerePage() {
                   {t(`results.${resultKey}.title`)}
                 </h1>
 
-                <p className="mt-4 text-sm font-semibold uppercase tracking-[0.22em] text-[#a9793d] md:mt-8 md:text-xl md:tracking-[0.25em]">
+                <p className="mt-4 text-sm font-semibold uppercase tracking-[0.22em] text-[var(--sh-accent-gold-sunlit)] md:mt-8 md:text-xl md:tracking-[0.25em]">
                   {t(`results.${resultKey}.accent`)}
                 </p>
 
@@ -463,7 +463,7 @@ export default function StartHerePage() {
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row md:mt-12 md:gap-5">
                   <Link
                     href="/register"
-                    className="rounded-full bg-[#a9793d] px-6 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] md:px-10 md:py-5 md:text-sm md:tracking-[0.25em]"
+                    className="rounded-full bg-[var(--sh-accent-gold-sunlit)] px-6 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] md:px-10 md:py-5 md:text-sm md:tracking-[0.25em]"
                   >
                     {t("cta.continue")}
                   </Link>

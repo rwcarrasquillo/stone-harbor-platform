@@ -864,7 +864,7 @@ export default function JournalPage() {
           <motion.div
             animate={{ scale: [1, 1.18, 1], opacity: [0.6, 0.95, 0.6] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="h-24 w-24 rounded-full border border-[#c4934e]/30"
+            className="h-24 w-24 rounded-full border border-[var(--sh-accent-gold-dusk)]/30"
             style={{
               background:
                 "radial-gradient(circle, rgba(196,147,78,0.20) 0%, rgba(196,147,78,0.04) 70%, transparent 100%)",
@@ -957,14 +957,14 @@ export default function JournalPage() {
               {t(`timeGreeting.${timeGreetingKey()}`)}
             </p>
             <p
-              className={`${serif.className} mt-2 text-2xl italic text-[#a9793d]`}
+              className={`${serif.className} mt-2 text-2xl italic text-[var(--sh-accent-gold-sunlit)]`}
             >
               {t("greeting")}
             </p>
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <Flame size={14} className="text-[#a9793d]" />
+              <Flame size={14} className="text-[var(--sh-accent-gold-sunlit)]" />
               <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
                 {t("streakLabel")}
               </p>
@@ -990,7 +990,7 @@ export default function JournalPage() {
           </div>
           <div className="md:col-span-2">
             <div className="flex items-center gap-2">
-              <Speech size={14} className="text-[#a9793d]" />
+              <Speech size={14} className="text-[var(--sh-accent-gold-sunlit)]" />
               <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
                 {t("promptLabel")}
               </p>
@@ -1019,7 +1019,7 @@ export default function JournalPage() {
                 : "border-white/50 bg-white/75 shadow-[0_20px_80px_rgba(0,0,0,0.08)]"
             }`}
           >
-            <p className="mb-5 text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
+            <p className="mb-5 text-xs font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold-sunlit)]">
               {t("eyebrow")}
             </p>
             <h1
@@ -1057,13 +1057,13 @@ export default function JournalPage() {
                 <div
                   className={`mb-8 border-l-2 px-4 py-4 md:mb-10 md:px-5 md:py-5 ${
                     isDusk
-                      ? "border-[#c4934e] bg-black/20"
-                      : "border-[#a9793d] bg-[#f6f0e6]"
+                      ? "border-[var(--sh-accent-gold-dusk)] bg-black/20"
+                      : "border-[var(--sh-accent-gold-sunlit)] bg-[#f6f0e6]"
                   }`}
                 >
                   <p
                     className={`mb-2 text-[10px] font-bold uppercase tracking-[0.28em] ${
-                      isDusk ? "text-[#c4934e]" : "text-[#a9793d]"
+                      isDusk ? "text-[var(--sh-accent-gold-dusk)]" : "text-[var(--sh-accent-gold-sunlit)]"
                     }`}
                   >
                     {t("storyHeader")}
@@ -1327,7 +1327,7 @@ export default function JournalPage() {
               <button
                 type="submit"
                 disabled={saving || !content.trim()}
-                className="group relative w-full overflow-hidden rounded-none border border-[#f4d7a1]/50 bg-[#a9793d] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.18)] transition duration-300 hover:scale-[1.02] hover:bg-[#8d6432] disabled:opacity-60 disabled:hover:scale-100"
+                className="group relative w-full overflow-hidden rounded-none border border-[#f4d7a1]/50 bg-[var(--sh-accent-gold-sunlit)] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.18)] transition duration-300 hover:scale-[1.02] hover:bg-[#8d6432] disabled:opacity-60 disabled:hover:scale-100"
               >
                 <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
                 <span className="relative z-10">
@@ -1350,7 +1350,7 @@ export default function JournalPage() {
           >
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="mb-3 text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold-sunlit)]">
                   {t("entriesEyebrow")}
                 </p>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)]">
@@ -1394,7 +1394,7 @@ export default function JournalPage() {
                   className={`w-full rounded-none border px-5 py-4 outline-none transition focus:border-[var(--sh-accent-gold)] ${
                     isDusk
                       ? "border-white/15 bg-white/[0.04] text-white"
-                      : "border-[var(--sh-border-medium)] bg-[#f8f4ed] text-[var(--sh-text-primary)]"
+                      : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-primary)]"
                   }`}
                 >
                   <option value="newest">{t("sortNewest")}</option>
@@ -1410,7 +1410,7 @@ export default function JournalPage() {
                 className={`rounded-none border p-8 ${
                   isDusk
                     ? "border-white/10 bg-white/[0.03]"
-                    : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+                    : "border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)]"
                 }`}
               >
                 <p
@@ -1427,7 +1427,7 @@ export default function JournalPage() {
                 className={`rounded-none border p-8 text-[var(--sh-text-secondary)] ${
                   isDusk
                     ? "border-white/10 bg-white/[0.03]"
-                    : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+                    : "border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)]"
                 }`}
               >
                 {t("emptySearch")}
@@ -1443,7 +1443,7 @@ export default function JournalPage() {
                       className={`rounded-none border p-6 transition hover:border-[var(--sh-accent-gold)]/40 ${
                         isDusk
                           ? "border-white/10 bg-white/[0.03] backdrop-blur-sm"
-                          : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+                          : "border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)]"
                       }`}
                       style={{ borderLeft: `3px solid ${color}` }}
                     >
@@ -1532,8 +1532,8 @@ export default function JournalPage() {
                             }
                             className={`w-full rounded-none border px-4 py-2 text-sm outline-none transition focus:ring-2 focus:ring-[#586558]/30 ${
                               isDusk
-                                ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-white/30 focus:border-[#c4934e]"
-                                : "border-stone-300 bg-[#f8f4ed] text-stone-800 placeholder:text-stone-400 focus:border-[#a9793d]"
+                                ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-white/30 focus:border-[var(--sh-accent-gold-dusk)]"
+                                : "border-stone-300 bg-[var(--sh-bg-card-tinted)] text-stone-800 placeholder:text-stone-400 focus:border-[var(--sh-accent-gold-sunlit)]"
                             }`}
                             placeholder={t("editTitlePlaceholder")}
                             autoFocus
@@ -1544,8 +1544,8 @@ export default function JournalPage() {
                             rows={Math.max(4, Math.min(12, editingDraft.split("\n").length + 1))}
                             className={`w-full resize-none rounded-none border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#586558]/30 ${
                               isDusk
-                                ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-white/30 focus:border-[#c4934e]"
-                                : "border-stone-300 bg-[#f8f4ed] text-stone-800 placeholder:text-stone-400 focus:border-[#a9793d]"
+                                ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-white/30 focus:border-[var(--sh-accent-gold-dusk)]"
+                                : "border-stone-300 bg-[var(--sh-bg-card-tinted)] text-stone-800 placeholder:text-stone-400 focus:border-[var(--sh-accent-gold-sunlit)]"
                             }`}
                             placeholder={t("editBodyPlaceholder")}
                           />
@@ -1563,7 +1563,7 @@ export default function JournalPage() {
                             <button
                               onClick={() => saveEditingEntry(entry)}
                               disabled={savingEdit || !editingDraft.trim()}
-                              className="rounded-none border border-[var(--sh-accent-gold)] bg-[#a9793d] px-5 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:bg-[#8d6432] disabled:opacity-60"
+                              className="rounded-none border border-[var(--sh-accent-gold)] bg-[var(--sh-accent-gold-sunlit)] px-5 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:bg-[#8d6432] disabled:opacity-60"
                             >
                               {savingEdit ? t("savingEdit") : t("saveEdit")}
                             </button>
@@ -1597,7 +1597,7 @@ export default function JournalPage() {
           >
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d]">
+                <p className="text-xs font-bold uppercase tracking-[0.3em] text-[var(--sh-accent-gold-sunlit)]">
                   {t("patternEyebrow")}
                 </p>
                 <h2

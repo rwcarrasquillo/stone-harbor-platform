@@ -181,7 +181,7 @@ export default function FounderStoryPromptsPage() {
       <div className="mx-auto max-w-6xl px-6 py-12">
         <p
           className={`mb-2 text-[10px] font-bold uppercase tracking-[0.32em] ${
-            isDusk ? "text-[#c4934e]" : "text-[#a9793d]"
+            isDusk ? "text-[var(--sh-accent-gold-dusk)]" : "text-[var(--sh-accent-gold-sunlit)]"
           }`}
         >
           Founder
@@ -221,8 +221,8 @@ export default function FounderStoryPromptsPage() {
                 className={`border px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] transition ${
                   active
                     ? isDusk
-                      ? "border-[#c4934e] bg-[#c4934e] text-stone-900"
-                      : "border-[#a9793d] bg-[#a9793d] text-stone-50"
+                      ? "border-[var(--sh-accent-gold-dusk)] bg-[var(--sh-accent-gold-dusk)] text-stone-900"
+                      : "border-[var(--sh-accent-gold-sunlit)] bg-[var(--sh-accent-gold-sunlit)] text-stone-50"
                     : isDusk
                       ? "border-white/20 text-stone-300 hover:bg-white/5"
                       : "border-stone-300 text-stone-700 hover:bg-stone-100"

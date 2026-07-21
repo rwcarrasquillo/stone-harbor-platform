@@ -136,7 +136,7 @@ export function MobileTabBar() {
                 aria-current={active ? "page" : undefined}
                 className={`flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
                   active
-                    ? "text-[#c4934e]"
+                    ? "text-[var(--sh-accent-gold-dusk)]"
                     : "text-stone-500 hover:text-stone-200"
                 }`}
               >

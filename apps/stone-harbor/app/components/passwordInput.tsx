@@ -59,7 +59,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           aria-pressed={shown}
           onClick={() => setShown((s) => !s)}
           tabIndex={-1}
-          className={`absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-none text-[#c4934e]/70 transition hover:text-[#c4934e] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c4934e]/40 ${buttonClassName}`}
+          className={`absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-none text-[var(--sh-accent-gold-dusk)]/70 transition hover:text-[var(--sh-accent-gold-dusk)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sh-accent-gold-dusk)]/40 ${buttonClassName}`}
         >
           {shown ? (
             <EyeOff size={18} strokeWidth={1.5} />

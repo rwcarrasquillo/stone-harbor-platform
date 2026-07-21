@@ -117,7 +117,7 @@ export function TheMapTile() {
       transition={{ duration: 0.7, ease: "easeOut" }}
       className="relative my-10 md:my-12"
     >
-      <div className="relative border border-[#c4934e]/40 bg-[var(--sh-card-bg)] p-6 md:p-8">
+      <div className="relative border border-[var(--sh-accent-gold-dusk)]/40 bg-[var(--sh-card-bg)] p-6 md:p-8">
         {/* Warm radial wash so the tile reads as inviting, not stark.
             Matches the dawn-glow ambience used elsewhere. */}
         <div
@@ -129,7 +129,7 @@ export function TheMapTile() {
           }}
         />
         <div className="relative">
-          <p className="text-[10px] font-bold uppercase tracking-[0.36em] text-[#c4934e]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.36em] text-[var(--sh-accent-gold-dusk)]">
             {eyebrow}
           </p>
           <h2 className="mt-3 font-serif text-2xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-3xl">
@@ -140,7 +140,7 @@ export function TheMapTile() {
           </p>
           <Link
             href={href}
-            className="mt-6 inline-block rounded-none border border-[#c4934e] bg-[#a9793d] px-6 py-3 text-xs font-bold uppercase tracking-[0.25em] text-white transition hover:bg-[#8d6432]"
+            className="mt-6 inline-block rounded-none border border-[var(--sh-accent-gold-dusk)] bg-[var(--sh-accent-gold-sunlit)] px-6 py-3 text-xs font-bold uppercase tracking-[0.25em] text-white transition hover:bg-[#8d6432]"
           >
             {cta}
           </Link>

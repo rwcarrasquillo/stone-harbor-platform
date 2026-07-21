@@ -82,7 +82,7 @@ export function CrisisFooter({ amplify988 = false }: Props) {
         </p>
         {amplify988 && (
           <p
-            className={`${serif.className} mt-2 text-base italic leading-snug text-[#a9793d]`}
+            className={`${serif.className} mt-2 text-base italic leading-snug text-[var(--sh-accent-gold-sunlit)]`}
           >
             {t("amplify")}
           </p>

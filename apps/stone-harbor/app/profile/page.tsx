@@ -1664,7 +1664,7 @@ function ToggleField({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 h-4 w-4 accent-[#a9793d]"
+        className="mt-0.5 h-4 w-4 accent-[var(--sh-accent-gold-sunlit)]"
       />
       <span className="text-sm leading-relaxed text-[var(--sh-text-secondary)]">
         {label}

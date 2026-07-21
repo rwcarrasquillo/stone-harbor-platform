@@ -65,7 +65,7 @@ export function Toast({
               <button
                 type="button"
                 onClick={onDismiss}
-                className="shrink-0 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500 transition hover:text-[#a9793d]"
+                className="shrink-0 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500 transition hover:text-[var(--sh-accent-gold-sunlit)]"
                 aria-label="Dismiss"
               >
                 Close

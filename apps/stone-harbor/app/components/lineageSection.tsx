@@ -283,7 +283,7 @@ function LineageField({
         className={`w-full resize-y border px-5 py-4 text-sm leading-relaxed transition focus:border-[var(--sh-accent-gold)] focus:outline-none ${
           isDusk
             ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-stone-500"
-            : "border-[var(--sh-border-medium)] bg-[#f8f4ed] text-[var(--sh-text-primary)]"
+            : "border-[var(--sh-border-medium)] bg-[var(--sh-bg-card-tinted)] text-[var(--sh-text-primary)]"
         }`}
         placeholder="Leave blank if not now."
       />
