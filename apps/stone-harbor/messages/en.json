@@ -461,6 +461,12 @@
     }
   },
   "journal": {
+    "focus": "Focus",
+    "exitFocus": "Exit focus",
+    "focusModeActive": "Focus mode active. Press escape to exit.",
+    "focusModeAria": "Journal focus mode",
+    "focusModeTitle": "Journal · Focus",
+    "focusEscHint": "Press ESC to exit",
     "brandCrumb": "Journal",
     "anchorPhrase": "Notice without judging. Just notice.",
     "voiceSignature": "The harbor is patient.",

@@ -42,6 +42,7 @@ import { useTheme } from "@/app/components/themeProvider";
 import { PageAmbience } from "@/app/components/pageAmbience";
 import { PageTopNav } from "@/app/components/pageTopNav";
 import { VentInput, VentTextarea } from "@/app/components/ventField";
+import { ComposeFocusMode } from "./composeFocusMode";
 import { UnsavedChangesModal } from "@/app/components/unsavedChangesModal";
 import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
 import { BodyCheck, type BodySpot } from "@/app/components/bodyCheck";
@@ -347,6 +348,11 @@ export default function JournalPage() {
   // This is the 5-second-rule pattern translated to the harbor's voice
   // — no countdown, no animation, just permission to begin badly.
   const [showStartNudge, setShowStartNudge] = useState(false);
+  // Focus mode — full-viewport in-page writing surface. Toggled by the
+  // "Focus" affordance in the compose actions row. ESC exits. Not a modal
+  // — no backdrop, no window metaphor. See design brief
+  // Stone_Harbor_Journal_Compose_Focus_Design.md.
+  const [focusMode, setFocusMode] = useState(false);
   // The member's lineage content, loaded once at profile fetch time.
   // The reference-back matcher uses it to decide which "you wrote
   // about this once" cards to surface after a save.
@@ -880,6 +886,40 @@ export default function JournalPage() {
     );
   }
 
+  // Focus mode — full-viewport in-page writing surface. Early return so it
+  // fully replaces the compose chrome. State is shared with the normal tree,
+  // so exiting (ESC / Exit / after Save) returns with content intact.
+  if (focusMode) {
+    return (
+      <ComposeFocusMode
+        title={editingEntryId ? editingDraftTitle : title}
+        content={editingEntryId ? editingDraft : content}
+        onTitleChange={editingEntryId ? setEditingDraftTitle : setTitle}
+        onContentChange={editingEntryId ? setEditingDraft : setContent}
+        storyPromptText={storyPrompt?.prompt_text ?? null}
+        saving={saving || savingEdit}
+        onSave={async () => {
+          desktopSavingRef.current = true;
+          if (editingEntryId) {
+            const entry = entries.find((x) => x.id === editingEntryId);
+            if (entry) await saveEditingEntry(entry);
+          } else {
+            // Neither form is mounted in focus mode, so call saveEntry
+            // directly with a synthesized event — it only reads
+            // e.preventDefault(). Functionally identical to the desktop
+            // Save button's requestSubmit().
+            await saveEntry({
+              preventDefault: () => {},
+            } as React.FormEvent<HTMLFormElement>);
+          }
+        }}
+        onExit={() => setFocusMode(false)}
+        isDusk={isDusk}
+        wordCount={wordCount}
+      />
+    );
+  }
+
   return (
     <main
       // Height is responsive between the two render trees inside:
@@ -1172,28 +1212,40 @@ export default function JournalPage() {
                 <label className="block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
                   {t("reflectionLabel")}
                 </label>
-                {/* BODY-CHECK INVITATION — gated by FEATURE_THRESHOLDS.bodyCheck.
-                    Appears in the man's experience around day 30 of his account.
-                    Soft, optional, no completion shame: if he taps it, the
-                    overlay opens; if he ignores it, the journal works as before.
-                    If he already did a check this session, the line becomes a
-                    quiet confirmation so the moment is visible to him. */}
-                {isFeatureUnlocked(
-                  userCreatedAt,
-                  FEATURE_THRESHOLDS.bodyCheck,
-                ) && (
+                <div className="flex items-center gap-4">
+                  {/* Focus — full-viewport in-page writing surface. Right-
+                      aligned above the textarea so it reads as a quiet
+                      affordance, not a primary action. */}
                   <button
                     type="button"
-                    onClick={() => setBodyCheckOpen(true)}
-                    className="text-[10px] italic tracking-wide text-[var(--sh-accent-gold)] transition hover:opacity-80"
+                    onClick={() => setFocusMode(true)}
+                    className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition hover:text-[var(--sh-accent-gold)]"
                   >
-                    {pendingBodySpots === null
-                      ? t("bodyCheckOffer")
-                      : pendingBodySpots.length === 0
-                        ? t("bodyCheckComplete")
-                        : t("bodyCheckNoticed", { spots: pendingBodySpots.join(", ") })}
+                    {t("focus")}
                   </button>
-                )}
+                  {/* BODY-CHECK INVITATION — gated by FEATURE_THRESHOLDS.bodyCheck.
+                      Appears in the man's experience around day 30 of his account.
+                      Soft, optional, no completion shame: if he taps it, the
+                      overlay opens; if he ignores it, the journal works as before.
+                      If he already did a check this session, the line becomes a
+                      quiet confirmation so the moment is visible to him. */}
+                  {isFeatureUnlocked(
+                    userCreatedAt,
+                    FEATURE_THRESHOLDS.bodyCheck,
+                  ) && (
+                    <button
+                      type="button"
+                      onClick={() => setBodyCheckOpen(true)}
+                      className="text-[10px] italic tracking-wide text-[var(--sh-accent-gold)] transition hover:opacity-80"
+                    >
+                      {pendingBodySpots === null
+                        ? t("bodyCheckOffer")
+                        : pendingBodySpots.length === 0
+                          ? t("bodyCheckComplete")
+                          : t("bodyCheckNoticed", { spots: pendingBodySpots.join(", ") })}
+                    </button>
+                  )}
+                </div>
               </div>
               <VentTextarea
                 required
@@ -1325,18 +1377,34 @@ export default function JournalPage() {
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={saving || !content.trim()}
-                // eslint-disable-next-line no-restricted-syntax -- bespoke gold border, no token
-                className="group relative w-full overflow-hidden rounded-none border border-[#f4d7a1]/50 bg-[var(--sh-accent-gold-sunlit)] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.18)] transition duration-300 hover:scale-[1.02] hover:bg-[var(--sh-accent-gold-deep-hover)] disabled:opacity-60 disabled:hover:scale-100"
+              {/* Mobile: sticky save so the button stays reachable while
+                  typing on long entries. Negative margin (matching the card's
+                  p-8 / md:p-12) makes the bar flush with the composer card
+                  edges; the translucent page-tint fill lets content read
+                  faintly behind it, and env(safe-area-inset-bottom) keeps it
+                  clear of the iOS home indicator. The gold button itself is
+                  unchanged — only wrapped. */}
+              <div
+                className="sticky bottom-0 -mx-8 border-t border-[var(--sh-border-subtle)] px-8 py-4 backdrop-blur-md md:-mx-12 md:px-12"
+                style={{
+                  paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--sh-bg-page) 92%, transparent)",
+                }}
               >
-                {/* eslint-disable-next-line no-restricted-syntax -- bespoke gold gradient, no token */}
-                <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
-                <span className="relative z-10">
-                  {saving ? t("savingDots") : t("save")}
-                </span>
-              </button>
+                <button
+                  type="submit"
+                  disabled={saving || !content.trim()}
+                  // eslint-disable-next-line no-restricted-syntax -- bespoke gold border, no token
+                  className="group relative w-full overflow-hidden rounded-none border border-[#f4d7a1]/50 bg-[var(--sh-accent-gold-sunlit)] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_35px_rgba(0,0,0,0.18)] transition duration-300 hover:scale-[1.02] hover:bg-[var(--sh-accent-gold-deep-hover)] disabled:opacity-60 disabled:hover:scale-100"
+                >
+                  {/* eslint-disable-next-line no-restricted-syntax -- bespoke gold gradient, no token */}
+                  <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
+                  <span className="relative z-10">
+                    {saving ? t("savingDots") : t("save")}
+                  </span>
+                </button>
+              </div>
             </form>
           </motion.div>
 
@@ -1808,6 +1876,14 @@ export default function JournalPage() {
                     </button>
                     <button
                       type="button"
+                      onClick={() => setFocusMode(true)}
+                      style={{ outline: "none", outlineOffset: 0 }}
+                      className={`${sans.className} text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition-colors hover:text-[var(--sh-accent-gold)]`}
+                    >
+                      {t("focus")}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => {
                         cancelEditingEntry();
                         router.push("/journal");
@@ -1819,18 +1895,28 @@ export default function JournalPage() {
                     </button>
                   </>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      desktopSavingRef.current = true;
-                      desktopFormRef.current?.requestSubmit();
-                    }}
-                    disabled={saving || content.trim().length === 0}
-                    style={{ outline: "none", outlineOffset: 0 }}
-                    className={`${sans.className} text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--sh-accent-gold)] transition-colors hover:text-[var(--sh-accent-gold-bright)] disabled:opacity-50`}
-                  >
-                    {saving ? t("saving") : t("save")}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        desktopSavingRef.current = true;
+                        desktopFormRef.current?.requestSubmit();
+                      }}
+                      disabled={saving || content.trim().length === 0}
+                      style={{ outline: "none", outlineOffset: 0 }}
+                      className={`${sans.className} text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--sh-accent-gold)] transition-colors hover:text-[var(--sh-accent-gold-bright)] disabled:opacity-50`}
+                    >
+                      {saving ? t("saving") : t("save")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFocusMode(true)}
+                      style={{ outline: "none", outlineOffset: 0 }}
+                      className={`${sans.className} text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition-colors hover:text-[var(--sh-accent-gold)]`}
+                    >
+                      {t("focus")}
+                    </button>
+                  </>
                 )}
               </div>
 

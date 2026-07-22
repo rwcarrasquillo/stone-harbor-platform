@@ -16,6 +16,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
 import { isWithinEditWindow } from "@/lib/journalEditWindow";
 import { deriveTitleFromPrompt } from "@/lib/story/surfacer";
+import { ComposeFocusMode } from "./compose/composeFocusMode";
 
 /**
  * Stone Harbor — Journal route (production, centered design).
@@ -335,6 +336,12 @@ export default function JournalPage() {
   // Cancel (either mode)  → drop draft, back to reading
   type Mode = "reading" | "composing" | "editing";
   const [mode, setMode] = useState<Mode>("reading");
+  // Focus mode — full-viewport in-page writing surface, shared with
+  // /journal/compose via ComposeFocusMode. Entered from the composing
+  // actions row; ESC / Exit / Save returns to this surface. /journal is
+  // the PRIMARY desktop composing surface (SH-103), so it carries the
+  // same writing-immersion vocabulary as compose.
+  const [focusMode, setFocusMode] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftContent, setDraftContent] = useState("");
   const [draftMood, setDraftMood] = useState<string | null>(null);
@@ -941,6 +948,32 @@ export default function JournalPage() {
     }
   }
 
+  // Focus mode replaces the whole /journal surface with the shared
+  // full-viewport writing pane. State is shared, so Exit / ESC / Save
+  // returns here with the draft intact. Only reachable from the composing
+  // actions row, so `mode` is "composing" or "editing" whenever this
+  // renders. Save also exits focus (handleSave resets mode to "reading"
+  // and clears the draft, which would otherwise strand an empty pane).
+  if (focusMode) {
+    return (
+      <ComposeFocusMode
+        title={draftTitle}
+        content={draftContent}
+        onTitleChange={setDraftTitle}
+        onContentChange={setDraftContent}
+        storyPromptText={activeStoryInvitation?.promptText ?? null}
+        saving={saving}
+        onSave={async () => {
+          await handleSave();
+          setFocusMode(false);
+        }}
+        onExit={() => setFocusMode(false)}
+        isDusk={theme === "dusk"}
+        wordCount={draftContent.trim().split(/\s+/).filter(Boolean).length}
+      />
+    );
+  }
+
   return (
     <>
     <div
@@ -1132,6 +1165,14 @@ export default function JournalPage() {
                       : mode === "editing"
                         ? t("saveEdit")
                         : t("save")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusMode(true)}
+                    style={{ outline: "none", outlineOffset: 0 }}
+                    className={`${sans.className} text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition-colors hover:text-[var(--sh-accent-gold)]`}
+                  >
+                    {t("focus")}
                   </button>
                   <button
                     type="button"

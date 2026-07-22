@@ -461,6 +461,12 @@
     }
   },
   "journal": {
+    "focus": "Enfoque",
+    "exitFocus": "Salir del enfoque",
+    "focusModeActive": "Modo enfoque activo. Presiona escape para salir.",
+    "focusModeAria": "Modo enfoque del diario",
+    "focusModeTitle": "Diario · Enfoque",
+    "focusEscHint": "Presiona ESC para salir",
     "brandCrumb": "Diario",
     "anchorPhrase": "Observa sin juzgar. Solo observa.",
     "voiceSignature": "La dársena es paciente.",
