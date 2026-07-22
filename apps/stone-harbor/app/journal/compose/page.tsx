@@ -896,7 +896,7 @@ export default function JournalPage() {
         content={editingEntryId ? editingDraft : content}
         onTitleChange={editingEntryId ? setEditingDraftTitle : setTitle}
         onContentChange={editingEntryId ? setEditingDraft : setContent}
-        storyPrompt={storyPrompt}
+        storyPromptText={storyPrompt?.prompt_text ?? null}
         saving={saving || savingEdit}
         onSave={async () => {
           desktopSavingRef.current = true;

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { AnchorMark } from "@/app/components/anchorMark";
 import { serif, sans } from "@/lib/fonts";
-import type { StoryPrompt } from "@/lib/story";
 
 /**
  * Stone Harbor — Compose Focus Mode.
@@ -29,7 +28,11 @@ type ComposeFocusModeProps = {
   content: string;
   onTitleChange: (v: string) => void;
   onContentChange: (v: string) => void;
-  storyPrompt: StoryPrompt | null;
+  // The active Story prompt's text, or null. A plain string (not a
+  // StoryPrompt object) so every writing surface — /journal, /journal/
+  // compose, and future ones — can pass its prompt text without
+  // synthesizing a StoryPrompt-shaped object.
+  storyPromptText: string | null;
   saving: boolean;
   onSave: () => void;
   onExit: () => void;
@@ -42,7 +45,7 @@ export function ComposeFocusMode({
   content,
   onTitleChange,
   onContentChange,
-  storyPrompt,
+  storyPromptText,
   saving,
   onSave,
   onExit,
@@ -120,7 +123,7 @@ export function ComposeFocusMode({
 
       {/* Writing pane — fills remaining viewport, bounded via flex */}
       <section className="flex min-h-0 flex-1 flex-col px-6 pt-6 md:px-24 md:pt-8">
-        {storyPrompt && (
+        {storyPromptText && (
           <div className="mb-6 border-l-2 border-[var(--sh-accent-gold)] pl-4">
             <p
               className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--sh-accent-gold)]`}
@@ -130,7 +133,7 @@ export function ComposeFocusMode({
             <p
               className={`${serif.className} mt-2 text-[16px] italic leading-[1.5] text-[var(--sh-text-secondary)]`}
             >
-              {storyPrompt.prompt_text}
+              {storyPromptText}
             </p>
           </div>
         )}
@@ -158,7 +161,7 @@ export function ComposeFocusMode({
           onChange={(e) => onContentChange(e.target.value)}
           placeholder={t("reflectionPlaceholder")}
           style={{ outline: "none", outlineOffset: 0 }}
-          className={`${serif.className} mt-5 flex-1 resize-none bg-transparent text-[16px] italic leading-[1.65] text-[var(--sh-text-secondary)] placeholder:text-[var(--sh-text-muted)] md:mt-7 md:text-[18px]`}
+          className={`${serif.className} mt-5 flex-1 resize-none bg-transparent text-[20px] italic leading-[1.65] text-[var(--sh-text-secondary)] placeholder:text-[var(--sh-text-muted)] md:mt-7 md:text-[22px]`}
         />
       </section>
 
