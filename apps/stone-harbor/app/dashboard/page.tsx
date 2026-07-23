@@ -1209,14 +1209,14 @@ function RoomsCarousel({
     },
     {
       key: "letters",
-      // /members-blog is the surface URL; "Letters" is its harbor
-      // vocabulary name after the 2026-06-18 architectural split that
-      // moved external curated content out to /resources. The eyebrow
-      // and name echo the surface's own anchor strip ("Letters" /
-      // "From the harbor.") so the dashboard card and the destination
-      // page read as one breath. Sits to the right of Journal as the
-      // first reading room — Stone Harbor's own writing.
-      href: "/members-blog",
+      // /letters is the surface URL after the SH-101 rename (2026-07-23);
+      // "Letters" is the harbor vocabulary name after the 2026-06-18
+      // architectural split that moved external curated content out to
+      // /resources. The eyebrow and name echo the surface's own anchor
+      // strip ("Letters" / "From the harbor.") so the dashboard card and
+      // the destination page read as one breath. Sits to the right of
+      // Journal as the first reading room — Stone Harbor's own writing.
+      href: "/letters",
       eyebrow: locale === "es" ? "Cartas" : "Letters",
       name: locale === "es" ? "Desde el puerto" : "From the harbor",
       tagline:

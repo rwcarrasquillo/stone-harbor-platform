@@ -32,7 +32,7 @@ import { AmnioticBackdrop } from "@/app/components/amnioticBackdrop";
  * element to anchor the fixed children correctly on iOS.
  *
  * Render in: /dashboard, /welcome, /journal, /messages,
- * /roadmap, /members-blog, /reflections (any authenticated screen).
+ * /roadmap, /letters, /reflections (any authenticated screen).
  *
  * Skip in: /meditation and /vent (focused immersive experiences
  * where the global ambience would compete with the screen-specific

@@ -33,7 +33,7 @@
  * Accent override:
  *   Pass `accentRgb` to render in pillar-specific colors (e.g.
  *   "169,121,61" for clarity/strength gold, "88,101,88" for calm moss).
- *   /roadmap and /members-blog rely on this to tint the lens per pillar
+ *   /roadmap and /letters rely on this to tint the lens per pillar
  *   — Calm's lens is moss, not gold. Omit the prop and the lens falls
  *   back to harbor brand gold for the active theme.
  *
