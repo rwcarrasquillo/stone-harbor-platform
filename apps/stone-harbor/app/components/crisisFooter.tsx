@@ -49,6 +49,7 @@ export function CrisisFooter({ amplify988 = false }: Props) {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
   const t = useTranslations("crisisFooter");
+  const tResources = useTranslations("crisisResources");
 
   return (
     <footer
@@ -87,6 +88,20 @@ export function CrisisFooter({ amplify988 = false }: Props) {
             {t("amplify")}
           </p>
         )}
+        {/* SH-105: the 988 line is the immediate answer; /crisis-resources
+            is the deeper directory behind it. This link sits inside the
+            crisis block rather than in the utility row below, because it
+            is a crisis link, not a legal one — the row's <nav> is
+            aria-labelled "Legal links" and should stay honest about what
+            it holds. Copy lives in the crisisResources namespace so the
+            footer's own keys are untouched. */}
+        <Link
+          href="/crisis-resources"
+          className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition hover:text-[var(--sh-accent-gold)]"
+        >
+          {tResources("footerLink")}
+          <span aria-hidden="true">→</span>
+        </Link>
       </div>
 
       {/* Language picker + legal links — quiet utility row below the

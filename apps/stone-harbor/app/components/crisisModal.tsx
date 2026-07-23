@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocale } from "next-intl";
 
@@ -52,6 +53,7 @@ const COPY = {
       { region: "Australia", text: "Lifeline. 13 11 14." },
       { region: "International", text: "findahelpline.com — search by country." },
     ],
+    seeAllLabel: "See all crisis resources",
     pauseLabel: "Pause the map for now",
     continueLabel: "I'm okay to keep going",
     softNote:
@@ -75,6 +77,7 @@ const COPY = {
       { region: "Argentina", text: "Centro de Asistencia al Suicida. 135." },
       { region: "Internacional", text: "findahelpline.com — busca por país." },
     ],
+    seeAllLabel: "Ver todos los recursos de crisis",
     pauseLabel: "Pausar el mapa por ahora",
     continueLabel: "Estoy bien para continuar",
     softNote:
@@ -156,6 +159,17 @@ export function CrisisModal({ level, onDismiss, onPause }: Props) {
                     </li>
                   ))}
                 </ul>
+
+                {/* SH-105: the modal is the immediate answer, the page is
+                    the deeper directory. Both exist, and the modal now
+                    knows where the page is. */}
+                <Link
+                  href="/crisis-resources"
+                  className="mt-6 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--sh-accent-gold-dusk)] transition hover:text-[var(--sh-accent-gold-bright)]"
+                >
+                  {t.seeAllLabel}
+                  <span aria-hidden="true">→</span>
+                </Link>
               </section>
 
               <p className="mt-8 max-w-prose text-sm italic leading-relaxed text-stone-400 md:text-base">

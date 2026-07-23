@@ -49,6 +49,12 @@ const HIDDEN_PREFIXES = [
   "/privacy",
   "/about",
   "/resources",
+  // "/resources" does not cover this one — "/crisis-resources" doesn't
+  // start with it. Listed explicitly (SH-105): the crisis page is a
+  // public surface a signed-out visitor can land on, member tabs are
+  // no use to them there, and the reclaimed height goes to the four
+  // primary resources on mobile.
+  "/crisis-resources",
   "/start-here",
   "/onboarding",
   "/settle-in",
