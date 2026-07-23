@@ -252,9 +252,16 @@ body {
 }
 
 /* Stable focus ring across the codebase. Many surfaces override
-   :focus-visible per element; this is the safe default. */
+   :focus-visible per element; this is the safe default.
+
+   SH-106 (2026-07-23): switched from #c4934e to
+   var(--sh-accent-gold-deep-hover) (#8d6432). The prior color
+   measured ~2.75:1 on Sunlit cream — below WCAG 1.4.11's 3:1
+   non-text-contrast threshold. Deep-hover clears 3:1 on both
+   themes and doubles as a Design System hygiene win (tokenized
+   rather than hardcoded). */
 :focus-visible {
-  outline: 2px solid #c4934e;
+  outline: 2px solid var(--sh-accent-gold-deep-hover);
   outline-offset: 2px;
 }
 
