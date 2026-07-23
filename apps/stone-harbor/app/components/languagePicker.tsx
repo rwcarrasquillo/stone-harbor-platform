@@ -66,7 +66,7 @@ export function LanguagePicker() {
       });
     } else {
       // Phase 2 page (cookie-driven, e.g. /dashboard, /journal,
-      // /messages, /members-blog, /resources, /roadmap, /welcome,
+      // /messages, /letters, /resources, /roadmap, /welcome,
       // /meditation, /vent). The cookie was just written; we need
       // a full reload so the server picks it up via
       // getRequestConfig + NextIntlClientProvider re-mounts on the

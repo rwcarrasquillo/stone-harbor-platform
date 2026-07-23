@@ -24,7 +24,7 @@ const AUTHENTICATED_PATH_PREFIXES = [
   "/journal",
   "/vent",
   "/messages",
-  "/members-blog",
+  "/letters",
   "/welcome",
   "/profile",
   "/meditation",

@@ -35,7 +35,7 @@ import Link from "next/link";
  *   The band uses `mb-6 md:mb-8` so the page header that follows it
  *   has consistent breathing room from page to page. The outer
  *   container uses `pt-8` to match the established top spacing on
- *   /dashboard, /journal, /messages, /members-blog.
+ *   /dashboard, /journal, /messages, /letters.
  */
 
 type Props = {

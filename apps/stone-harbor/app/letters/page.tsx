@@ -20,14 +20,14 @@ import {
 import type { ComponentType } from "react";
 
 /**
- * Stone Harbor — /members-blog (production, the Letters surface).
+ * Stone Harbor — /letters (production, the Letters surface).
  *
  * Stone Harbor originals only. External curated content moved to
  * `/resources` in the same ship (2026-06-18). Before the split the
  * two surfaces overlapped — both showed external articles — and
  * neither carried a clean signal about voice. After the split:
  *
- *   /members-blog → "Letters from the harbor" — original writing
+ *   /letters → "Letters from the harbor" — original writing
  *                   from the editorial team, in Harbor Voice. The
  *                   harbor writes letters.
  *   /resources    → "What we found worth your time" — external
@@ -51,7 +51,7 @@ import type { ComponentType } from "react";
  *
  * Visual differentiation from /resources:
  *   /resources renders lean text-only cards (no visual slot, no hero)
- *   to feel like a reading list. /members-blog keeps the gradient
+ *   to feel like a reading list. /letters keeps the gradient
  *   visual slot and the featured hero so original letters carry the
  *   editorial weight they deserve — they're the harbor's own writing
  *   and should sit on the page like commissioned pieces, not feed
@@ -1147,7 +1147,7 @@ export default function NewMembersBlogPage() {
 // ============================================================================
 
 /**
- * Horizon mark for the /members-blog (Letters) foot.
+ * Horizon mark for the /letters (Letters) foot.
  *
  * Same composition as the other harbor surfaces — engraved-gold rule
  * pair + breathing anchor + italic voice signature.

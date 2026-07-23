@@ -18,6 +18,23 @@ const nextConfig = {
   compiler: { removeConsole: { exclude: ["error"] } },
   poweredByHeader: false,
   reactStrictMode: true,
+  // SH-101 (2026-07-23): /members-blog renamed to /letters to match the
+  // harbor vocabulary. Permanent 308 redirect for any inbound bookmarks,
+  // dashboard cards from stale builds, or external links.
+  async redirects() {
+    return [
+      {
+        source: "/members-blog",
+        destination: "/letters",
+        permanent: true,
+      },
+      {
+        source: "/members-blog/:path*",
+        destination: "/letters/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 module.exports = withNextIntl(nextConfig);

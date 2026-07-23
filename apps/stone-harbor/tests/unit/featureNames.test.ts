@@ -24,8 +24,8 @@ describe("featureForPath — known doors", () => {
     expect(featureForPath("/meditation")).toBe("Breathe");
   });
 
-  it("maps /members-blog to Members Blog", () => {
-    expect(featureForPath("/members-blog")).toBe("Members Blog");
+  it("maps /letters to Letters", () => {
+    expect(featureForPath("/letters")).toBe("Letters");
   });
 });
 

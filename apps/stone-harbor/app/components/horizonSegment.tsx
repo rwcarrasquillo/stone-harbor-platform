@@ -16,7 +16,7 @@
  *
  * The visual result is a thinner, more delicate horizon than the
  * old SVG lens — but it matches the CSS horizon already shipped on
- * /journal/archive, /lineage, /roadmap, /resources, /members-blog.
+ * /journal/archive, /lineage, /roadmap, /resources, /letters.
  * Consistency across all surfaces beats the heavier lens look on
  * three of them.
  *

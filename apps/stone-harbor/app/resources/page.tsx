@@ -31,7 +31,7 @@ import {
  * Clarity / Calm / Strength — with the member's current path first.
  * Each strip uses CSS scroll-snap with peek so the member can see
  * "there's more here" without endless vertical scroll. Mirrors the
- * /members-blog architecture for cross-page consistency. /resources
+ * /letters architecture for cross-page consistency. /resources
  * has no internal posts (all external) so the source toggle is
  * omitted, and no featured hero either — the page jumps straight to
  * the strips after the anchor strip.
@@ -80,7 +80,7 @@ const STRIP_LIMIT = 6;
 type Pillar = "clarity" | "calm" | "strength";
 
 // Each pillar pairs an icon with its accent color. Same shape as the
-// PILLAR_META on /members-blog so the two library surfaces render
+// PILLAR_META on /letters so the two library surfaces render
 // pillar identity the same way: small accent-colored icon next to a
 // white serif italic H2. The icon carries the color signal so the
 // title itself can stay editorially restrained.
@@ -118,7 +118,7 @@ function normalizeStage(value: string | null | undefined): Pillar {
 //
 // Hover treatment: engraved-gold lens hairlines fade in at the top
 // and bottom of whichever card the cursor is over. Same hover-follows-
-// cursor pattern as /messages conversation cards and /members-blog
+// cursor pattern as /messages conversation cards and /letters
 // FeedCard, scoped to brand gold (the cards aren't pillar-tinted on
 // /resources — pillar identity sits in the strip header above).
 function ResourceCard({
@@ -141,7 +141,7 @@ function ResourceCard({
       }`}
     >
       {/* Hover hairlines — opacity-fade in on group-hover. The CSS
-          duration matches the FeedCard treatment on /members-blog so
+          duration matches the FeedCard treatment on /letters so
           the cards feel like one family across the library + resources
           surfaces. */}
       <span
@@ -245,7 +245,7 @@ export default function ResourcesPage() {
   }
 
   // Group items by pillar, ordered so the member's current path
-  // appears first. Mirrors the /members-blog pillarSections shape.
+  // appears first. Mirrors the /letters pillarSections shape.
   const pillarSections = useMemo<
     { pillar: Pillar; items: ExternalItem[] }[]
   >(() => {
@@ -448,7 +448,7 @@ export default function ResourcesPage() {
                           {/* Pillar header — accent-colored icon on
                               the left carries the color signal; the
                               H2 stays editorial white serif italic.
-                              Same composition as /members-blog so the
+                              Same composition as /letters so the
                               two library surfaces read as one family. */}
                           <div className="flex items-center gap-2 md:gap-3">
                             <meta.Icon

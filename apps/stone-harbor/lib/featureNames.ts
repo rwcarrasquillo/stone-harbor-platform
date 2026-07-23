@@ -20,7 +20,7 @@ export const SLUG_TO_FEATURE: Record<string, string> = {
   messages: "Brotherhood",
   meditation: "Breathe",
   // Other authenticated routes.
-  "members-blog": "Members Blog",
+  letters: "Letters",
   dashboard: "Dashboard",
   welcome: "Welcome",
   roadmap: "Roadmap",
