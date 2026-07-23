@@ -1380,5 +1380,170 @@
       "continue": "Continue Forward",
       "retake": "Retake Assessment"
     }
+  },
+  "crisisResources": {
+    "meta": {
+      "title": "Crisis Resources — Stone Harbor",
+      "description": "Crisis resources for anyone in distress. 988, Crisis Text Line, Veterans Crisis Line, and more."
+    },
+    "newTab": "opens in a new tab",
+    "footerLink": "More resources",
+    "hero": {
+      "title": "If you're in crisis, you don't have to be here.",
+      "body": "Stone Harbor is a quiet place. It is not where the help you need lives. The numbers and links below connect you to people whose job is to be there right now.",
+      "epilogue": "Pick up the phone, or text, or click. The harbor will be here when you come back."
+    },
+    "primary": {
+      "aria": "Immediate crisis resources",
+      "988": {
+        "name": "988 Suicide and Crisis Lifeline",
+        "purpose": "For anyone in emotional distress or thinking about suicide.",
+        "call": "Call: 988",
+        "text": "Text: 988",
+        "chat": "Chat: 988lifeline.org/chat",
+        "hours": "Available 24/7 in English and Spanish. Free, confidential."
+      },
+      "ctl": {
+        "name": "Crisis Text Line",
+        "purpose": "For text-first support — useful if calling is hard right now.",
+        "text": "Text HOME to 741741",
+        "regions": "(US, Canada, UK, Ireland)",
+        "hours": "Available 24/7. Free, confidential."
+      },
+      "veterans": {
+        "name": "Veterans Crisis Line",
+        "purpose": "For veterans, service members, and their loved ones.",
+        "call": "Call: 988, then press 1",
+        "text": "Text: 838255",
+        "chat": "Chat: veteranscrisisline.net/chat",
+        "hours": "Available 24/7. You do not need to be enrolled in VA benefits. You do not need to be in crisis to call."
+      },
+      "911": {
+        "name": "911 — Emergency",
+        "purpose": "If you are in immediate physical danger, or if someone you care about is, call 911.",
+        "call": "Call: 911",
+        "international": "If you are in another country, dial your country's local emergency number."
+      }
+    },
+    "secondary": {
+      "sectionHeader": "If you're looking for something more specific.",
+      "trevor": {
+        "name": "The Trevor Project — LGBTQ+ Youth and Young Adults",
+        "purpose": "For LGBTQ+ young people in crisis, or anyone exploring questions of identity in a hard moment.",
+        "call": "Call: 1-866-488-7386",
+        "text": "Text: START to 678-678",
+        "chat": "Chat: thetrevorproject.org/get-help",
+        "hours": "24/7. Free, confidential."
+      },
+      "samhsa": {
+        "name": "SAMHSA National Helpline — Substance Use and Mental Health",
+        "purpose": "For mental health and substance use questions. Treatment referrals, information, support.",
+        "call": "Call: 1-800-662-HELP (4357)",
+        "hours": "24/7. Free, confidential. English and Spanish."
+      },
+      "dv": {
+        "name": "National Domestic Violence Hotline",
+        "purpose": "For anyone experiencing domestic violence, or witnessing it, or trying to help someone who is.",
+        "call": "Call: 1-800-799-7233 (1-800-799-SAFE)",
+        "text": "Text: START to 88788",
+        "chat": "Chat: thehotline.org",
+        "hours": "24/7. Free, confidential. More than 200 languages available."
+      },
+      "postvention": {
+        "name": "Postvention — If You've Lost Someone",
+        "purpose": "For survivors of suicide loss, and for anyone grieving a sudden or violent loss.",
+        "afsp": "American Foundation for Suicide Prevention Survivor Support: afsp.org/find-support",
+        "allianceOfHope": "Alliance of Hope for Suicide Loss Survivors: allianceofhope.org",
+        "hours": "Not 24/7 crisis services, but real, careful, ongoing communities for the grief that comes after."
+      },
+      "rainn": {
+        "name": "National Sexual Assault Hotline (RAINN)",
+        "purpose": "For survivors of sexual assault, recent or past.",
+        "call": "Call: 1-800-656-HOPE (4673)",
+        "chat": "Chat: rainn.org",
+        "hours": "24/7. Free, confidential."
+      }
+    },
+    "florida": {
+      "sectionHeader": "In Florida",
+      "211": {
+        "name": "Florida 211",
+        "purpose": "For non-crisis help with mental health, substance use, housing, food, or anything else where you need to know \"what now?\"",
+        "call": "Call or text: 211",
+        "chat": "Chat: 211florida.org",
+        "hours": "24/7. Free, confidential. English and Spanish."
+      },
+      "veterans": {
+        "name": "Florida Veterans Foundation",
+        "purpose": "For Florida-based veterans seeking peer support, benefits navigation, and crisis resources.",
+        "website": "Website: floridaveteransfoundation.org"
+      },
+      "dcf": {
+        "name": "Florida Department of Children and Families — Crisis Counselors",
+        "purpose": "Crisis stabilization and Baker Act information.",
+        "website": "Website: myflfamilies.com/services/mental-health-substance-abuse"
+      }
+    },
+    "espanol": {
+      "sectionHeader": "En español",
+      "988es": {
+        "name": "Línea 988 — Línea Nacional de Prevención del Suicidio",
+        "purpose": "Para cualquier persona en angustia emocional o pensando en el suicidio.",
+        "call": "Llama: 988",
+        "text": "Texto: 988",
+        "textNote": "(escribe \"AYUDA\")",
+        "chat": "Chat: 988lineadeayuda.org/chat",
+        "hours": "24/7. Gratuito y confidencial. En español."
+      },
+      "ctles": {
+        "name": "Línea de Texto de Crisis",
+        "purpose": "Para apoyo por mensaje de texto.",
+        "text": "Texto: AYUDA al 741741",
+        "hours": "24/7. Gratuito."
+      },
+      "samhsaes": {
+        "name": "SAMHSA — Línea de Ayuda Nacional",
+        "purpose": "Para preguntas sobre salud mental y uso de sustancias.",
+        "call": "Llama: 1-800-662-HELP (4357)",
+        "hours": "24/7. Gratuito y confidencial. En español."
+      }
+    },
+    "international": {
+      "sectionHeader": "Outside the United States",
+      "canada": {
+        "country": "Canada",
+        "org": "Talk Suicide Canada",
+        "call": "Call: 1-833-456-4566 (24/7)",
+        "text": "Text: 45645 (4pm-midnight ET)"
+      },
+      "uk": {
+        "country": "United Kingdom",
+        "org": "Samaritans",
+        "call": "Call: 116 123 (24/7, free from any phone)"
+      },
+      "ireland": {
+        "country": "Ireland",
+        "org": "Samaritans",
+        "call": "Call: 116 123 (24/7, free)"
+      },
+      "australia": {
+        "country": "Australia",
+        "org": "Lifeline",
+        "call": "Call: 13 11 14 (24/7)"
+      },
+      "mexico": {
+        "country": "Mexico",
+        "org": "SAPTEL",
+        "call": "Call: 55 5259 8121 (24/7)"
+      },
+      "worldwide": {
+        "country": "Worldwide directory",
+        "link": "findahelpline.com"
+      }
+    },
+    "closing": {
+      "body": "If none of the above lists the right resource for what you're carrying, message us at <mail>rafael@stoneharborapp.com</mail>. We are not a crisis service, but we are real people, and we will help you find what you need.",
+      "signature": "The harbor is patient. It will be here."
+    }
   }
 }

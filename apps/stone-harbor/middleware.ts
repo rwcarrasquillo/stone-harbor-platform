@@ -68,6 +68,11 @@ const PHASE_2_PAGES = new Set([
   "reset-password",
   "privacy",
   "terms",
+  // /crisis-resources is public by design (SH-105) — a visitor in
+  // distress reaches it without an account, same as privacy + terms.
+  // Deliberately NOT in the matcher below, for the same reason those
+  // two aren't.
+  "crisis-resources",
   // /auth/callback handles the Supabase confirmation redirect (SH-5).
   // Supabase always sends the link to the canonical /auth/callback path,
   // but if a locale-prefixed variant ever appears (mis-typed bookmark,
