@@ -73,6 +73,11 @@ const PHASE_2_PAGES = new Set([
   // Deliberately NOT in the matcher below, for the same reason those
   // two aren't.
   "crisis-resources",
+  // /keepers is the public Lighthouse Keepers patron page (SH-108) —
+  // reachable signed-out, same public-route treatment as privacy,
+  // terms and crisis-resources. Deliberately NOT in the matcher below,
+  // for the same reason those aren't.
+  "keepers",
   // /auth/callback handles the Supabase confirmation redirect (SH-5).
   // Supabase always sends the link to the canonical /auth/callback path,
   // but if a locale-prefixed variant ever appears (mis-typed bookmark,

@@ -26,6 +26,7 @@ export const SLUG_TO_FEATURE: Record<string, string> = {
   roadmap: "Roadmap",
   resources: "Resources",
   "start-here": "Start Here",
+  keepers: "Lighthouse Keepers",
 };
 
 /**
