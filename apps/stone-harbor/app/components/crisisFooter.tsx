@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { serif } from "@/lib/fonts";
+import { supabase } from "@/lib/supabaseClient";
 import { useTheme } from "@/app/components/themeProvider";
 import { LanguagePicker } from "@/app/components/languagePicker";
 
@@ -50,6 +52,28 @@ export function CrisisFooter({ amplify988 = false }: Props) {
   const isDusk = theme === "dusk";
   const t = useTranslations("crisisFooter");
   const tResources = useTranslations("crisisResources");
+  const tKeepers = useTranslations("keepers");
+
+  // SH-108 — the /keepers footer link is belt-and-suspenders reachability
+  // (brief §7.6). Gated on the feature flag so it never points at a
+  // pre-launch 404. Patronage is neither care nor legal, so it lives on
+  // its own quiet line — NOT inside the "Legal links" nav below, which
+  // stays honest about what it holds (same discipline as crisis-resources).
+  const [keepersEnabled, setKeepersEnabled] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void supabase
+      .from("app_settings")
+      .select("keepers_enabled")
+      .eq("id", 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (alive) setKeepersEnabled(!!data?.keepers_enabled);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
     <footer
@@ -136,6 +160,19 @@ export function CrisisFooter({ amplify988 = false }: Props) {
           </Link>
         </nav>
       </div>
+
+      {/* SH-108 — quiet patron link on its own line, outside the Legal
+          nav. Only rendered when the surface is live. */}
+      {keepersEnabled && (
+        <div className="mx-auto mt-2 flex max-w-7xl items-center justify-center md:justify-end">
+          <Link
+            href="/keepers"
+            className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition hover:text-[var(--sh-accent-gold)]"
+          >
+            {tKeepers("brandCrumb")}
+          </Link>
+        </div>
+      )}
     </footer>
   );
 }

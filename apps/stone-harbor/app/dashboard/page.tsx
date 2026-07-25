@@ -350,10 +350,29 @@ export default function DashboardCenteredPage() {
   );
   const [ackDismissing, setAckDismissing] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  // SH-108 — gate the Lighthouse Keepers room card on the feature flag.
+  const [keepersEnabled, setKeepersEnabled] = useState(false);
 
   useEffect(() => {
     void loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // SH-108 — read app_settings.keepers_enabled (singleton id=1) so the
+  // Keepers room card stays hidden until the surface launches.
+  useEffect(() => {
+    let alive = true;
+    void supabase
+      .from("app_settings")
+      .select("keepers_enabled")
+      .eq("id", 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (alive) setKeepersEnabled(!!data?.keepers_enabled);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   async function loadAll() {
@@ -1017,6 +1036,7 @@ export default function DashboardCenteredPage() {
                 lineageUnlocked={lineageUnlocked}
                 lineageDoorSeenAt={lineageDoorSeenAt}
                 meditationCopy={c.meditation}
+                keepersEnabled={keepersEnabled}
               />
             </motion.div>
           )}
@@ -1125,6 +1145,7 @@ function RoomsCarousel({
   lineageUnlocked,
   lineageDoorSeenAt,
   meditationCopy,
+  keepersEnabled,
 }: {
   locale: "en" | "es";
   lineageUnlocked: boolean;
@@ -1135,6 +1156,7 @@ function RoomsCarousel({
     body: string;
     cta: string;
   };
+  keepersEnabled: boolean;
 }) {
   // Build the rooms array with Journal at the center index.
   // 5 cards (no Lineage): Messages, The Map, Journal, Rhythm, The Breath
@@ -1288,6 +1310,24 @@ function RoomsCarousel({
           ? "Unos minutos sin prisa."
           : "A few unhurried minutes.",
     },
+    // SH-108 — Lighthouse Keepers patron room. Gated on the feature flag
+    // (hidden pre-launch). Appended at the end so Journal keeps the center
+    // anchor. "Lighthouse Keepers" is a proper noun — English in both
+    // locales; only the tagline localizes (brief §7.6). The eyebrow
+    // ("Patronage" / "Patrocinio") is not brief-verbatim — flagged for the
+    // founder editorial pass.
+    ...(keepersEnabled
+      ? [
+          {
+            key: "keepers",
+            href: "/keepers",
+            eyebrow: locale === "es" ? "Patrocinio" : "Patronage",
+            name: "Lighthouse Keepers",
+            tagline:
+              locale === "es" ? "Sostén la dársena." : "Sustain the harbor.",
+          },
+        ]
+      : []),
   ];
 
   const defaultIdx = rooms.findIndex((r) => r.key === "journal");

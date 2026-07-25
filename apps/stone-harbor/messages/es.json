@@ -1545,5 +1545,96 @@
       "body": "Si ninguno de los recursos anteriores es el adecuado para lo que estás cargando, escríbenos a <mail>rafael@stoneharborapp.com</mail>. No somos un servicio de crisis, pero somos personas reales, y te ayudaremos a encontrar lo que necesitas.",
       "signature": "La dársena es paciente. Estará aquí cuando vuelvas."
     }
+  },
+  "keepers": {
+    "brandCrumb": "Lighthouse Keepers",
+    "hero": {
+      "title": "Sostén la dársena.",
+      "framing": "Stone Harbor es gratis, y seguirá siéndolo. Lighthouse Keepers es simplemente una forma de que los miembros que han encontrado algo aquí ayuden a mantener el espacio abierto — para ellos, y para la próxima persona que llegue. Ninguna función se desbloquea con esto, y nada se retiene sin esto."
+    },
+    "legal": {
+      "body": "Stone Harbor Ventures LLC no es una organización sin fines de lucro 501(c)(3) hoy. Tu contribución es apoyo de patrocinio, no una donación deducible de impuestos — no recibirás un recibo fiscal. Esto puede cambiar cuando se establezca la Fundación Stone Harbor (objetivo 2027). Si prefieres esperar hasta que exista el estatus deducible, es una decisión honesta — la dársena es paciente."
+    },
+    "tiers": {
+      "tier1": {
+        "eyebrow": "Café cotidiano",
+        "price": "$10 mensual",
+        "body": "Un café al mes. El tipo de apoyo continuo y silencioso que se acumula a lo largo del año y le permite a la dársena mantener las luces encendidas — hosting, cuidado editorial, la infraestructura de todos los días.",
+        "cta": "Elegir $10 mensual"
+      },
+      "tier2": {
+        "eyebrow": "Miembro comprometido",
+        "price": "$25 mensual",
+        "body": "Significativo. El nivel que refleja que la dársena se ha vuelto parte de tu ritmo continuo — un compromiso mensual con el espacio, no un gesto pasajero.",
+        "cta": "Elegir $25 mensual"
+      },
+      "tier3": {
+        "eyebrow": "Patrón sostenedor",
+        "price": "$100 mensual",
+        "body": "El nivel que sostiene trabajo real. Cubre una parte considerable del costo mensual de operar la dársena — trabajo editorial, infraestructura a escala, las mejoras continuas a la forma en que la plataforma te acompaña.",
+        "cta": "Elegir $100 mensual"
+      }
+    },
+    "oneTime": {
+      "title": "Contribuir una vez",
+      "body": "Contribuir una vez. Cualquier cantidad, cuando el momento se sienta apropiado. Sin compromiso más allá de este instante.",
+      "amountLabel": "Cantidad (mín $1)",
+      "chips": [
+        10,
+        25,
+        100,
+        250
+      ],
+      "cta": "Contribuir esta vez"
+    },
+    "wall": {
+      "eyebrow": "Patrones que eligieron visibilidad",
+      "description": "Sin cantidades, sin niveles — solo los primeros nombres de miembros que quisieron ser parte del círculo visible."
+    },
+    "activePatron": {
+      "eyebrow": "La dársena te acompaña",
+      "body": "Has sido Lighthouse Keeper desde {since}. Actualmente aportas {amount} mensuales.",
+      "manageCta": "Gestionar tu apoyo",
+      "changeTierCta": "Cambiar a otro nivel"
+    },
+    "lapsedPatron": {
+      "title": "La dársena todavía te acompaña",
+      "body": "Tu apoyo mensual no está activo en este momento. Si quieres retomarlo, elige un nivel abajo — sin explicaciones, sin penalización por la pausa."
+    },
+    "success": {
+      "title": "La dársena te acompaña. Tu apoyo está confirmado.",
+      "wallOptIn": {
+        "prompt": "¿Te gustaría que tu primer nombre aparezca en el muro silencioso de patrones? Puedes cambiar esto en cualquier momento en tu portal de patrocinio.",
+        "yes": "Sí, agregar mi nombre",
+        "no": "No, mantén mi privacidad",
+        "later": "Decidir más tarde"
+      },
+      "backToDashboard": "Volver a tu panel"
+    },
+    "canceledNotice": "Pago cancelado — no se cobró nada. La dársena es paciente; puedes volver cuando el momento se sienta apropiado.",
+    "voiceSignature": "— La dársena"
+  },
+  "keepersEmail": {
+    "subjectEn": "Thank you for supporting Stone Harbor",
+    "subjectEs": "Gracias por sostener Stone Harbor",
+    "receipt": {
+      "amountEn": "Amount",
+      "dateEn": "Date",
+      "amountEs": "Cantidad",
+      "dateEs": "Fecha",
+      "ref": "Ref"
+    },
+    "en": {
+      "p1": "The harbor holds you.",
+      "p2": "Your patronage keeps the space open — the hosting, the editorial care, the everyday work of keeping something honest running. Members you'll never meet will write in journals you'll never read, and that keeps happening because of contributions like yours.",
+      "p3": "You can manage your patronage anytime at [Patron portal link]. If you ever need to pause or step away, no explanation required.",
+      "signature": "— The harbor"
+    },
+    "es": {
+      "p1": "La dársena te acompaña.",
+      "p2": "Tu apoyo mantiene el espacio abierto — el hosting, el cuidado editorial, el trabajo cotidiano de sostener algo honesto. Miembros que nunca conocerás escribirán en diarios que nunca leerás, y eso sigue sucediendo por contribuciones como la tuya.",
+      "p3": "Puedes gestionar tu apoyo en cualquier momento en [Enlace al portal de patrocinio]. Si alguna vez necesitas pausar o dar un paso atrás, no se requiere explicación.",
+      "signature": "— La dársena"
+    }
   }
 }
