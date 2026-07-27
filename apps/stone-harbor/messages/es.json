@@ -1556,19 +1556,19 @@
       "body": "Stone Harbor Ventures LLC no es una organización sin fines de lucro 501(c)(3) hoy. Tu contribución es apoyo de patrocinio, no una donación deducible de impuestos — no recibirás un recibo fiscal. Esto puede cambiar cuando se establezca la Fundación Stone Harbor (objetivo 2027). Si prefieres esperar hasta que exista el estatus deducible, es una decisión honesta — la dársena es paciente."
     },
     "tiers": {
-      "tier1": {
+      "tier_1": {
         "eyebrow": "Café cotidiano",
         "price": "$10 mensual",
         "body": "Un café al mes. El tipo de apoyo continuo y silencioso que se acumula a lo largo del año y le permite a la dársena mantener las luces encendidas — hosting, cuidado editorial, la infraestructura de todos los días.",
         "cta": "Elegir $10 mensual"
       },
-      "tier2": {
+      "tier_2": {
         "eyebrow": "Miembro comprometido",
         "price": "$25 mensual",
         "body": "Significativo. El nivel que refleja que la dársena se ha vuelto parte de tu ritmo continuo — un compromiso mensual con el espacio, no un gesto pasajero.",
         "cta": "Elegir $25 mensual"
       },
-      "tier3": {
+      "tier_3": {
         "eyebrow": "Patrón sostenedor",
         "price": "$100 mensual",
         "body": "El nivel que sostiene trabajo real. Cubre una parte considerable del costo mensual de operar la dársena — trabajo editorial, infraestructura a escala, las mejoras continuas a la forma en que la plataforma te acompaña.",

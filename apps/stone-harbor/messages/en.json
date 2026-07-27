@@ -1556,19 +1556,19 @@
       "body": "Stone Harbor Ventures LLC is not a 501(c)(3) nonprofit today. Your contribution is patron support, not a tax-deductible donation — you won't receive a tax receipt. This may change when the Stone Harbor Foundation is established (targeted 2027). If you'd rather wait for tax-deductible status, that's an honest choice — the harbor is patient."
     },
     "tiers": {
-      "tier1": {
+      "tier_1": {
         "eyebrow": "Daily cup",
         "price": "$10 monthly",
         "body": "A coffee a month. The kind of quiet ongoing support that adds up across a year and lets the harbor keep the lights on — hosting, editorial care, the everyday infrastructure.",
         "cta": "Choose $10 monthly"
       },
-      "tier2": {
+      "tier_2": {
         "eyebrow": "Invested member",
         "price": "$25 monthly",
         "body": "Meaningful. The tier that reflects the harbor becoming part of your ongoing rhythm — a monthly commitment to the space, not a passing gesture.",
         "cta": "Choose $25 monthly"
       },
-      "tier3": {
+      "tier_3": {
         "eyebrow": "Sustaining patron",
         "price": "$100 monthly",
         "body": "The tier that sustains real work. Covers a substantial slice of the harbor's monthly running cost — content editorial, infrastructure at scale, the ongoing improvements to how the platform holds you.",
