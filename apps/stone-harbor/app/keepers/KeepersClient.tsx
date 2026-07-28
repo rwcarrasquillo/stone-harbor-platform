@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 
@@ -169,7 +170,12 @@ export function KeepersClient() {
         {/* Hero */}
         <header className="text-center">
           <div className="mb-6 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)]">
-            <span>Stone Harbor</span>
+            <Link
+              href="/dashboard"
+              className="transition-colors hover:text-[var(--sh-text-secondary)]"
+            >
+              Stone Harbor
+            </Link>
             <span aria-hidden="true" className="opacity-40">·</span>
             <span>{t("brandCrumb")}</span>
           </div>
