@@ -301,9 +301,23 @@ function TierCard({
   themeName: "sunlit" | "dusk";
 }) {
   return (
-    <div className="group relative flex flex-col rounded-lg bg-transparent p-5 transition-colors hover:bg-[var(--sh-bg-card-tinted-hover)]">
+    <div className="group relative flex flex-col rounded-lg bg-transparent p-5">
       <HairlineLens position="top" theme={themeName} />
-      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
+      {/* Farol — lighthouse beam falling from the top hairline (the lintel).
+          Matches dashboard RoomCard treatment (see dashboard/page.tsx L1450).
+          Ellipse 50% 140% at 50% 0% keeps the beam narrow + tall, extending
+          past the bottom for a soft cone. Fades in on hover; theme-aware. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{
+          background:
+            themeName === "sunlit"
+              ? "radial-gradient(ellipse 50% 140% at 50% 0%, rgba(169,121,61,0.10) 0%, rgba(169,121,61,0.05) 30%, rgba(169,121,61,0.02) 60%, transparent 95%)"
+              : "radial-gradient(ellipse 50% 140% at 50% 0%, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.04) 30%, rgba(255,255,255,0.015) 60%, transparent 95%)",
+        }}
+      />
+      <p className="relative text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
         {eyebrow}
       </p>
       <p className={`${serif.className} mt-2 text-xl text-[var(--sh-text-primary)]`}>{price}</p>
