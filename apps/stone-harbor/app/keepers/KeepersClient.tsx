@@ -232,6 +232,7 @@ export function KeepersClient() {
                   body={t(`tiers.${tier}.body`)}
                   cta={t(`tiers.${tier}.cta`)}
                   busy={busy === tier}
+                  themeName={themeName}
                   onClick={() => startCheckout({ mode: "subscription", tier })}
                 />
               ))}
@@ -283,6 +284,7 @@ function TierCard({
   cta,
   onClick,
   busy,
+  themeName,
 }: {
   eyebrow: string;
   price: string;
@@ -290,10 +292,11 @@ function TierCard({
   cta: string;
   onClick: () => void;
   busy: boolean;
+  themeName: "sunlit" | "dusk";
 }) {
   return (
-    <div className="group relative flex flex-col rounded-lg border border-[var(--sh-border-subtle)] bg-transparent p-5 transition-colors hover:bg-[var(--sh-bg-card-tinted-hover)]">
-      <span className="pointer-events-none absolute inset-x-4 top-0 h-px bg-[var(--sh-border-subtle)]" aria-hidden="true" />
+    <div className="group relative flex flex-col rounded-lg bg-transparent p-5 transition-colors hover:bg-[var(--sh-bg-card-tinted-hover)]">
+      <HairlineLens position="top" theme={themeName} />
       <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
         {eyebrow}
       </p>
