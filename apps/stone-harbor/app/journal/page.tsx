@@ -13,6 +13,7 @@ import { HorizonSegment } from "@/app/components/horizonSegment";
 import { useTheme } from "@/app/components/themeProvider";
 import { UnsavedChangesModal } from "@/app/components/unsavedChangesModal";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
 import { isWithinEditWindow } from "@/lib/journalEditWindow";
 import { deriveTitleFromPrompt } from "@/lib/story/surfacer";
@@ -543,29 +544,13 @@ export default function JournalPage() {
         : null;
 
     async function loadEntries() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (cancelled) return;
+      // SH-110 — auth, suspension and settle-in in one call. The separate
+      // suspended_at round-trip that used to sit here is gone; the guard
+      // covers it.
+      const session = await requireActiveSession();
+      if (cancelled || !session) return;
 
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("suspended_at")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (cancelled) return;
-
-      if (profile?.suspended_at) {
-        router.replace("/suspended");
-        return;
-      }
-
-      setUserId(user.id);
+      setUserId(session.id);
 
       if (focusId) {
         // Two parallel queries: the focused entry by id, plus the 5
@@ -575,13 +560,13 @@ export default function JournalPage() {
           supabase
             .from("journal_entries")
             .select("id, title, content, mood, created_at, edited_at, story_invitation_id")
-            .eq("user_id", user.id)
+            .eq("user_id", session.id)
             .eq("id", focusId)
             .maybeSingle(),
           supabase
             .from("journal_entries")
             .select("id, title, content, mood, created_at, edited_at, story_invitation_id")
-            .eq("user_id", user.id)
+            .eq("user_id", session.id)
             .neq("id", focusId)
             .order("created_at", { ascending: false })
             .limit(5),
@@ -617,7 +602,7 @@ export default function JournalPage() {
       const { data, error } = await supabase
         .from("journal_entries")
         .select("id, title, content, mood, created_at, edited_at, story_invitation_id")
-        .eq("user_id", user.id)
+        .eq("user_id", session.id)
         .order("created_at", { ascending: false })
         .limit(7);
       if (cancelled) return;

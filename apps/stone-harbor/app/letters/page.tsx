@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { AnchorMark } from "@/app/components/anchorMark";
 import { HairlineLens } from "@/app/components/hairlineLens";
@@ -539,27 +540,16 @@ export default function NewMembersBlogPage() {
   });
 
   async function loadAll() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      window.location.href = "/login";
-      return;
-    }
-    const { data: gateRow } = await supabase
-      .from("profiles")
-      .select("suspended_at")
-      .eq("id", user.id)
-      .single();
-    if (gateRow?.suspended_at) {
-      window.location.href = "/suspended";
-      return;
-    }
+    // SH-110 — auth, suspension and settle-in in one call. The separate
+    // suspended_at round-trip that used to sit here is gone; the guard
+    // covers it, leaving one profile read for healing_stage.
+    const session = await requireActiveSession();
+    if (!session) return;
 
     const { data: profile } = await supabase
       .from("profiles")
       .select("healing_stage")
-      .eq("id", user.id)
+      .eq("id", session.id)
       .single();
     const stage = normalizeStage(profile?.healing_stage);
     setUserStage(stage);

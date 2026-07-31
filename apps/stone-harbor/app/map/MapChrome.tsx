@@ -3,7 +3,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { serif, sans } from "@/lib/fonts";
@@ -14,6 +13,7 @@ import { HairlineLens } from "@/app/components/hairlineLens";
 import { useTheme } from "@/app/components/themeProvider";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 
 /**
  * Stone Harbor — /map shared chrome.
@@ -30,43 +30,33 @@ import { supabase } from "@/lib/supabaseClient";
  */
 
 // ───────────────────────────────────────────────────────────────────
-// Auth guard — mirrors /journal exactly: getUser → /login, suspended
-// profile → /suspended. Returns the resolved userId and a ready flag
-// so each page can gate its own data-load on a confirmed session.
+// Auth guard — delegates to the shared requireActiveSession() helper
+// (SH-110), which runs all three gates in order: no session → /login,
+// suspended → /suspended, settle-in incomplete → /settle-in. Returns
+// the resolved userId and a ready flag so each page can gate its own
+// data-load on a confirmed session.
+//
+// All four /map surfaces (hub, begin, week/[n], operating-manual) call
+// this hook, so fixing it here fixes the whole /map tree at once. The
+// hook previously ran its own getUser + suspended_at pair and never
+// checked settle-in.
 // ───────────────────────────────────────────────────────────────────
 export function useHarborAuthGuard() {
-  const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (cancelled) return;
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("suspended_at")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      if (profile?.suspended_at) {
-        router.replace("/suspended");
-        return;
-      }
-      setUserId(user.id);
+      const session = await requireActiveSession();
+      if (cancelled || !session) return;
+      setUserId(session.id);
       setReady(true);
     })();
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, []);
 
   return { userId, ready };
 }

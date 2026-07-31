@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Volume2, VolumeX } from "lucide-react";
 import { serif, sans } from "@/lib/fonts";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 import { AnchorMark } from "@/app/components/anchorMark";
 import { RotatingNatureBackdrop } from "@/app/components/rotatingNatureBackdrop";
 import {
@@ -130,6 +131,21 @@ export default function MeditationPage() {
   // the right pattern depends on the day, not on the man's history.
   const [pattern, setPattern] = useState<BreathPattern>(BREATH_PATTERNS.box);
   const { phase: breathPhase, phaseDuration } = useBreathCycle(pattern);
+
+  // SH-110 — page-load gate: signed in, not suspended, settle-in
+  // complete. /meditation had no mount gate; the getUser() below is an
+  // optional read for the Long Exhale unlock and deliberately fails
+  // silently, so it was never gating anything. Adding the guard here
+  // brings the room in line with every other member surface.
+  //
+  // Behavior change worth knowing: a signed-out visitor who lands on
+  // /meditation directly now goes to /login instead of getting the
+  // box-breath circle anonymously. /meditation is a members-only room
+  // (PHASE_2_PAGES, reachable only from the dashboard rooms strip), so
+  // that's the intended posture — but it IS a change.
+  useEffect(() => {
+    void requireActiveSession();
+  }, []);
 
   // Fetch created_at on mount so we can decide whether to show the
   // Long Exhale toggle. Failing silently keeps the page usable even

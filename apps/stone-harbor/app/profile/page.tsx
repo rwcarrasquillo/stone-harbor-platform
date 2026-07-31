@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 import { trackMilestone } from "@/lib/memberUsage";
 import { serif, sans } from "@/lib/fonts";
 import { InactivityGate } from "@/app/components/inactivityGate";
@@ -226,7 +226,6 @@ const EMPTY_FORM: ProfileForm = {
 };
 
 export default function ProfilePage() {
-  const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("profile");
   const tSpine = useTranslations("spine");
@@ -294,30 +293,21 @@ export default function ProfilePage() {
     let cancelled = false;
 
     async function checkUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (cancelled) return;
+      // SH-110 — auth, suspension and settle-in in one call. The inline
+      // suspension check that used to live here is covered by the guard;
+      // the read below survives only for created_at, which drives the
+      // Lineage section's day-90 progressive disclosure.
+      const session = await requireActiveSession();
+      if (cancelled || !session) return;
 
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-
-      // Suspension gate — suspended members cannot edit their profile.
       const { data: gateRow } = await supabase
         .from("profiles")
-        .select("suspended_at, created_at")
-        .eq("id", user.id)
+        .select("created_at")
+        .eq("id", session.id)
         .maybeSingle();
       if (cancelled) return;
 
-      if (gateRow?.suspended_at) {
-        router.replace("/suspended");
-        return;
-      }
-
-      setUserId(user.id);
+      setUserId(session.id);
       setUserCreatedAt(gateRow?.created_at ?? null);
 
       const { data, error } = await supabase
@@ -325,7 +315,7 @@ export default function ProfilePage() {
         .select(
           "email, display_name, username, pronouns, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, interests, favorite_quote, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave, lineage_section_visit_count, known_languages, theme_preference, current_roadmap_step_id",
         )
-        .eq("id", user.id)
+        .eq("id", session.id)
         .maybeSingle();
       if (cancelled) return;
 
@@ -350,7 +340,7 @@ export default function ProfilePage() {
       }
 
       const loaded: ProfileForm = {
-        email: data?.email ?? user.email ?? "",
+        email: data?.email ?? session.email ?? "",
         display_name: data?.display_name ?? "",
         username: data?.username ?? "",
         pronouns: data?.pronouns ?? "",
@@ -415,7 +405,7 @@ export default function ProfilePage() {
         void supabase
           .from("profiles")
           .update({ lineage_section_visit_count: effectiveVisitCount })
-          .eq("id", user.id);
+          .eq("id", session.id);
       }
       const deepLinkedToLineage =
         typeof window !== "undefined" &&
@@ -433,7 +423,7 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [router, t]);
+  }, [t]);
 
   // ───── Hash-aware scroll (deep-link to #lineage) ─────
   useEffect(() => {

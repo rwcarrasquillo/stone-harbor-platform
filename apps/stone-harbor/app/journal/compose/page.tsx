@@ -12,6 +12,7 @@ import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnchorMark } from "@/app/components/anchorMark";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 import { emitMemberEvent, trackMilestone } from "@/lib/memberUsage";
 import {
   deriveTitleFromPrompt,
@@ -543,29 +544,21 @@ export default function JournalPage() {
   }
 
   async function loadJournal() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      window.location.href = "/login";
-      return;
-    }
-    // Suspension gate — keep suspended members off member-facing surfaces.
-    // Also fetch created_at and the three lineage columns so we can
-    // compute progressive-disclosure thresholds and run the
+    // SH-110 — auth, suspension and settle-in in one call. The inline
+    // suspension check that used to live here is covered by the guard;
+    // the read below survives for created_at and the three lineage
+    // columns, which drive progressive-disclosure thresholds and the
     // reference-back matcher after each entry save.
+    const session = await requireActiveSession();
+    if (!session) return;
     const { data: gateRow } = await supabase
       .from("profiles")
       .select(
-        "suspended_at, created_at, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave",
+        "created_at, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave",
       )
-      .eq("id", user.id)
+      .eq("id", session.id)
       .single();
-    if (gateRow?.suspended_at) {
-      window.location.href = "/suspended";
-      return;
-    }
-    setUserId(user.id);
+    setUserId(session.id);
     setUserCreatedAt(gateRow?.created_at ?? null);
     setLineageContent({
       fatherGrief: gateRow?.lineage_father_grief ?? null,
@@ -577,7 +570,7 @@ export default function JournalPage() {
       .select(
         "id, title, original_title, content, original_content, mood, created_at, edited_at",
       )
-      .eq("user_id", user.id)
+      .eq("user_id", session.id)
       .order("created_at", { ascending: false });
     if (!error && data) {
       setEntries(data);

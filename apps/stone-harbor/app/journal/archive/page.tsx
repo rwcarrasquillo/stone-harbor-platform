@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import { serif, sans } from "@/lib/fonts";
 import { AnchorMark } from "@/app/components/anchorMark";
 import { useTheme } from "@/app/components/themeProvider";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 
 /**
  * Stone Harbor — Journal Archive route (production).
@@ -168,7 +168,6 @@ function groupByMonth(
 // ============================================================================
 
 export default function JournalArchivePage() {
-  const router = useRouter();
   const { theme } = useTheme();
   const t = useTranslations("journal");
   const tMood = useTranslations("mood");
@@ -187,32 +186,16 @@ export default function JournalArchivePage() {
     let cancelled = false;
 
     async function loadEntries() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (cancelled) return;
-
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("suspended_at")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (cancelled) return;
-
-      if (profile?.suspended_at) {
-        router.replace("/suspended");
-        return;
-      }
+      // SH-110 — auth, suspension and settle-in in one call. The separate
+      // suspended_at round-trip that used to sit here is gone; the guard
+      // covers it.
+      const session = await requireActiveSession();
+      if (cancelled || !session) return;
 
       const { data, error } = await supabase
         .from("journal_entries")
         .select("id, title, content, mood, created_at, edited_at, story_invitation_id")
-        .eq("user_id", user.id)
+        .eq("user_id", session.id)
         .order("created_at", { ascending: false })
         .limit(500);
       if (cancelled) return;
@@ -231,7 +214,7 @@ export default function JournalArchivePage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, []);
 
   // ───── Loading state ─────
   if (entries === null) {

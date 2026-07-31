@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 import { emitMemberEvent, trackMilestone } from "@/lib/memberUsage";
 import { serif, sans } from "@/lib/fonts";
 import { InactivityGate } from "@/app/components/inactivityGate";
@@ -111,6 +112,17 @@ export default function VentCenteredPage() {
     const cookie = typeof document !== "undefined" ? document.cookie : "";
     const m = /(?:^|;\s*)NEXT_LOCALE=([^;]+)/.exec(cookie);
     setLocale(m?.[1] === "es" ? "es" : "en");
+  }, []);
+
+  // SH-110 — page-load gate: signed in, not suspended, settle-in
+  // complete. /vent had no mount gate at all; the only auth check on
+  // this surface lived inside commitToJournal(), which fires when the
+  // member saves. That check stays exactly where it is — swapping it
+  // for this guard would hard-navigate a member away mid-compose and
+  // take their unsaved words with it. The gate belongs on arrival; the
+  // save path keeps its gentle inline "please sign in" message.
+  useEffect(() => {
+    void requireActiveSession();
   }, []);
 
   // Focus the textarea immediately on mount — frictionless dump entry,
