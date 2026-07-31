@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 import { PageAmbience } from "@/app/components/pageAmbience";
 import { PageTopNav } from "@/app/components/pageTopNav";
 import { InactivityGate } from "@/app/components/inactivityGate";
@@ -130,8 +131,25 @@ export default function RhythmPage() {
 
   const [state, setState] = useState<InferencesState>({ kind: "loading" });
 
+  // SH-112 — page-load gate: signed in, not suspended, settle-in
+  // complete. /rhythm is a member room (it hangs off the dashboard
+  // rooms strip) but carried no gate at all: the getSession() below is
+  // a Bearer-token fetch for /api/eidos/inferences, and a signed-out
+  // visitor simply got the "still emerging" empty state instead of a
+  // redirect. SH-110's sweep missed this surface twice over — it greps
+  // .getUser() (this uses .getSession()) and it lives under
+  // app/[locale]/*, which that ship's exclusion list waved past as
+  // "unauthenticated pages."
+  //
+  // The token fetch stays exactly where it is. requireActiveSession()
+  // returns { id, email } and carries no access_token, so it gates the
+  // surface — it can't replace the token read.
   useEffect(() => {
-    void loadInferences();
+    void (async () => {
+      const session = await requireActiveSession();
+      if (!session) return;
+      await loadInferences();
+    })();
   }, []);
 
   async function loadInferences() {

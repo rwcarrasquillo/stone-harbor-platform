@@ -37,9 +37,23 @@ const EMAIL_SUSPENDED = `auth-guards-e2e-suspended-${STAMP}@example.com`;
 const EMAIL_ACTIVE = `auth-guards-e2e-active-${STAMP}@example.com`;
 
 /**
- * Every authenticated member surface SH-110 wired the guard into.
- * `/map` covers the whole map tree — its four pages share the
- * `useHarborAuthGuard` hook in MapChrome.tsx.
+ * Every authenticated member surface behind `requireActiveSession()`.
+ *
+ * SH-110 wired the first 13. SH-112 added /rhythm; SH-114 confirmed the
+ * /map subtree by walking each sub-page rather than trusting the hub.
+ *
+ * The four /map pages each call the shared `useHarborAuthGuard` hook
+ * from MapChrome.tsx — they are NOT wrapped by it — so each is listed
+ * separately. A sub-page that dropped the hook call would still render
+ * MapChrome's frame and look fine; only an assertion per route catches
+ * that.
+ *
+ * /rhythm lives under app/[locale]/* and is ONLY reachable locale-
+ * prefixed. There is no app/rhythm/page.tsx and "rhythm" is absent from
+ * middleware's PHASE_2_PAGES, so bare /rhythm 404s rather than
+ * canonicalizing — the dashboard rooms strip links to /${locale}/rhythm
+ * for exactly that reason. Asserting the bare path here would be
+ * asserting against a 404, so only the two real spellings are listed.
  */
 const MEMBER_SURFACES = [
   "/dashboard",
@@ -53,9 +67,33 @@ const MEMBER_SURFACES = [
   "/vent",
   "/meditation",
   "/messages",
-  "/map",
   "/lineage",
+  // SH-114 — the whole /map tree, one entry per route.
+  "/map",
+  "/map/begin",
+  "/map/week/1",
+  "/map/operating-manual",
+  // SH-112 — /rhythm, at each spelling the router actually serves.
+  "/en/rhythm",
+  "/es/rhythm",
 ];
+
+/**
+ * Product redirects that are NOT auth redirects.
+ *
+ * An active member landing somewhere other than the URL they asked for
+ * is normally the bug this spec exists to catch — but a few routes move
+ * you on purpose. `/map/week/[n]` sends a member who hasn't started the
+ * Map to `/map/begin`; that's the Map's own flow control, nothing to do
+ * with the guard. Listed explicitly so the exception is a decision on
+ * the record rather than a loosened assertion.
+ *
+ * The signed-out and suspended cases below allow no such exceptions:
+ * those must reach /login, /settle-in or /suspended, always.
+ */
+const PRODUCT_REDIRECTS: Record<string, string[]> = {
+  "/map/week/1": ["/map/begin"],
+};
 
 let admin: SupabaseClient;
 const userIds: Record<string, string> = {};
@@ -186,7 +224,13 @@ test.describe("Auth guards across member surfaces", () => {
 
     for (const surface of MEMBER_SURFACES) {
       await page.goto(surface);
-      await settleAndAssertStay(page, surface, "should render for an active member");
+      await page.waitForLoadState("load", { timeout: 15_000 });
+      await page.waitForTimeout(1_200);
+      const allowed = [surface, ...(PRODUCT_REDIRECTS[surface] ?? [])];
+      expect(
+        allowed.some((path) => page.url().includes(path)),
+        `${surface} should render for an active member (or land on one of ${allowed.join(", ")}), got ${page.url()}`,
+      ).toBe(true);
     }
   });
 
