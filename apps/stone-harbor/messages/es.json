@@ -1636,5 +1636,31 @@
       "p3": "Puedes gestionar tu apoyo en cualquier momento en [Enlace al portal de patrocinio]. Si alguna vez necesitas pausar o dar un paso atrás, no se requiere explicación.",
       "signature": "— La dársena"
     }
+  },
+  "spine": {
+    "settleIn": {
+      "eyebrow": "Dónde empezar",
+      "title": "Elige dónde comienza la dársena a acompañarte.",
+      "framing": "La mayoría de los hombres que llegan aquí empiezan en Calma. El sistema nervioso es la base de todo lo demás — la claridad es difícil de alcanzar cuando el cuerpo sigue en alarma, y la fuerza construida sobre una calma no resuelta se derrumba bajo presión. Es la sugerencia de la dársena, no una regla. Si ya sabes que necesitas empezar en otro lugar, también se honra.",
+      "chooseElsewhere": "O elige dónde comenzar",
+      "stagePickerEyebrow": "El sendero completo"
+    },
+    "currentStep": {
+      "eyebrow": "Estás en",
+      "next": {
+        "eyebrow": "Siguiente",
+        "readiness": "Cuando estés listo."
+      },
+      "seeWholePath": "Ver el sendero completo →"
+    },
+    "roadmap": {
+      "currentlyOn": "Actualmente estás en el Paso {n}: {title}."
+    },
+    "profile": {
+      "currentlyOn": "Actualmente en el Paso {n}: {title}."
+    }
+  },
+  "dashboardRooms": {
+    "headerForSpine": "Salas disponibles para este paso"
   }
 }

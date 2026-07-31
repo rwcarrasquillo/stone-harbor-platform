@@ -13,6 +13,14 @@ import path from "node:path";
  * is stamped and they land on /dashboard. The synthetic account is deleted
  * in afterAll (DB hygiene).
  *
+ * SH-109 (spine Ship 1) added a sixth screen — "Where to begin" — behind
+ * `app_settings.spine_enabled`. This spec covers the flag-OFF contract:
+ * five screens, the entrance gesture on screen 5, and a completion write
+ * that leaves `current_roadmap_step_id` NULL. The flag-ON walk-through
+ * lives in spine.spec.ts, which is the only spec that mutates the
+ * singleton flag row — see the note at the top of that file for why the
+ * two are kept apart under Playwright's `fullyParallel`.
+ *
  * Requires NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (read from
  * apps/stone-harbor/.env.local). When absent the spec skips so CI in an
  * unconfigured environment stays green.
@@ -106,22 +114,31 @@ test.describe("Settle-in flow", () => {
     await page.getByRole("button", { name: /continue/i }).click();
     await page.waitForURL(/step=5/, { timeout: 10_000 });
 
-    // Screen 5 — the entrance.
+    // Screen 5 — the entrance. With the spine flag off (the default),
+    // this screen still carries the entrance gesture itself and there is
+    // no sixth "Where to begin" screen behind it.
     await expect(page.getByText("Before you step in.")).toBeVisible();
+    await expect(page.getByText("Where to begin")).toHaveCount(0);
     await page.getByRole("button", { name: /step into the harbor/i }).click();
 
     // Lands on the dashboard after the crossfade.
     await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
     expect(page.url()).toMatch(/\/dashboard/);
 
-    // settle_in_completed_at is now stamped; skipped stays null.
+    // settle_in_completed_at is now stamped; skipped stays null. The
+    // spine columns stay untouched — no picker ran, so the member isn't
+    // placed on the path and the dashboard keeps its rooms-strip layout.
     const { data, error } = await admin
       .from("profiles")
-      .select("settle_in_completed_at, settle_in_skipped_at")
+      .select(
+        "settle_in_completed_at, settle_in_skipped_at, current_roadmap_step_id, current_step_entered_at",
+      )
       .eq("id", userId!)
       .single();
     expect(error).toBeNull();
     expect(data?.settle_in_completed_at).toBeTruthy();
     expect(data?.settle_in_skipped_at).toBeNull();
+    expect(data?.current_roadmap_step_id).toBeNull();
+    expect(data?.current_step_entered_at).toBeNull();
   });
 });

@@ -19,6 +19,7 @@ import { LineageSection } from "@/app/components/lineageSection";
 import { Toast, type ToastState } from "@/app/components/toast";
 import { cascadeFadeUp, cascadeTransition } from "@/lib/motion";
 import { FEATURE_THRESHOLDS, isFeatureUnlocked } from "@/lib/userProgress";
+import { getSpineEnabled, getStepById, type RoadmapStep } from "@/lib/spine";
 
 /**
  * Stone Harbor — Profile route (production, harbor-vocabulary composition).
@@ -228,6 +229,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("profile");
+  const tSpine = useTranslations("spine");
   // Live theme + setter from the provider. `theme` seeds the visual-
   // preferences radio on load; `setTheme` is fired on save so the
   // change repaints immediately (it also mirrors cookie + DB).
@@ -239,6 +241,10 @@ export default function ProfilePage() {
   const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
   const [lineageDefaultCollapsed, setLineageDefaultCollapsed] =
     useState(false);
+  // SH-109 — the member's current step on the path. One quiet line in
+  // the anchor strip; null unless spine_enabled is true AND the member
+  // has been placed.
+  const [currentStep, setCurrentStep] = useState<RoadmapStep | null>(null);
 
   const [formData, setFormData] = useState<ProfileForm>(EMPTY_FORM);
   // Baseline snapshot of the last-saved form, used to compute the
@@ -317,7 +323,7 @@ export default function ProfilePage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "email, display_name, username, pronouns, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, interests, favorite_quote, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave, lineage_section_visit_count, known_languages, theme_preference",
+          "email, display_name, username, pronouns, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, interests, favorite_quote, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave, lineage_section_visit_count, known_languages, theme_preference, current_roadmap_step_id",
         )
         .eq("id", user.id)
         .maybeSingle();
@@ -325,6 +331,22 @@ export default function ProfilePage() {
 
       if (error) {
         fail(t("toasts.error"));
+      }
+
+      // SH-109 — resolve the current step's title + position for the
+      // quiet anchor-strip line. Fails soft in every direction: flag off,
+      // member not placed, stale id — the line simply doesn't render.
+      const currentStepId =
+        (data as { current_roadmap_step_id?: string | null } | null)
+          ?.current_roadmap_step_id ?? null;
+      if (currentStepId) {
+        void (async () => {
+          const spineEnabled = await getSpineEnabled(supabase);
+          if (cancelled || !spineEnabled) return;
+          const step = await getStepById(supabase, currentStepId);
+          if (cancelled) return;
+          setCurrentStep(step);
+        })();
       }
 
       const loaded: ProfileForm = {
@@ -825,6 +847,19 @@ export default function ProfilePage() {
             >
               {t("supportLine")}
             </p>
+            {/* SH-109 — where the member is on the path. One more piece
+                of who he is, sitting a notch below the support line. No
+                badge, no pill, no competitive framing. */}
+            {currentStep && (
+              <p
+                className={`${serif.className} mt-2 text-[13px] italic text-[var(--sh-text-secondary)]`}
+              >
+                {tSpine("profile.currentlyOn", {
+                  n: currentStep.position,
+                  title: currentStep.title,
+                })}
+              </p>
+            )}
           </motion.section>
 
           {/* ===== Main editing column ===== */}

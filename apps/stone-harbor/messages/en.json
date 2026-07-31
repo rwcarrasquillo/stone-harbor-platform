@@ -1636,5 +1636,31 @@
       "p3": "Puedes gestionar tu apoyo en cualquier momento en [Enlace al portal de patrocinio]. Si alguna vez necesitas pausar o dar un paso atrás, no se requiere explicación.",
       "signature": "— La dársena"
     }
+  },
+  "spine": {
+    "settleIn": {
+      "eyebrow": "Where to begin",
+      "title": "Choose where the harbor starts holding you.",
+      "framing": "Most men who arrive here start at Calm. The nervous system is the foundation for everything else — clarity is hard to reach when the body's still in alarm, and strength built on unresolved calm collapses under pressure. That's the harbor's suggestion, not a rule. If you already know you need to begin somewhere else, that's honored too.",
+      "chooseElsewhere": "Or choose where to begin",
+      "stagePickerEyebrow": "The whole path"
+    },
+    "currentStep": {
+      "eyebrow": "You're on",
+      "next": {
+        "eyebrow": "Next",
+        "readiness": "When you're ready."
+      },
+      "seeWholePath": "See the whole path →"
+    },
+    "roadmap": {
+      "currentlyOn": "You're currently on Step {n}: {title}."
+    },
+    "profile": {
+      "currentlyOn": "Currently on Step {n}: {title}."
+    }
+  },
+  "dashboardRooms": {
+    "headerForSpine": "Rooms available for this step"
   }
 }
