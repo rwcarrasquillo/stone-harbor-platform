@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { getSpineEnabled } from "@/lib/spine";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { AnchorMark } from "@/app/components/anchorMark";
 import { HairlineLens } from "@/app/components/hairlineLens";
@@ -97,8 +98,16 @@ function formatDate(value: string) {
 export default function RoadmapPage() {
   const t = useTranslations("roadmap");
   const tPillar = useTranslations("pillar");
+  const tSpine = useTranslations("spine");
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
+
+  // SH-109 — the member's current step on the path. Additive only: the
+  // checklist model (user_roadmap_progress + mark_roadmap_step_complete)
+  // is untouched here and coexists with the new current-step model until
+  // Ship 3 deprecates it. Null unless spine_enabled is true AND the
+  // member has been placed.
+  const [currentStepId, setCurrentStepId] = useState<string | null>(null);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [userStage, setUserStage] = useState<Stage>("clarity");
@@ -167,13 +176,22 @@ export default function RoadmapPage() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("healing_stage")
+      .select("healing_stage, current_roadmap_step_id")
       .eq("id", user.id)
       .single();
 
     const stage = normalizeStage(profile?.healing_stage);
     setUserStage(stage);
     setActiveStage(stage);
+
+    // SH-109 — the current-step marker only appears once the flag is on.
+    // Failing soft leaves the surface exactly as it renders today.
+    const spineEnabled = await getSpineEnabled(supabase);
+    setCurrentStepId(
+      spineEnabled
+        ? ((profile?.current_roadmap_step_id as string | null) ?? null)
+        : null,
+    );
 
     const { data: stepsData, error: stepsErr } = await supabase
       .from("roadmap_steps")
@@ -299,6 +317,13 @@ export default function RoadmapPage() {
     return stats;
   }, [stagedSteps, progress]);
 
+  // SH-109 — resolved from the already-loaded step list, so the marker
+  // costs no extra query. Stays null while steps load, or if the stored
+  // id no longer matches a step.
+  const currentStep = currentStepId
+    ? (steps.find((s) => s.id === currentStepId) ?? null)
+    : null;
+
   const activeStageSteps = stagedSteps.get(activeStage) ?? [];
   const activeMeta = stages.find((s) => s.value === activeStage);
   const activeAccent = activeMeta?.accent ?? GOLD_DEEP;
@@ -400,6 +425,20 @@ export default function RoadmapPage() {
           >
             {t("subtitle")}
           </p>
+          {/* SH-109 — current-step marker. Tucked between the subtitle
+              and the stage tabs, quiet enough not to compete with the
+              anchor strip's title. Absent when the spine flag is off or
+              the member hasn't been placed on the path. */}
+          {currentStep && (
+            <p
+              className={`${serif.className} mt-3 text-[13px] italic text-[var(--sh-text-secondary)] md:text-[14px]`}
+            >
+              {tSpine("roadmap.currentlyOn", {
+                n: currentStep.position,
+                title: currentStep.title,
+              })}
+            </p>
+          )}
         </section>
 
         {/* ===== Body =====
@@ -603,6 +642,7 @@ export default function RoadmapPage() {
                 <MobileStepList
                   steps={activeStageSteps}
                   progress={progress}
+                  currentStepId={currentStepId}
                   busyStepId={busyStepId}
                   activeAccent={activeAccent}
                   activeAccentRgb={activeAccentRgb}
@@ -677,7 +717,22 @@ export default function RoadmapPage() {
                       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-8">
                         <div className="flex-1">
                           <div className="flex items-center gap-3">
-                            <span className="text-xs font-bold text-[var(--sh-text-muted)]">
+                            {/* SH-109 — "you are here." The position badge
+                                shifts from muted tertiary to the stage
+                                accent on the member's current step.
+                                Reuses existing chrome; no new overlay. */}
+                            <span
+                              className={`text-xs font-bold ${
+                                step.id === currentStepId
+                                  ? ""
+                                  : "text-[var(--sh-text-muted)]"
+                              }`}
+                              style={
+                                step.id === currentStepId
+                                  ? { color: activeAccent }
+                                  : undefined
+                              }
+                            >
                               {String(step.position).padStart(2, "0")}
                             </span>
                             {isCompleted ? (
@@ -809,6 +864,7 @@ export default function RoadmapPage() {
 function MobileStepList({
   steps,
   progress,
+  currentStepId,
   busyStepId,
   activeAccent,
   activeAccentRgb,
@@ -823,6 +879,8 @@ function MobileStepList({
 }: {
   steps: RoadmapStep[];
   progress: Map<string, string>;
+  /** SH-109 — the member's current step, or null when the spine is off. */
+  currentStepId: string | null;
   busyStepId: string | null;
   activeAccent: string;
   activeAccentRgb: string;
@@ -876,7 +934,17 @@ function MobileStepList({
         />
 
         <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-[var(--sh-text-muted)]">
+          {/* SH-109 — same "you are here" accent as the desktop card. */}
+          <span
+            className={`text-xs font-bold ${
+              heroStep.id === currentStepId ? "" : "text-[var(--sh-text-muted)]"
+            }`}
+            style={
+              heroStep.id === currentStepId
+                ? { color: activeAccent }
+                : undefined
+            }
+          >
             {String(heroStep.position).padStart(2, "0")}
           </span>
           {heroIsCompleted ? (
@@ -955,7 +1023,21 @@ function MobileStepList({
                   opacity: isStepCompleted ? 0.7 : 1,
                 }}
               >
-                <span className="text-[10px] font-bold text-[var(--sh-text-muted)]">
+                {/* SH-109 — the path strip carries the same marker so
+                    "you are here" doesn't vanish when the member swaps a
+                    different step into the hero position. */}
+                <span
+                  className={`text-[10px] font-bold ${
+                    step.id === currentStepId
+                      ? ""
+                      : "text-[var(--sh-text-muted)]"
+                  }`}
+                  style={
+                    step.id === currentStepId
+                      ? { color: activeAccent }
+                      : undefined
+                  }
+                >
                   {String(step.position).padStart(2, "0")}
                 </span>
                 <span

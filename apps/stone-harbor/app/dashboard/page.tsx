@@ -29,11 +29,19 @@ import { HorizonSegment } from "@/app/components/horizonSegment";
 import { PersonalizedGreeting } from "@/app/components/personalizedGreeting";
 import { TodayIntention } from "@/app/components/todayIntention";
 import { StoryInvitationCard } from "@/app/components/storyInvitationCard";
+import { CurrentStepPanel } from "@/app/dashboard/components/currentStepPanel";
 import {
   dismissalKey,
   resolveActiveAcknowledgment,
   type Acknowledgment,
 } from "@/lib/seasonalAcknowledgments";
+import {
+  findNextStep,
+  getAllSteps,
+  getSpineEnabled,
+  getStepById,
+  type RoadmapStep,
+} from "@/lib/spine";
 
 /**
  * Stone Harbor — Dashboard route (production, centered design).
@@ -312,6 +320,10 @@ function localizedAckCopy(
  */
 const CASCADE_STEPS = {
   todayIntention: 0,
+  // SH-109 — the current-step panel arrives on the same beat as today's
+  // intention. It sits below the personal writing prompt and above the
+  // story card, so sharing a step index keeps the cascade even.
+  currentStepPanel: 0,
   storyCard: 1,
   horizonMark: 2,
   roomsStrip: 3,
@@ -321,6 +333,7 @@ export default function DashboardCenteredPage() {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
   useTranslations("dashboard");
+  const tRooms = useTranslations("dashboardRooms");
 
   const [locale, setLocale] = useState<"en" | "es">("en");
   useEffect(() => {
@@ -352,6 +365,11 @@ export default function DashboardCenteredPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   // SH-108 — gate the Lighthouse Keepers room card on the feature flag.
   const [keepersEnabled, setKeepersEnabled] = useState(false);
+  // SH-109 — the member's place on the path. Both stay null unless
+  // spine_enabled is true AND the member has been placed, which is the
+  // condition for the current-step panel to render at all.
+  const [currentStep, setCurrentStep] = useState<RoadmapStep | null>(null);
+  const [nextStep, setNextStep] = useState<RoadmapStep | null>(null);
 
   useEffect(() => {
     void loadAll();
@@ -374,6 +392,52 @@ export default function DashboardCenteredPage() {
       alive = false;
     };
   }, []);
+
+  // SH-109 — read the spine flag and, when it's on, the member's current
+  // step plus the one after it (for the peek-at-next section).
+  //
+  // Every failure mode here is a no-op: flag off, member not yet placed,
+  // a stale step id, RLS blocking the read. The panel simply doesn't
+  // render and the dashboard composes as it does today. The spine must
+  // never be the reason a member can't reach their rooms.
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    void (async () => {
+      try {
+        const enabled = await getSpineEnabled(supabase);
+        if (!alive || !enabled) return;
+
+        const { data: row } = await supabase
+          .from("profiles")
+          .select("current_roadmap_step_id")
+          .eq("id", userId)
+          .maybeSingle();
+        const stepId = row?.current_roadmap_step_id as string | null | undefined;
+        if (!alive || !stepId) return;
+
+        const step = await getStepById(supabase, stepId);
+        if (!alive || !step) {
+          if (alive) {
+            console.warn(
+              "[dashboard] current_roadmap_step_id doesn't resolve to a step; falling back to the rooms strip.",
+            );
+          }
+          return;
+        }
+        setCurrentStep(step);
+
+        const allSteps = await getAllSteps(supabase);
+        if (!alive) return;
+        setNextStep(findNextStep(allSteps, stepId));
+      } catch (e) {
+        console.warn("[dashboard] spine read failed; rendering without it.", e);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [userId]);
 
   async function loadAll() {
     const {
@@ -974,6 +1038,27 @@ export default function DashboardCenteredPage() {
             )}
           </div>
 
+          {/* ───── Current step (SH-109, spine Ship 1) ─────
+              Lives OUTSIDE the max-w-[720px] column so it can take the
+              840px width tier the acknowledgment card uses on lg+ —
+              wide enough to read as the frame the rooms sit inside,
+              short of the story card's 920px feature width.
+              Sits below today's intention and above the rooms strip,
+              per design brief §5.2. Absent entirely when the flag is
+              off or the member hasn't been placed on the path. */}
+          {currentStep && (
+            <motion.div
+              {...cascadeFadeUp}
+              transition={cascadeTransition(CASCADE_STEPS.currentStepPanel)}
+              // px-10 on a 920px cap puts the panel's own edges at 840px
+              // on lg+ — the same width the acknowledgment card reaches
+              // via its -mx-[100px] extension off the 720px column.
+              className="mx-auto mb-14 w-full max-w-[720px] px-10 lg:max-w-[920px]"
+            >
+              <CurrentStepPanel currentStep={currentStep} nextStep={nextStep} />
+            </motion.div>
+          )}
+
           {/* ───── A story to tell (FEATURE PANEL) ─────
               Lives OUTSIDE the max-w-[720px] column at max-w-[920px]
               so it breaks the reading width to become the day's
@@ -1037,6 +1122,11 @@ export default function DashboardCenteredPage() {
                 lineageDoorSeenAt={lineageDoorSeenAt}
                 meditationCopy={c.meditation}
                 keepersEnabled={keepersEnabled}
+                // SH-109 — the strip only takes a section header once the
+                // member is on a step, and then it names the new
+                // relationship: rooms are tools, the step is the frame.
+                // Null = no header, which is exactly today's layout.
+                header={currentStep ? tRooms("headerForSpine") : null}
               />
             </motion.div>
           )}
@@ -1146,6 +1236,7 @@ function RoomsCarousel({
   lineageDoorSeenAt,
   meditationCopy,
   keepersEnabled,
+  header,
 }: {
   locale: "en" | "es";
   lineageUnlocked: boolean;
@@ -1157,6 +1248,14 @@ function RoomsCarousel({
     cta: string;
   };
   keepersEnabled: boolean;
+  /**
+   * Optional section header above the strip (SH-109). Null — the
+   * pre-spine default — renders no header at all, which is how the
+   * dashboard has always composed. A string renders the quiet
+   * uppercase label that names the strip's relationship to the
+   * member's current step.
+   */
+  header?: string | null;
 }) {
   // Build the rooms array with Journal at the center index.
   // 5 cards (no Lineage): Messages, The Map, Journal, Rhythm, The Breath
@@ -1383,6 +1482,13 @@ function RoomsCarousel({
     // the section's padding squeezing it. The row itself has the
     // max-w cap; the section just gives it room.
     <section className="mx-auto max-w-[1440px] px-10 pb-16">
+      {header && (
+        <p
+          className={`${sans.className} mx-auto mb-4 w-full max-w-[1200px] text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]`}
+        >
+          {header}
+        </p>
+      )}
       <div
         ref={scrollRef}
         className="mx-auto flex w-full max-w-[1200px] gap-3 overflow-x-auto scroll-smooth"

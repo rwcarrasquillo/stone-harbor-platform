@@ -17,6 +17,13 @@
  * settle_in_completed_at, skipping writes settle_in_skipped_at — either
  * clears the gate. Revisits (from /welcome) write neither.
  *
+ * SH-109 (spine Ship 1) adds a SIXTH screen — "Where to begin" — which
+ * renders only when `app_settings.spine_enabled` is true. It carries the
+ * soft starting-step picker (Calm 1 pre-selected, the whole 15-step path
+ * one tap away) and moves the enter-the-harbor gesture onto itself, so
+ * the step the member chose rides along with the completion write. With
+ * the flag off the flow is exactly the five screens it has always been.
+ *
  * Motion is calibrated to the brand voice — opacity only, breath-paced,
  * and fully disabled under `prefers-reduced-motion: reduce`.
  */
@@ -29,23 +36,55 @@ import { serif, sans } from "@/lib/fonts";
 import { EASE } from "@/lib/motion";
 import { PageAmbience } from "@/app/components/pageAmbience";
 import { BreathCircle, useBreathCycle } from "@/app/components/breathCircle";
+import { HairlineLens } from "@/app/components/hairlineLens";
+import { useTheme } from "@/app/components/themeProvider";
 import { supabase } from "@/lib/supabaseClient";
+import {
+  getAllSteps,
+  getSpineEnabled,
+  groupStepsByStage,
+  suggestedStartingStep,
+  type RoadmapStep,
+} from "@/lib/spine";
 
 const STEP_MIN = 1;
+/** The five locked settle-in screens. */
 const STEP_MAX = 5;
+/** With the spine flag on, "Where to begin" sits one past the last. */
+const STEP_MAX_SPINE = 6;
 
 const GOLD = "#c4934e";
+const MOSS = "#586558";
+const MOSS_RGB = "88,101,88";
+const GOLD_DEEP = "#a9793d";
+const GOLD_DEEP_RGB = "169,121,61";
 const STAGGER = 0.25; // standard line-to-line gap (250ms)
 const PAUSE = 0.5; // the longer pause before "Quiet." / "Unmoved." (500ms)
 const SCREEN_FADE = 0.5; // 500ms screen-to-screen crossfade
 
 const CARD_KEYS = ["reflect", "vent", "brotherhood", "breathe"] as const;
 
-/** Clamp the `?step=` search param into the valid 1..5 range. */
-function clampStep(raw: string | null): number {
+/**
+ * Stage accents, matching /roadmap's pairing of a solid hex (text/icon)
+ * with an RGB triplet (HairlineLens gradient stops). Calm is moss;
+ * Clarity and Strength are gold-deep.
+ */
+const STAGE_ACCENT: Record<string, { hex: string; rgb: string }> = {
+  calm: { hex: MOSS, rgb: MOSS_RGB },
+  clarity: { hex: GOLD_DEEP, rgb: GOLD_DEEP_RGB },
+  strength: { hex: GOLD_DEEP, rgb: GOLD_DEEP_RGB },
+};
+
+/**
+ * Clamp the `?step=` search param into the valid range. `max` is 5 in
+ * the locked flow and 6 once the spine picker is in play, so a member
+ * who lands on `?step=6` with the flag off simply sees the last locked
+ * screen rather than a blank one.
+ */
+function clampStep(raw: string | null, max: number): number {
   const n = Number.parseInt(raw ?? "1", 10);
   if (!Number.isFinite(n)) return STEP_MIN;
-  return Math.min(STEP_MAX, Math.max(STEP_MIN, n));
+  return Math.min(max, Math.max(STEP_MIN, n));
 }
 
 /**
@@ -128,15 +167,28 @@ function SettleInFlow() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("settleIn");
+  const tSpine = useTranslations("spine");
+  const tPillar = useTranslations("pillar");
+  const { theme } = useTheme();
   const reduced = useReducedMotion() ?? false;
-
-  const step = clampStep(searchParams.get("step"));
 
   // First pass = member has neither completed nor skipped before. Only a
   // first pass writes the timestamps; revisits navigate without recording.
   const [userId, setUserId] = useState<string | null>(null);
   const [isFirstPass, setIsFirstPass] = useState(true);
   const [leaving, setLeaving] = useState(false);
+
+  // SH-109 — spine picker state. `spineEnabled` starts false so the flow
+  // renders its locked five screens on first paint and only grows the
+  // sixth once app_settings answers. `selectedStepId` seeds to Calm 1
+  // (the harbor's suggestion) as soon as the steps land.
+  const [spineEnabled, setSpineEnabled] = useState(false);
+  const [steps, setSteps] = useState<RoadmapStep[]>([]);
+  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
+  const [chooserOpen, setChooserOpen] = useState(false);
+
+  const stepMax = spineEnabled ? STEP_MAX_SPINE : STEP_MAX;
+  const step = clampStep(searchParams.get("step"), stepMax);
 
   useEffect(() => {
     let active = true;
@@ -159,6 +211,19 @@ function SettleInFlow() {
       if (data && (data.settle_in_completed_at || data.settle_in_skipped_at)) {
         setIsFirstPass(false);
       }
+
+      // Spine flag + the whole path. roadmap_steps is readable by
+      // `authenticated`, so this runs after the auth check above. Both
+      // reads fail soft — a null flag or an empty step list simply means
+      // the picker never renders and the flow stays at five screens.
+      const enabled = await getSpineEnabled(supabase);
+      if (!active) return;
+      if (!enabled) return;
+      const allSteps = await getAllSteps(supabase);
+      if (!active || allSteps.length === 0) return;
+      setSteps(allSteps);
+      setSelectedStepId(suggestedStartingStep(allSteps)?.id ?? null);
+      setSpineEnabled(true);
     })();
     return () => {
       active = false;
@@ -167,10 +232,10 @@ function SettleInFlow() {
 
   const goToStep = useCallback(
     (n: number) => {
-      const clamped = Math.min(STEP_MAX, Math.max(STEP_MIN, n));
+      const clamped = Math.min(stepMax, Math.max(STEP_MIN, n));
       router.push(`/settle-in?step=${clamped}`, { scroll: false });
     },
-    [router],
+    [router, stepMax],
   );
 
   /**
@@ -192,6 +257,12 @@ function SettleInFlow() {
         console.warn("[settle-in] No session token; skipping server write.");
         return false;
       }
+      // SH-109 — the chosen starting step rides along with the completion
+      // write. Only on `complete`, and only when the picker actually
+      // rendered: skipping leaves current_roadmap_step_id NULL, which the
+      // dashboard reads as "not yet placed on the path."
+      const stepId =
+        action === "complete" && spineEnabled ? selectedStepId : null;
       try {
         const res = await fetch(`/api/settle-in/${action}`, {
           method: "POST",
@@ -199,6 +270,9 @@ function SettleInFlow() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
+          ...(stepId
+            ? { body: JSON.stringify({ currentStepId: stepId }) }
+            : {}),
         });
         const body = (await res.json().catch(() => null)) as
           | { ok?: boolean; error?: string; message?: string }
@@ -217,7 +291,7 @@ function SettleInFlow() {
         return false;
       }
     },
-    [isFirstPass],
+    [isFirstPass, spineEnabled, selectedStepId],
   );
 
   const handleSkip = useCallback(async () => {
@@ -241,7 +315,22 @@ function SettleInFlow() {
   const bodyClass = `${serif.className} text-balance text-xl leading-relaxed text-[var(--sh-text-primary)] md:text-2xl`;
   const ctaClass = `${sans.className} mt-10 inline-block text-sm uppercase tracking-[0.2em] text-[var(--sh-accent-gold)] underline-offset-4 transition hover:underline`;
 
-  const screenContent = useMemo(() => renderScreen(), [step, reduced, t]);
+  const screenContent = useMemo(
+    () => renderScreen(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      step,
+      reduced,
+      t,
+      tSpine,
+      tPillar,
+      theme,
+      spineEnabled,
+      steps,
+      selectedStepId,
+      chooserOpen,
+    ],
+  );
 
   function renderScreen() {
     switch (step) {
@@ -372,13 +461,124 @@ function SettleInFlow() {
               >
                 {t("screen5.transition")}
               </p>
-              <button type="button" onClick={handleEnter} className="group inline-block">
-                <span
-                  className={`${serif.className} border-b border-[var(--sh-accent-gold)]/50 pb-1 text-2xl italic text-[var(--sh-accent-gold)] transition-all duration-300 group-hover:border-[var(--sh-accent-gold)] group-hover:[text-shadow:0_0_14px_rgba(196,147,78,0.55)] md:text-3xl`}
+              {/* SH-109 — with the spine on, the entrance gesture moves
+                  to the "Where to begin" screen so the member's chosen
+                  step travels with the completion write. This screen
+                  then closes on the same quiet "Continue" the three
+                  screens before it use. */}
+              {spineEnabled ? (
+                <button
+                  type="button"
+                  onClick={() => goToStep(6)}
+                  className={ctaClass}
                 >
-                  {t("screen5.enter")}
-                </span>
-              </button>
+                  {t("screen4.cta")}
+                </button>
+              ) : (
+                <EnterHarborButton label={t("screen5.enter")} onClick={handleEnter} />
+              )}
+            </motion.div>
+          </div>
+        );
+      }
+      case 6: {
+        // "Where to begin" — renders only when spine_enabled is true, in
+        // which case `steps` is non-empty and `selectedStepId` is seeded
+        // to Calm 1. The guard is belt-and-braces for a mid-flight flag
+        // flip.
+        if (!spineEnabled || steps.length === 0) return null;
+        const selected =
+          steps.find((s) => s.id === selectedStepId) ?? steps[0];
+        const selectedAccent =
+          STAGE_ACCENT[selected.stage] ?? STAGE_ACCENT.clarity;
+        return (
+          <div className="text-center">
+            <motion.div
+              initial={reduced ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={reduced ? { duration: 0 } : { duration: 0.5, ease: EASE.patient }}
+            >
+              <p
+                className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]`}
+              >
+                {tSpine("settleIn.eyebrow")}
+              </p>
+              <p className={`${bodyClass} mt-3`}>{tSpine("settleIn.title")}</p>
+              <p
+                className={`${sans.className} mx-auto mt-6 max-w-lg text-balance text-base leading-relaxed text-[var(--sh-text-secondary)]`}
+              >
+                {tSpine("settleIn.framing")}
+              </p>
+
+              {/* The harbor's suggestion, already chosen. Tapping a row
+                  in the chooser below swaps whichever step sits here. */}
+              <div className="mt-10 text-left">
+                <StepChoiceCard
+                  step={selected}
+                  stageLabel={tPillar(selected.stage)}
+                  accent={selectedAccent}
+                  theme={theme}
+                  selected
+                />
+              </div>
+
+              {/* Secondary affordance — the whole path, one tap away.
+                  Selection is client-side only; nothing is written until
+                  the member steps into the harbor. */}
+              {!chooserOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setChooserOpen(true)}
+                  className={ctaClass}
+                >
+                  {tSpine("settleIn.chooseElsewhere")}
+                </button>
+              ) : (
+                <div className="mt-10 text-left">
+                  <p
+                    className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]`}
+                  >
+                    {tSpine("settleIn.stagePickerEyebrow")}
+                  </p>
+                  <div className="mt-4 space-y-6">
+                    {groupStepsByStage(steps).map((group) => {
+                      const accent =
+                        STAGE_ACCENT[group.stage] ?? STAGE_ACCENT.clarity;
+                      return (
+                        <div key={group.stage}>
+                          <p
+                            className="text-[10px] font-bold uppercase tracking-[0.28em]"
+                            style={{ color: accent.hex }}
+                          >
+                            {tPillar(group.stage)}
+                          </p>
+                          <div className="mt-3 space-y-2">
+                            {group.steps.map((s) => (
+                              <StepChoiceCard
+                                key={s.id}
+                                step={s}
+                                stageLabel={tPillar(s.stage)}
+                                accent={accent}
+                                theme={theme}
+                                selected={s.id === selected.id}
+                                onSelect={() => setSelectedStepId(s.id)}
+                                compact
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-12">
+                <EnterHarborButton
+                  label={t("screen5.enter")}
+                  onClick={handleEnter}
+                />
+              </div>
             </motion.div>
           </div>
         );
@@ -452,6 +652,132 @@ function SettleInFlow() {
         )}
       </AnimatePresence>
     </main>
+  );
+}
+
+/**
+ * The entrance gesture — large italic serif in harbor gold with a soft
+ * underline that brightens and blooms on hover. Extracted so both the
+ * locked flow (screen 5) and the spine flow (screen 6) close on exactly
+ * the same moment; only its position in the sequence moves.
+ */
+function EnterHarborButton({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" onClick={onClick} className="group inline-block">
+      <span
+        className={`${serif.className} border-b border-[var(--sh-accent-gold)]/50 pb-1 text-2xl italic text-[var(--sh-accent-gold)] transition-all duration-300 group-hover:border-[var(--sh-accent-gold)] group-hover:[text-shadow:0_0_14px_rgba(196,147,78,0.55)] md:text-3xl`}
+      >
+        {label}
+      </span>
+    </button>
+  );
+}
+
+/**
+ * A step as a choosable card — the "Where to begin" picker's only
+ * repeated unit (SH-109).
+ *
+ * Chrome is borrowed wholesale from /roadmap's step cards so settle-in
+ * and the path surface speak the same visual language: stage badge +
+ * zero-padded position, serif title, quiet description, and a
+ * HairlineLens pair when the card is the selected one.
+ *
+ * `compact` is the chooser-row variant — smaller type, one-line
+ * description — versus the full-weight card that carries the harbor's
+ * suggestion at the top of the screen. Cards without `onSelect` render
+ * as a static panel rather than a button.
+ */
+function StepChoiceCard({
+  step,
+  stageLabel,
+  accent,
+  theme,
+  selected,
+  onSelect,
+  compact = false,
+}: {
+  step: RoadmapStep;
+  stageLabel: string;
+  accent: { hex: string; rgb: string };
+  theme: "sunlit" | "dusk";
+  selected: boolean;
+  onSelect?: () => void;
+  compact?: boolean;
+}) {
+  const isDusk = theme === "dusk";
+  const body = (
+    <>
+      {selected && (
+        <>
+          <HairlineLens position="top" theme={theme} accentRgb={accent.rgb} />
+          <HairlineLens position="bottom" theme={theme} accentRgb={accent.rgb} />
+        </>
+      )}
+      <div className="flex items-center gap-3">
+        <span className="text-[10px] font-bold text-[var(--sh-text-muted)]">
+          {String(step.position).padStart(2, "0")}
+        </span>
+        <span
+          className="text-[10px] font-bold uppercase tracking-[0.22em]"
+          style={{ color: accent.hex }}
+        >
+          {stageLabel}
+        </span>
+      </div>
+      <h3
+        className={`${serif.className} mt-2 font-medium text-[var(--sh-text-primary)] ${
+          compact ? "text-lg" : "text-2xl"
+        }`}
+      >
+        {step.title}
+      </h3>
+      {step.description && (
+        <p
+          className={`${sans.className} mt-2 leading-relaxed text-[var(--sh-text-secondary)] ${
+            compact ? "text-[13px]" : "text-sm"
+          }`}
+        >
+          {step.description}
+        </p>
+      )}
+    </>
+  );
+
+  const className = `relative w-full text-left transition ${
+    compact ? "px-4 py-3" : "p-5"
+  } ${
+    isDusk
+      ? "bg-black/30 backdrop-blur-sm hover:bg-black/40"
+      : "bg-[var(--sh-bg-card-tinted)] hover:bg-white/70"
+  }`;
+  const style = {
+    border: `1px solid ${isDusk ? "rgba(255,255,255,0.08)" : "#e7e5e4"}`,
+  };
+
+  if (!onSelect) {
+    return (
+      <div className={className} style={style}>
+        {body}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      className={className}
+      style={style}
+    >
+      {body}
+    </button>
   );
 }
 
