@@ -29,12 +29,14 @@
  */
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { serif, sans } from "@/lib/fonts";
 import { EASE } from "@/lib/motion";
 import { PageAmbience } from "@/app/components/pageAmbience";
+import { AnchorMark } from "@/app/components/anchorMark";
 import { BreathCircle, useBreathCycle } from "@/app/components/breathCircle";
 import { HairlineLens } from "@/app/components/hairlineLens";
 import { useTheme } from "@/app/components/themeProvider";
@@ -53,7 +55,6 @@ const STEP_MAX = 5;
 /** With the spine flag on, "Where to begin" sits one past the last. */
 const STEP_MAX_SPINE = 6;
 
-const GOLD = "#c4934e";
 const MOSS = "#586558";
 const MOSS_RGB = "88,101,88";
 const GOLD_DEEP = "#a9793d";
@@ -475,7 +476,17 @@ function SettleInFlow() {
                   {t("screen4.cta")}
                 </button>
               ) : (
-                <EnterHarborButton label={t("screen5.enter")} onClick={handleEnter} />
+                <>
+                  {/* SH-115 — the threshold marker, on the last screen
+                      only. With the spine off that's this screen; with
+                      it on the entrance (and this mark) live on screen
+                      6 instead, so it's rendered beside the button it
+                      belongs to rather than keyed off a step number. */}
+                  <div className="mb-10">
+                    <SettleInHorizonMark />
+                  </div>
+                  <EnterHarborButton label={t("screen5.enter")} onClick={handleEnter} />
+                </>
               )}
             </motion.div>
           </div>
@@ -573,7 +584,13 @@ function SettleInFlow() {
                 </div>
               )}
 
+              {/* SH-115 — the threshold marker. Screen 6 is the last
+                  screen whenever it exists, so the arrival gesture
+                  lands here rather than on screen 5. */}
               <div className="mt-12">
+                <SettleInHorizonMark />
+              </div>
+              <div className="mt-10">
                 <EnterHarborButton
                   label={t("screen5.enter")}
                   onClick={handleEnter}
@@ -590,40 +607,57 @@ function SettleInFlow() {
 
   return (
     <main
-      className={`${sans.className} relative flex min-h-screen flex-col overflow-hidden bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}
+      // SH-115 — h-full (not min-h-screen) so the page fills the space
+      // the root layout leaves above the body-level GlobalCrisisFooter,
+      // matching /roadmap and /dashboard. overflow-y-auto replaces the
+      // old overflow-hidden: the leaving crossfade uses fixed inset-0
+      // and never needed parent clipping, while a tall screen — screen
+      // 6 with all fifteen steps expanded — was previously clipped with
+      // no way to scroll to the entrance button.
+      className={`${sans.className} relative flex h-full flex-col overflow-y-auto bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}
     >
       <PageAmbience />
 
-      {/* Top-center anchor — visual continuity with the harbor, non-interactive. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-5 z-20 -translate-x-1/2 opacity-60"
-      >
-        <svg
-          width="32"
-          height="32"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke={GOLD}
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+      {/* ===== Top brand header =====
+          SH-115 — the harbor-vocabulary crumb every other member
+          surface wears, lifted from /roadmap. It replaces two pieces of
+          floating chrome: a hand-inlined top-center anchor SVG (its own
+          hardcoded gold, redundant now that the crumb carries an
+          AnchorMark) and an absolutely-positioned top-right Skip. Skip
+          keeps its handler and its promise — never trapped — it just
+          sits in the header row now like every other utility action. */}
+      <header className="relative z-20 flex flex-shrink-0 items-center justify-between border-b border-[var(--sh-border-subtle)] px-4 py-4 md:px-10 md:py-6">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2 md:gap-3"
+          aria-label="Stone Harbor — Dashboard"
         >
-          <circle cx="12" cy="5" r="1.5" />
-          <path d="M12 22V8" />
-          <path d="M5 12a7 7 0 0 0 14 0" />
-          <path d="M8 8h8" />
-        </svg>
-      </div>
+          <AnchorMark size={28} />
+          <span
+            className={`${serif.className} text-[16px] italic tracking-[-0.012em] text-[var(--sh-text-primary)] md:text-[20px]`}
+          >
+            Stone Harbor
+          </span>
+          <span className="text-[14px] text-[var(--sh-text-muted)] md:text-[16px]">
+            ·
+          </span>
+          <span
+            className={`${serif.className} text-[16px] italic tracking-[-0.012em] text-[var(--sh-text-secondary)] md:text-[20px]`}
+          >
+            {t("brandCrumb")}
+          </span>
+        </Link>
 
-      {/* Skip — never trapped. Records settle_in_skipped_at on first pass. */}
-      <button
-        type="button"
-        onClick={handleSkip}
-        className={`${sans.className} absolute right-4 top-5 z-20 text-xs uppercase tracking-[0.18em] text-[var(--sh-text-tertiary)] transition-colors hover:text-[var(--sh-text-secondary)]`}
-      >
-        {t("skip")}
-      </button>
+        {/* Never trapped. Records settle_in_skipped_at on first pass. */}
+        <button
+          type="button"
+          onClick={handleSkip}
+          style={{ outline: "none", outlineOffset: 0 }}
+          className={`${sans.className} text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition-colors hover:text-[var(--sh-text-primary)]`}
+        >
+          {t("skip")}
+        </button>
+      </header>
 
       <section className="relative z-10 mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center px-5 py-24">
         <AnimatePresence mode="wait">
@@ -652,6 +686,79 @@ function SettleInFlow() {
         )}
       </AnimatePresence>
     </main>
+  );
+}
+
+/**
+ * Horizon mark for the settle-in threshold (SH-115).
+ *
+ * Same composition as /roadmap's RoadmapHorizonMark and /journal's
+ * CenteredHorizonMark — engraved-gold rule pair, breathing anchor at
+ * centre, italic voice signature below. Two deliberate departures from
+ * those two, because this one sits INSIDE a screen rather than at the
+ * foot of a page:
+ *
+ *   - No border-t. A rule across the column would read as a divider
+ *     between the framing copy and the entrance button; the gold pair
+ *     is already the mark.
+ *   - No page-foot padding. It breathes with the screen's own rhythm.
+ *
+ * Renders only on the last screen — the arrival gesture, immediately
+ * before the member steps in. The voice signature is inlined here with
+ * a locale switch rather than added to the settleIn namespace, matching
+ * how keepers-success and the auth emails carry the same two words.
+ */
+function SettleInHorizonMark() {
+  const { theme } = useTheme();
+  const locale = useLocale();
+  const goldRgb = theme === "sunlit" ? "169,121,61" : "196,147,78";
+  const lineShadow =
+    theme === "sunlit"
+      ? "0 1px 0 rgba(60,40,15,0.18)"
+      : "0 0 4px rgba(196,147,78,0.28)";
+  const lineAlphaInner = theme === "sunlit" ? 0.95 : 0.85;
+  const lineAlphaMid = theme === "sunlit" ? 0.5 : 0.4;
+
+  return (
+    <div className="flex flex-col items-center justify-center">
+      <motion.div
+        animate={{ opacity: [0.78, 1, 0.78] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        className="flex w-3/4 max-w-[640px] items-center justify-center gap-3"
+      >
+        <div
+          aria-hidden="true"
+          className="h-px flex-1"
+          style={{
+            background: `linear-gradient(to right, transparent 0%, rgba(${goldRgb},${lineAlphaMid}) 50%, rgba(${goldRgb},${lineAlphaInner}) 100%)`,
+            boxShadow: lineShadow,
+          }}
+        />
+
+        <motion.div
+          animate={{ scale: [1, 1.04, 1] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          style={{ transformOrigin: "center" }}
+        >
+          <AnchorMark size={20} shaftHeight={42} fill="var(--sh-accent-gold)" />
+        </motion.div>
+
+        <div
+          aria-hidden="true"
+          className="h-px flex-1"
+          style={{
+            background: `linear-gradient(to right, rgba(${goldRgb},${lineAlphaInner}) 0%, rgba(${goldRgb},${lineAlphaMid}) 50%, transparent 100%)`,
+            boxShadow: lineShadow,
+          }}
+        />
+      </motion.div>
+
+      <p
+        className={`${serif.className} mt-5 text-[14px] italic tracking-[-0.012em] text-[var(--sh-text-secondary)]`}
+      >
+        {locale === "es" ? "— La dársena" : "— The harbor"}
+      </p>
+    </div>
   );
 }
 
