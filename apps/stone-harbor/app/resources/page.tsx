@@ -207,35 +207,36 @@ export default function ResourcesPage() {
     strength: null,
   });
 
-  // SH-110 — page-load gate: signed in, not suspended, settle-in
-  // complete. /resources had no gate; the getUser() inside load() is an
-  // optional read that personalizes userStage and is skipped entirely
-  // when there's no session, so the reading list rendered for anyone
-  // who knew the URL. The guard runs alongside the load rather than
-  // inside it — the content fetch is unauthenticated by design and
-  // doesn't need to wait on the gate to resolve.
+  // SH-110 / SH-114 — page-load gate: signed in, not suspended,
+  // settle-in complete. /resources had no gate before SH-110; the
+  // getUser() inside load() was optional personalization skipped
+  // entirely when there was no session, so the reading list rendered
+  // for anyone who knew the URL.
+  //
+  // SH-114 makes the load WAIT on the guard rather than race it. The
+  // content fetch is unauthenticated by design, so firing both in
+  // parallel meant a signed-out visitor could see the list paint for a
+  // beat before the redirect landed. Awaiting closes that window.
   //
   // Behavior change worth knowing: signed-out visitors now go to
   // /login instead of seeing the curated list.
   useEffect(() => {
-    void requireActiveSession();
-    void load();
+    void (async () => {
+      const session = await requireActiveSession();
+      if (!session) return;
+      await load(session.id);
+    })();
   }, []);
 
-  async function load() {
+  async function load(sessionUserId: string) {
     setLoading(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("healing_stage")
-          .eq("id", user.id)
-          .single();
-        setUserStage(normalizeStage(profile?.healing_stage));
-      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("healing_stage")
+        .eq("id", sessionUserId)
+        .single();
+      setUserStage(normalizeStage(profile?.healing_stage));
       const { data, error } = await supabase
         .from("external_content")
         .select(

@@ -143,25 +143,22 @@ export default function MeditationPage() {
   // box-breath circle anonymously. /meditation is a members-only room
   // (PHASE_2_PAGES, reachable only from the dashboard rooms strip), so
   // that's the intended posture — but it IS a change.
-  useEffect(() => {
-    void requireActiveSession();
-  }, []);
-
-  // Fetch created_at on mount so we can decide whether to show the
-  // Long Exhale toggle. Failing silently keeps the page usable even
-  // if the member is offline or unauthenticated (the box cycle still
-  // works without any account data).
+  // SH-114 folds the old separate created_at read into this same
+  // effect: the guard is awaited and short-circuited, and the profile
+  // read runs only once an active session is confirmed. Previously the
+  // guard was fired and forgotten and the created_at query raced it.
+  //
+  // The created_at read still fails soft — a null just means the Long
+  // Exhale toggle stays hidden, never a blocked page.
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (cancelled || !user) return;
+    void (async () => {
+      const session = await requireActiveSession();
+      if (cancelled || !session) return;
       const { data } = await supabase
         .from("profiles")
         .select("created_at")
-        .eq("id", user.id)
+        .eq("id", session.id)
         .single();
       if (!cancelled) setUserCreatedAt(data?.created_at ?? null);
     })();

@@ -88,6 +88,8 @@ export default function VentCenteredPage() {
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
+  /** Resolved by the mount guard below (SH-114); used by the save path. */
+  const [userId, setUserId] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ───── Unsaved-changes guard ─────
@@ -114,15 +116,26 @@ export default function VentCenteredPage() {
     setLocale(m?.[1] === "es" ? "es" : "en");
   }, []);
 
-  // SH-110 — page-load gate: signed in, not suspended, settle-in
-  // complete. /vent had no mount gate at all; the only auth check on
-  // this surface lived inside commitToJournal(), which fires when the
-  // member saves. That check stays exactly where it is — swapping it
-  // for this guard would hard-navigate a member away mid-compose and
-  // take their unsaved words with it. The gate belongs on arrival; the
-  // save path keeps its gentle inline "please sign in" message.
+  // SH-110 / SH-114 — page-load gate: signed in, not suspended,
+  // settle-in complete. /vent had no mount gate at all before SH-110;
+  // its only auth check lived inside commitToJournal(), which fires on
+  // save.
+  //
+  // The guard is awaited and short-circuited rather than fired and
+  // forgotten (SH-114): nothing downstream runs while the redirect is
+  // in flight. The resolved id is held in state so the save path can
+  // use it instead of re-querying auth — the member is already
+  // confirmed active by the time they can type.
   useEffect(() => {
-    void requireActiveSession();
+    let cancelled = false;
+    void (async () => {
+      const session = await requireActiveSession();
+      if (cancelled || !session) return;
+      setUserId(session.id);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Focus the textarea immediately on mount — frictionless dump entry,
@@ -175,11 +188,11 @@ export default function VentCenteredPage() {
     setSaving(true);
     setSavedMessage(null);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    // SH-114 — the mount guard already confirmed an active session, so
+    // this reads the id it resolved instead of re-querying auth. A null
+    // here means the guard hasn't landed yet (or is mid-redirect); the
+    // member keeps their words and the same gentle line either way.
+    if (!userId) {
       setSaving(false);
       setSavedMessage("Please sign in to save this entry.");
       return;
@@ -199,7 +212,7 @@ export default function VentCenteredPage() {
     // cache"). Verified against production schema 2026-06-18.
     const trimmedContent = body.trim();
     const { error } = await supabase.from("journal_entries").insert({
-      user_id: user.id,
+      user_id: userId,
       content: trimmedContent,
       original_content: trimmedContent,
       mood: mood ?? null,
