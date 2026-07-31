@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 import { cascadeFadeUp, cascadeTransition } from "@/lib/motion";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
@@ -440,22 +441,27 @@ export default function DashboardCenteredPage() {
   }, [userId]);
 
   async function loadAll() {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session?.user) {
+    // SH-110 — the shared three-gate gate: signed in, not suspended,
+    // settle-in complete. Returns null after firing the right redirect,
+    // so there's nothing to handle here beyond bailing out.
+    const session = await requireActiveSession();
+    if (!session) {
       setUserId(null);
       return;
     }
-    const uid = session.user.id;
-    const createdAt = session.user.created_at ?? null;
+    const uid = session.id;
     setUserId(uid);
-    setUserCreatedAt(createdAt);
 
     const { data: profileData } = await supabase
       .from("profiles")
       .select(
-        "email, display_name, username, healing_stage, avatar_url, cover_url, birth_month, birth_day, acknowledge_birthday, seasonal_acknowledgments_enabled, acknowledgments_dismissed, lineage_door_seen_at",
+        // created_at rides along on the profile read now that the guard
+        // no longer hands back a raw Supabase session. The profiles row
+        // is created by an AFTER-INSERT trigger in the same transaction
+        // as auth.users, so the two timestamps agree — and /profile and
+        // /messages already compute their unlock thresholds off this
+        // column, so the dashboard now matches them.
+        "email, created_at, display_name, username, healing_stage, avatar_url, cover_url, birth_month, birth_day, acknowledge_birthday, seasonal_acknowledgments_enabled, acknowledgments_dismissed, lineage_door_seen_at",
       )
       // The profiles table's PK is `id`, matching auth.users.id 1:1.
       // Every other surface (/messages, /journal, /welcome, /lineage)
@@ -470,8 +476,12 @@ export default function DashboardCenteredPage() {
       .eq("id", uid)
       .maybeSingle();
 
+    setUserCreatedAt(
+      (profileData as { created_at?: string | null } | null)?.created_at ?? null,
+    );
+
     const loadedProfile: Profile = {
-      email: profileData?.email ?? session.user.email ?? null,
+      email: profileData?.email ?? session.email ?? null,
       display_name: profileData?.display_name ?? null,
       username: profileData?.username ?? null,
       healing_stage: profileData?.healing_stage ?? null,

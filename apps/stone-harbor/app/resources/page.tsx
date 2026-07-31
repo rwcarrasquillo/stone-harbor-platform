@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { AnchorMark } from "@/app/components/anchorMark";
 import { HairlineLens } from "@/app/components/hairlineLens";
@@ -206,7 +207,18 @@ export default function ResourcesPage() {
     strength: null,
   });
 
+  // SH-110 — page-load gate: signed in, not suspended, settle-in
+  // complete. /resources had no gate; the getUser() inside load() is an
+  // optional read that personalizes userStage and is skipped entirely
+  // when there's no session, so the reading list rendered for anyone
+  // who knew the URL. The guard runs alongside the load rather than
+  // inside it — the content fetch is unauthenticated by design and
+  // doesn't need to wait on the gate to resolve.
+  //
+  // Behavior change worth knowing: signed-out visitors now go to
+  // /login instead of seeing the curated list.
   useEffect(() => {
+    void requireActiveSession();
     void load();
   }, []);
 

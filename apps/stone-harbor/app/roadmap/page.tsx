@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 import { getSpineEnabled } from "@/lib/spine";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { AnchorMark } from "@/app/components/anchorMark";
@@ -155,29 +156,17 @@ export default function RoadmapPage() {
   );
 
   async function loadAll() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      window.location.href = "/login";
-      return;
-    }
-    // Suspension gate
-    const { data: gateRow } = await supabase
-      .from("profiles")
-      .select("suspended_at")
-      .eq("id", user.id)
-      .single();
-    if (gateRow?.suspended_at) {
-      window.location.href = "/suspended";
-      return;
-    }
-    setUserId(user.id);
+    // SH-110 — auth, suspension and settle-in in one call. The separate
+    // suspended_at round-trip that used to sit here is gone; the guard
+    // covers it.
+    const session = await requireActiveSession();
+    if (!session) return;
+    setUserId(session.id);
 
     const { data: profile } = await supabase
       .from("profiles")
       .select("healing_stage, current_roadmap_step_id")
-      .eq("id", user.id)
+      .eq("id", session.id)
       .single();
 
     const stage = normalizeStage(profile?.healing_stage);
@@ -207,7 +196,7 @@ export default function RoadmapPage() {
     const { data: progressData, error: progressErr } = await supabase
       .from("user_roadmap_progress")
       .select("step_id, completed_at")
-      .eq("user_id", user.id);
+      .eq("user_id", session.id);
 
     if (progressErr) {
       console.error("Could not load progress:", progressErr.message);

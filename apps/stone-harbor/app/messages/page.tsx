@@ -4,6 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { AnchorMark } from "@/app/components/anchorMark";
 import { useTheme } from "@/app/components/themeProvider";
@@ -294,25 +295,19 @@ export default function MessagesPage() {
   }, [messages]);
 
   async function loadPage() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      window.location.href = "/login";
-      return;
-    }
+    // SH-110 — auth, suspension and settle-in in one call. The inline
+    // suspension check that used to live here is covered by the guard;
+    // the read below survives only for created_at.
+    const session = await requireActiveSession();
+    if (!session) return;
     const { data: gateRow } = await supabase
       .from("profiles")
-      .select("suspended_at, created_at")
-      .eq("id", user.id)
+      .select("created_at")
+      .eq("id", session.id)
       .single();
-    if (gateRow?.suspended_at) {
-      window.location.href = "/suspended";
-      return;
-    }
-    setUserId(user.id);
+    setUserId(session.id);
     setUserCreatedAt(gateRow?.created_at ?? null);
-    await loadConversations(user.id);
+    await loadConversations(session.id);
     setLoading(false);
   }
 

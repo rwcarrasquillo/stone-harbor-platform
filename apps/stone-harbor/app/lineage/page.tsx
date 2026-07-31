@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { serif, sans } from "@/lib/fonts";
@@ -10,6 +9,7 @@ import { AnchorMark } from "@/app/components/anchorMark";
 import { useTheme } from "@/app/components/themeProvider";
 import { LineageSection } from "@/app/components/lineageSection";
 import { supabase } from "@/lib/supabaseClient";
+import { requireActiveSession } from "@/lib/authGuards";
 
 /**
  * Stone Harbor — Lineage route (production, harbor vocabulary).
@@ -61,7 +61,6 @@ import { supabase } from "@/lib/supabaseClient";
  */
 
 export default function LineagePage() {
-  const router = useRouter();
   const { theme } = useTheme();
   const t = useTranslations("lineage");
 
@@ -87,33 +86,23 @@ export default function LineagePage() {
     let cancelled = false;
 
     async function load() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (cancelled) return;
+      // SH-110 — auth, suspension and settle-in in one call. The
+      // suspension column is off the read below now that the guard
+      // covers it; the rest of the round-trip is unchanged.
+      const session = await requireActiveSession();
+      if (cancelled || !session) return;
 
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-
-      // Fetch the three lineage fields + visit_count + the suspension
-      // gate in one round-trip.
+      // Fetch the three lineage fields + visit_count in one round-trip.
       const { data: profile } = await supabase
         .from("profiles")
         .select(
-          "suspended_at, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave, lineage_section_visit_count",
+          "lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave, lineage_section_visit_count",
         )
-        .eq("id", user.id)
+        .eq("id", session.id)
         .maybeSingle();
       if (cancelled) return;
 
-      if (profile?.suspended_at) {
-        router.replace("/suspended");
-        return;
-      }
-
-      setUserId(user.id);
+      setUserId(session.id);
       setFatherGrief(profile?.lineage_father_grief ?? "");
       setFatherAnger(profile?.lineage_father_anger ?? "");
       setPatternToLeave(profile?.lineage_pattern_to_leave ?? "");
@@ -130,14 +119,14 @@ export default function LineagePage() {
           lineage_section_visit_count:
             (profile?.lineage_section_visit_count ?? 0) + 1,
         })
-        .eq("id", user.id);
+        .eq("id", session.id);
     }
 
     void load();
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, []);
 
   // ───── Debounced auto-save ─────
   //
