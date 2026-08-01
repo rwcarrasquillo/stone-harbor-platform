@@ -40,7 +40,6 @@ import {
 } from "@/app/components/icons";
 import { todaysPrompt as sharedTodaysPrompt } from "@/lib/dailyPrompts";
 import { useTheme } from "@/app/components/themeProvider";
-import { PageAmbience } from "@/app/components/pageAmbience";
 import { PageTopNav } from "@/app/components/pageTopNav";
 import { VentInput, VentTextarea } from "@/app/components/ventField";
 import { ComposeFocusMode } from "./composeFocusMode";
@@ -952,9 +951,6 @@ export default function JournalPage() {
        * ═══════════════════════════════════════════════════════════════
        */}
       <div className="lg:hidden">
-
-      {/* Unified harbor ambience — same on every authenticated page */}
-      <PageAmbience />
 
       {/* SOUND TOGGLE */}
       <button
