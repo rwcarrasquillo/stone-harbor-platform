@@ -18,12 +18,14 @@
 
 name: Lint
 
+# Runs on every PR to main, deliberately unfiltered by path. A `paths:`
+# filter would skip the job on PRs that don't touch apps/stone-harbor/**,
+# and GitHub holds a required check pending forever when its workflow is
+# skipped — so an unconditional job is what makes this safe to mark
+# required.
 on:
   pull_request:
     branches: [main]
-    paths:
-      - "apps/stone-harbor/**"
-      - ".github/workflows/**"
 
 jobs:
   lint:
