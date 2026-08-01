@@ -1,0 +1,48 @@
+# Stone Harbor — lint gate (SH-113).
+#
+# The repo's first CI workflow. It exists so the SH-113 auth-guard rule
+# actually fails something: middleware.ts does zero auth work, every gate
+# is client-side per page, and Next 16 dropped build-time linting, so
+# without this job a page that skips requireActiveSession() ships green.
+#
+# Scope: the Next app only. `apps/stone-harbor/supabase/functions/**` is
+# excluded via the lint:ci script — those are Deno edge functions with 61
+# pre-existing @typescript-eslint/no-explicit-any errors that predate
+# SH-113 and are tracked as their own cleanup. They are excluded from the
+# GATE, not from `pnpm lint`, so they stay visible locally as the worklist
+# rather than being silently forgiven.
+#
+# Warnings do not fail the job by design — the SH-100 hex backlog is held
+# at "warn" on purpose, and turning warnings into failures would gate this
+# on unrelated palette work. Errors fail.
+
+name: Lint
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/stone-harbor/**"
+      - ".github/workflows/**"
+
+jobs:
+  lint:
+    name: eslint (stone-harbor)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Reads the root package.json "packageManager" field (pnpm@9.0.0),
+      # so the version stays in one place.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # Root install: eslint and its config live in the app workspace, so
+      # the whole workspace has to resolve before the app can lint.
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter @stone-harbor/web lint:ci

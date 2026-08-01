@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "lint:ci": "eslint . --ignore-pattern \"supabase/**\"",
     "test": "vitest run --reporter=json --outputFile=.test-results/unit.json",
     "test:watch": "vitest",
     "test:db": "node scripts/run-db-tests.mjs",
