@@ -1102,6 +1102,7 @@
     "skip": "Skip settle-in",
     "revisit": "Revisit settle-in",
     "anchorLabel": "Stone Harbor",
+    "brandCrumb": "Settle In",
     "screen1": {
       "lines": [
         "You're here now.",
