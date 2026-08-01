@@ -35,7 +35,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { serif, sans } from "@/lib/fonts";
 import { EASE } from "@/lib/motion";
-import { PageAmbience } from "@/app/components/pageAmbience";
 import { AnchorMark } from "@/app/components/anchorMark";
 import { BreathCircle, useBreathCycle } from "@/app/components/breathCircle";
 import { HairlineLens } from "@/app/components/hairlineLens";
@@ -616,8 +615,6 @@ function SettleInFlow() {
       // no way to scroll to the entrance button.
       className={`${sans.className} relative flex h-full flex-col overflow-y-auto bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}
     >
-      <PageAmbience />
-
       {/* ===== Top brand header =====
           SH-115 — the harbor-vocabulary crumb every other member
           surface wears, lifted from /roadmap. It replaces two pieces of
