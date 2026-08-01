@@ -97,6 +97,110 @@ const BACKLOG_AT_WARN = [
   "app/components/rhythmTile.tsx",
 ];
 
+/* ---------------------------------------------------------------------
+ * Raw auth checks outside the shared guard (SH-113)
+ *
+ * Every authenticated member surface must gate through
+ * `requireActiveSession()` in lib/authGuards.ts. That helper runs three
+ * checks in a deliberate order — signed in → not suspended → settled in
+ * — and a page that calls `supabase.auth.getUser()` directly gets only
+ * the first, silently skipping the suspension and settle-in gates.
+ *
+ * This is enforced by a rule rather than by convention because
+ * convention already failed once. SH-110 found 13 member surfaces that
+ * had drifted off the helper over several months, and nothing anywhere
+ * flagged it: middleware.ts does locale canonicalization only and zero
+ * auth work, so every gate in this app is client-side and per-page.
+ * SH-112 and SH-114 closed the remaining gaps; this rule keeps them shut.
+ *
+ * The selectors match `<anything>.auth.getUser()` / `.getSession()`,
+ * which covers the `supabase.auth.*` call shape wherever the client is
+ * imported from.
+ *
+ * IMPORTANT — read before adding an allowlist entry: an exemption is not
+ * "this file is noisy", it is "a gate here would be wrong". The existing
+ * entries fall into five categories, each justified inline below. If a
+ * new file doesn't fit one of them, it needs the helper, not an entry.
+ */
+const RAW_AUTH_CHECK_MESSAGE =
+  "Raw Supabase auth check outside lib/authGuards.ts. Call requireActiveSession() instead — it also gates suspension and settle-in, which a bare getUser()/getSession() silently skips. If this surface genuinely must not gate (pre-auth flow, server route, redirect target of the guard itself, or a token read on an already-gated surface), add it to RAW_AUTH_ALLOWLIST in eslint.config.mjs with a reason.";
+
+const RAW_AUTH_CHECK_SELECTORS = [
+  {
+    selector:
+      "CallExpression[callee.object.property.name='auth'][callee.property.name='getUser']",
+    message: RAW_AUTH_CHECK_MESSAGE,
+  },
+  {
+    selector:
+      "CallExpression[callee.object.property.name='auth'][callee.property.name='getSession']",
+    message: RAW_AUTH_CHECK_MESSAGE,
+  },
+];
+
+// Files where a raw auth check is the correct call. Every entry was
+// audited against the call sites present when SH-113 shipped.
+const RAW_AUTH_ALLOWLIST = [
+  // (1) The helper itself — the one true implementation of the gate.
+  "lib/authGuards.ts",
+
+  // (2) Server-side. requireActiveSession() redirects by assigning
+  // window.location, so it cannot run outside the browser. Route
+  // handlers authenticate a bearer token instead of gating a rendered
+  // surface.
+  "lib/apiSupabase.ts",
+  "lib/memberUsage.ts",
+  "app/api/**",
+
+  // (3) Pre-auth flows — there is no session to require yet, and
+  // gating them would lock members out of the routes that create the
+  // session in the first place.
+  "app/auth/**",
+  "app/login/**",
+  "app/\\[locale\\]/login/**",
+  "app/register/**",
+  "app/forgot-password/**",
+  "app/reset-password/**",
+
+  // (4) Redirect TARGETS of the guard. requireActiveSession() sends
+  // members to /settle-in and /suspended; calling it from those pages
+  // would bounce them straight back into an infinite loop.
+  "app/settle-in/page.tsx",
+  "app/suspended/page.tsx",
+
+  // (5) Public marketing + campaign surfaces. No member gate by design.
+  // Escaped brackets: [locale] is a literal directory, not a character
+  // class.
+  "app/\\[locale\\]/**",
+  "app/keepers/**",
+
+  // (6) Token reads on surfaces that are ALREADY gated elsewhere. These
+  // pull `session.access_token` to authorize a fetch — they are not
+  // gates, and the helper has no token to hand back (it returns
+  // {id, email}). /map in particular is gated once by MapChrome.tsx,
+  // which every page under app/map/ renders.
+  "app/map/**",
+  "app/components/storyInvitationCard.tsx",
+  "app/components/theMapTile.tsx",
+
+  // (7) Runs above every gate — themeProvider must theme the login page
+  // too, so it cannot depend on an active member session.
+  "app/components/themeProvider.tsx",
+
+  // (8) Child components of already-gated pages. They read identity to
+  // scope a query or attribute an action, and neither redirects, so
+  // neither is acting as a gate.
+  "app/components/DailyQuoteCard.tsx",
+  "app/components/flagButton.tsx",
+
+  // (9) Founder-only tool. Gates on isFounderEmail(user.email) — a role
+  // check the member helper doesn't model. Worth revisiting: it could
+  // call requireActiveSession() first and then check the role, which
+  // would also give it the suspension + settle-in gates it currently
+  // lacks. Tracked as an SH-113 follow-up rather than folded in here.
+  "app/founder/story-prompts/page.tsx",
+];
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -104,10 +208,37 @@ const eslintConfig = defineConfig([
     rules: {
       "react-hooks/set-state-in-effect": "warn",
       "react-hooks/immutability": "warn",
+      "no-restricted-syntax": [
+        "error",
+        ...HEX_IN_TAILWIND_SELECTORS,
+        ...RAW_AUTH_CHECK_SELECTORS,
+      ],
+    },
+  },
+  // SH-113 — raw-auth exemption. Drops ONLY the auth selectors; the hex
+  // rule stays at "error" here. Must sit after the base block and before
+  // BACKLOG_AT_WARN (see the ordering note on that block).
+  {
+    files: RAW_AUTH_ALLOWLIST,
+    rules: {
       "no-restricted-syntax": ["error", ...HEX_IN_TAILWIND_SELECTORS],
     },
   },
-  // Backlog exemption — same selectors, downgraded to "warn" (§5).
+  // Backlog exemption — hex selectors downgraded to "warn" (§5).
+  //
+  // ORDERING (SH-113): this block must stay LAST of the three that carry
+  // hex selectors. Flat config replaces rule options rather than merging
+  // them, so whichever block matches last decides the whole rule — both
+  // its severity and its full selector list. Landing here after the
+  // raw-auth exemption keeps these files at hex-"warn"; landing before it
+  // would silently promote them back to "error" and reopen the backlog.
+  //
+  // These files carry no auth selectors, which is correct today: every
+  // BACKLOG_AT_WARN entry that touches supabase.auth is also on
+  // RAW_AUTH_ALLOWLIST (the pre-auth flows, /suspended, the [locale]
+  // marketing surfaces). Note the coupling though — when a file's hex is
+  // migrated and its entry leaves BACKLOG_AT_WARN, auth enforcement turns
+  // ON for it. That direction is safe, but it is a real side effect.
   {
     files: BACKLOG_AT_WARN,
     rules: {
@@ -129,7 +260,13 @@ const eslintConfig = defineConfig([
       "app/components/amnioticBackdrop.tsx",
     ],
     rules: {
-      "no-restricted-syntax": "off",
+      // SH-113 — was a bare "off". Because flat config replaces rule
+      // options, "off" here would have switched off the raw-auth
+      // selectors on these files too, not just the hex ones. Respelled
+      // to keep the hex exemption while leaving the auth guard live.
+      // Neither file calls supabase.auth today, so this adds no errors —
+      // it just stops the exemption from widening beyond its intent.
+      "no-restricted-syntax": ["error", ...RAW_AUTH_CHECK_SELECTORS],
     },
   },
   // Override default ignores of eslint-config-next.
