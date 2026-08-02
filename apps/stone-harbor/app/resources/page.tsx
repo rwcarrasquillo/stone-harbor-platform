@@ -11,6 +11,7 @@ import { AnchorMark } from "@/app/components/anchorMark";
 import { HairlineLens } from "@/app/components/hairlineLens";
 import { useTheme } from "@/app/components/themeProvider";
 import { serif, sans } from "@/lib/fonts";
+import { resolveSpineContent } from "@/lib/spine";
 import {
   ChevronLeft,
   ChevronRight,
@@ -233,10 +234,30 @@ export default function ResourcesPage() {
     try {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("healing_stage")
+        .select("healing_stage, current_roadmap_step_id")
         .eq("id", sessionUserId)
         .single();
-      setUserStage(normalizeStage(profile?.healing_stage));
+
+      // SH-120 (spine Ship 2A) — same repoint as /letters. The
+      // pillarSections ordering and the resources.yourPathBadge below
+      // already deliver "for where you are now"; Ship 2A only changes
+      // which stage drives them, from the once-declared healing_stage
+      // to the member's live position on the path.
+      //
+      // external_content carries the same pillar taxonomy as
+      // roadmap_steps.stage (161 rows across calm/clarity/strength), so
+      // this works on today's library with no step-tagging required.
+      // No FK is added to external_content in spine_002: it is
+      // externally-ingested curated material, and per-step tagging is
+      // an editorial job outside Ship 2B's scope of Stone Harbor
+      // originals. Tracked as a follow-up if step precision is wanted.
+      // Reuses the step id from the profile read above rather than
+      // issuing its own — see the same pattern in /letters.
+      const spine = await resolveSpineContent(
+        supabase,
+        profile?.current_roadmap_step_id as string | null | undefined,
+      );
+      setUserStage(spine ? spine.stage : normalizeStage(profile?.healing_stage));
       const { data, error } = await supabase
         .from("external_content")
         .select(

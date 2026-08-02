@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { requireActiveSession } from "@/lib/authGuards";
-import { getSpineEnabled } from "@/lib/spine";
+import { getSpineFlags } from "@/lib/spine";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { AnchorMark } from "@/app/components/anchorMark";
 import { HairlineLens } from "@/app/components/hairlineLens";
@@ -109,6 +109,8 @@ export default function RoadmapPage() {
   // Ship 3 deprecates it. Null unless spine_enabled is true AND the
   // member has been placed.
   const [currentStepId, setCurrentStepId] = useState<string | null>(null);
+  // SH-120 — gates the out-of-sequence note only.
+  const [spineContentEnabled, setSpineContentEnabled] = useState(false);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [userStage, setUserStage] = useState<Stage>("clarity");
@@ -175,12 +177,15 @@ export default function RoadmapPage() {
 
     // SH-109 — the current-step marker only appears once the flag is on.
     // Failing soft leaves the surface exactly as it renders today.
-    const spineEnabled = await getSpineEnabled(supabase);
+    // SH-120 reads both flags in the one round trip: `content` gates
+    // the soft out-of-sequence note below and nothing else here.
+    const flags = await getSpineFlags(supabase);
     setCurrentStepId(
-      spineEnabled
+      flags.spine
         ? ((profile?.current_roadmap_step_id as string | null) ?? null)
         : null,
     );
+    setSpineContentEnabled(flags.spine && flags.content);
 
     const { data: stepsData, error: stepsErr } = await supabase
       .from("roadmap_steps")
@@ -428,6 +433,28 @@ export default function RoadmapPage() {
               })}
             </p>
           )}
+          {/* SH-120 — soft out-of-sequence note (design brief §4.8 /
+              §10 Q2). A suggestion, never a gate: the member keeps the
+              step they chose and nothing here nags them toward another.
+
+              Deliberately narrower than the brief's "step is not Calm
+              1" condition, which would also catch members who WALKED
+              to a later step — telling someone on Calm 3 that they
+              "chose to start here" would simply be false. Requiring an
+              empty progress map means this only reaches a member still
+              standing on their chosen starting point, which is the one
+              case the copy is true for. Ship 1 doesn't record the
+              starting step, so the empty checklist is the honest proxy. */}
+          {spineContentEnabled &&
+            currentStep &&
+            !(currentStep.stage === "calm" && currentStep.position === 1) &&
+            progress.size === 0 && (
+              <p
+                className={`${sans.className} mt-2 max-w-xl text-[12px] leading-relaxed text-[var(--sh-text-tertiary)] md:text-[13px]`}
+              >
+                {tSpine("roadmap.outOfSequenceNote")}
+              </p>
+            )}
         </section>
 
         {/* ===== Body =====

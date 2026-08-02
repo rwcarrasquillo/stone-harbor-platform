@@ -1654,8 +1654,22 @@
       },
       "seeWholePath": "See the whole path →"
     },
+    "invitation": {
+      "eyebrow": {
+        "prompt": "A question for today",
+        "letter": "A letter for today",
+        "meditation": "A breath for today"
+      },
+      "action": {
+        "prompt": "Write →",
+        "letter": "Read →",
+        "meditation": "Breathe →"
+      },
+      "meditationLine": "The breath room is open. Nothing to solve there, nothing to write down."
+    },
     "roadmap": {
-      "currentlyOn": "You're currently on Step {n}: {title}."
+      "currentlyOn": "You're currently on Step {n}: {title}.",
+      "outOfSequenceNote": "You chose to start here. The harbor usually suggests walking Calm, then Clarity, then Strength — but you know your ground better than we do."
     },
     "profile": {
       "currentlyOn": "Currently on Step {n}: {title}."

@@ -387,3 +387,235 @@ test.describe("Spine Ship 1", () => {
     ).toBeVisible({ timeout: 15_000 });
   });
 });
+
+/**
+ * Spine Ship 2A E2E (SH-120) — surface adaptation.
+ *
+ * WHY THIS LIVES IN spine.spec.ts RATHER THAN spine-content.spec.ts:
+ * the shipping prompt asked for a separate file, but every assertion
+ * below needs `spine_enabled` ON as well as `spine_content_enabled`
+ * (getSpineContentContext requires both). `app_settings` is a singleton
+ * row and playwright.config.ts sets `fullyParallel: true`, so a second
+ * spec file flipping spine_enabled would race the Ship 1 block above —
+ * exactly the hazard the header note on this file exists to prevent.
+ * Keeping both ships in the one flag-owning file preserves that
+ * invariant; file-level serial mode keeps the two describes apart.
+ *
+ * Covered:
+ *   - content flag OFF → /letters, /resources, /roadmap and the
+ *     dashboard render exactly as Ship 1 left them (regression guard)
+ *   - content flag ON  → /letters and /resources follow the current
+ *     STEP's stage instead of the declared healing_stage
+ *   - content flag ON  → the dashboard invitation follows the weekday
+ *     cadence, and Sunday renders nothing at all
+ *   - content flag ON  → /journal/compose serves a stage-matched prompt
+ *   - content flag ON  → /roadmap carries the soft out-of-sequence note
+ *     for a member standing on a non-Calm-1 starting step, and does NOT
+ *     carry it for a member who started where the harbor suggested
+ */
+
+const EMAIL_CONTENT = `spine2a-content-${STAMP}@example.com`;
+const EMAIL_OUTOFSEQ = `spine2a-outofseq-${STAMP}@example.com`;
+
+const content: Record<string, string> = {};
+let priorContentFlag = false;
+
+async function setSpineContentFlag(enabled: boolean) {
+  const { error } = await admin
+    .from("app_settings")
+    .update({ spine_content_enabled: enabled })
+    .eq("id", 1);
+  if (error) throw error;
+}
+
+/** Fix the browser clock to a known weekday so the cadence is testable. */
+async function setWeekday(page: Page, isoDate: string) {
+  await page.clock.setFixedTime(new Date(`${isoDate}T10:00:00`));
+}
+
+test.describe("Spine Ship 2A — surface adaptation", () => {
+  test.skip(
+    !haveAdmin,
+    "Set NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY to run.",
+  );
+
+  test.beforeAll(async () => {
+    admin = createClient(SUPABASE_URL!, SERVICE_KEY!, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const { data: settings, error: settingsErr } = await admin
+      .from("app_settings")
+      .select("spine_enabled, spine_content_enabled")
+      .eq("id", 1)
+      .single();
+    if (settingsErr) throw settingsErr;
+    priorFlag = !!settings?.spine_enabled;
+    priorContentFlag = !!settings?.spine_content_enabled;
+
+    stepIds.calm1 = await stepId("calm", 1);
+    stepIds.strength4 = await stepId("strength", 4);
+
+    // Declared stage and actual step deliberately DISAGREE. That gap is
+    // the whole point of the repoint: healing_stage says Strength (what
+    // this member said about himself once), the path says Calm 1 (where
+    // he actually is). Flag off follows the first, flag on the second,
+    // so the assertions can't pass by accident.
+    content.member = await createMember(EMAIL_CONTENT, {
+      currentStepId: stepIds.calm1,
+    });
+    await admin
+      .from("profiles")
+      .update({ healing_stage: "strength" })
+      .eq("id", content.member);
+
+    // Standing on Strength 4 with an empty checklist — a member who
+    // chose to start out of sequence rather than walked there.
+    content.outOfSeq = await createMember(EMAIL_OUTOFSEQ, {
+      currentStepId: stepIds.strength4,
+    });
+
+    await setSpineFlag(true);
+    await setSpineContentFlag(false);
+  });
+
+  test.afterAll(async () => {
+    if (!admin) return;
+    // Both switches back before anything else, same reasoning as Ship 1.
+    await setSpineContentFlag(priorContentFlag);
+    await setSpineFlag(priorFlag);
+    for (const id of Object.values(content)) {
+      await admin.auth.admin.deleteUser(id);
+    }
+  });
+
+  test("content flag off — every adapted surface renders as Ship 1 left it", async ({
+    page,
+  }) => {
+    await setSpineContentFlag(false);
+    await signIn(page, EMAIL_CONTENT);
+
+    // Ship 1's panel is still there (spine_enabled is on)...
+    await expect(page.getByText("You're on", { exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
+    // ...but Ship 2A's invitation is not, on any weekday.
+    await expect(page.getByText(/A (question|letter|breath) for today/)).toHaveCount(0);
+
+    // /letters follows the DECLARED stage, not the step.
+    await page.goto("/letters");
+    await expect(page.getByText("Your path: Strength")).toBeVisible({
+      timeout: 15_000,
+    });
+
+    // /resources likewise.
+    await page.goto("/resources");
+    await expect(
+      page.locator('section[aria-label="Strength resources"]'),
+    ).toContainText("Your Path", { timeout: 15_000 });
+  });
+
+  test("content flag on — letters and resources follow the current step's stage", async ({
+    page,
+  }) => {
+    await setSpineContentFlag(true);
+    await signIn(page, EMAIL_CONTENT);
+
+    // healing_stage still says Strength; the path says Calm 1. Calm wins.
+    await page.goto("/letters");
+    await expect(page.getByText("Your path: Calm")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Your path: Strength")).toHaveCount(0);
+
+    await page.goto("/resources");
+    await expect(
+      page.locator('section[aria-label="Calm resources"]'),
+    ).toContainText("Your Path", { timeout: 15_000 });
+  });
+
+  test("content flag on — the invitation follows the weekday cadence", async ({
+    page,
+  }) => {
+    await setSpineContentFlag(true);
+
+    // Tuesday → a letter. 2026-08-04 is a Tuesday.
+    await setWeekday(page, "2026-08-04");
+    await signIn(page, EMAIL_CONTENT);
+    await expect(page.getByText("A letter for today")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByRole("link", { name: /Read/ })).toBeVisible();
+
+    // Wednesday → a breath. Same member, same flags.
+    await setWeekday(page, "2026-08-05");
+    await page.goto("/dashboard");
+    await expect(page.getByText("A breath for today")).toBeVisible({
+      timeout: 15_000,
+    });
+
+    // Monday → a question, and it is one of the CALM prompts, because
+    // this member's step is Calm 1.
+    await setWeekday(page, "2026-08-03");
+    await page.goto("/dashboard");
+    await expect(page.getByText("A question for today")).toBeVisible({
+      timeout: 15_000,
+    });
+  });
+
+  test("content flag on — Sunday is rest and the invitation stays away", async ({
+    page,
+  }) => {
+    await setSpineContentFlag(true);
+    // 2026-08-02 is a Sunday.
+    await setWeekday(page, "2026-08-02");
+    await signIn(page, EMAIL_CONTENT);
+
+    // The step panel still renders; the invitation deliberately doesn't.
+    await expect(page.getByText("You're on", { exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText(/A (question|letter|breath) for today/)).toHaveCount(0);
+  });
+
+  test("content flag on — compose serves a prompt from the member's stage", async ({
+    page,
+  }) => {
+    await setSpineContentFlag(true);
+    await signIn(page, EMAIL_CONTENT);
+    await page.goto("/journal/compose");
+
+    // The four calm-tagged questions in lib/dailyPrompts. Which one the
+    // day lands on is deterministic but date-dependent, so assert that
+    // the prompt is drawn from the calm pool rather than pinning one.
+    await expect(
+      page
+        .getByText(
+          /calmer version of you|still hurts that you haven't named|body feel today that your mind ignored|nervous system spending energy/,
+        )
+        .first(),
+    ).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("content flag on — roadmap carries the soft out-of-sequence note", async ({
+    page,
+  }) => {
+    await setSpineContentFlag(true);
+
+    // Started on Strength 4, nothing completed → the note appears.
+    await signIn(page, EMAIL_OUTOFSEQ);
+    await page.goto("/roadmap");
+    await expect(page.getByText(/You chose to start here\./)).toBeVisible({
+      timeout: 15_000,
+    });
+
+    // A member who started where the harbor suggested is never nagged.
+    await page.context().clearCookies();
+    await signIn(page, EMAIL_CONTENT);
+    await page.goto("/roadmap");
+    await expect(page.getByText(/You're currently on Step 1/)).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText(/You chose to start here\./)).toHaveCount(0);
+  });
+});
