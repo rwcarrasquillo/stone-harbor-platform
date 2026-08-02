@@ -29,6 +29,7 @@ import { HairlineLens } from "@/app/components/hairlineLens";
 import { HorizonSegment } from "@/app/components/horizonSegment";
 import { PersonalizedGreeting } from "@/app/components/personalizedGreeting";
 import { TodayIntention } from "@/app/components/todayIntention";
+import { TodaysInvitation } from "@/app/components/todaysInvitation";
 import { StoryInvitationCard } from "@/app/components/storyInvitationCard";
 import { CurrentStepPanel } from "@/app/dashboard/components/currentStepPanel";
 import {
@@ -325,6 +326,9 @@ const CASCADE_STEPS = {
   // intention. It sits below the personal writing prompt and above the
   // story card, so sharing a step index keeps the cascade even.
   currentStepPanel: 0,
+  // SH-120 — today's invitation lands one beat after the step panel it
+  // hangs off, so the frame arrives before the thing inside it.
+  todaysInvitation: 1,
   storyCard: 1,
   horizonMark: 2,
   roomsStrip: 3,
@@ -1067,6 +1071,31 @@ export default function DashboardCenteredPage() {
             >
               <CurrentStepPanel currentStep={currentStep} nextStep={nextStep} />
             </motion.div>
+          )}
+
+          {/* ───── Today's invitation (SH-120, spine Ship 2A) ─────
+              The harbor's offer for the day, sitting directly under the
+              step panel at the same 840px tier so the two read as one
+              block: here is where you are, and here is one thing for
+              today. Distinct from TodayIntention above, which is the
+              member's own input rather than something served to them.
+
+              Note the design brief placed this "above TodayIntention";
+              on the built dashboard TodayIntention sits above the step
+              panel, not below it, so honoring "below the current-step
+              panel" puts it here.
+
+              Self-hides on Sunday, when content adaptation is off, when
+              the member isn't placed, and when the day's class has
+              nothing to offer — so it is mounted unconditionally for
+              any signed-in member and decides for itself. It carries
+              its own cascade wrapper and margin so that a quiet day
+              leaves no gap behind. */}
+          {userId && (
+            <TodaysInvitation
+              userId={userId}
+              cascadeStep={CASCADE_STEPS.todaysInvitation}
+            />
           )}
 
           {/* ───── A story to tell (FEATURE PANEL) ─────

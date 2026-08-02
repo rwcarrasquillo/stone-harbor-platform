@@ -1654,8 +1654,22 @@
       },
       "seeWholePath": "Ver el sendero completo →"
     },
+    "invitation": {
+      "eyebrow": {
+        "prompt": "Una pregunta para hoy",
+        "letter": "Una carta para hoy",
+        "meditation": "Una respiración para hoy"
+      },
+      "action": {
+        "prompt": "Escribir →",
+        "letter": "Leer →",
+        "meditation": "Respirar →"
+      },
+      "meditationLine": "La sala de respiración está abierta. Nada que resolver ahí, nada que anotar."
+    },
     "roadmap": {
-      "currentlyOn": "Actualmente estás en el Paso {n}: {title}."
+      "currentlyOn": "Actualmente estás en el Paso {n}: {title}.",
+      "outOfSequenceNote": "Elegiste empezar aquí. La dársena suele sugerir caminar Calma, luego Claridad, luego Fuerza — pero conoces tu terreno mejor que nosotros."
     },
     "profile": {
       "currentlyOn": "Actualmente en el Paso {n}: {title}."

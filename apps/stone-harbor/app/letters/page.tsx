@@ -10,6 +10,7 @@ import { AnchorMark } from "@/app/components/anchorMark";
 import { HairlineLens } from "@/app/components/hairlineLens";
 import { useTheme } from "@/app/components/themeProvider";
 import { serif, sans } from "@/lib/fonts";
+import { resolveSpineContent } from "@/lib/spine";
 import {
   ChevronLeft,
   ChevronRight,
@@ -548,10 +549,32 @@ export default function NewMembersBlogPage() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("healing_stage")
+      .select("healing_stage, current_roadmap_step_id")
       .eq("id", session.id)
       .single();
-    const stage = normalizeStage(profile?.healing_stage);
+
+    // SH-120 (spine Ship 2A) — "for where you are now" already exists on
+    // this surface: pillarSections below orders the member's stage
+    // first and badges it with membersBlog.yourPath. All Ship 2A does is
+    // change WHICH stage that is.
+    //
+    // healing_stage is what the member said about themselves once, at
+    // signup. The spine's current step is where they actually are on the
+    // path this week. When content adaptation is on and they've been
+    // placed, the second is the truer answer, so it wins. Everything
+    // downstream — ordering, badge, accent color — follows unchanged.
+    //
+    // resolveSpineContent returns null for every not-applicable case
+    // (either flag off, never placed, stale step, failed read), so the
+    // fallback below is the whole pre-Ship-2A behavior. It reuses the
+    // step id from the profile read above rather than issuing its own,
+    // so an unplaced member pays nothing and everyone else pays one
+    // flag read.
+    const spine = await resolveSpineContent(
+      supabase,
+      profile?.current_roadmap_step_id as string | null | undefined,
+    );
+    const stage = spine ? spine.stage : normalizeStage(profile?.healing_stage);
     setUserStage(stage);
 
     // Internal Stone Harbor originals only. External curated content

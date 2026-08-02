@@ -38,7 +38,11 @@ import {
   Speech,
   type IconProps,
 } from "@/app/components/icons";
-import { todaysPrompt as sharedTodaysPrompt } from "@/lib/dailyPrompts";
+import {
+  todaysPrompt as sharedTodaysPrompt,
+  stagePromptForDay,
+} from "@/lib/dailyPrompts";
+import { resolveSpineContent, type RoadmapStage } from "@/lib/spine";
 import { useTheme } from "@/app/components/themeProvider";
 import { PageTopNav } from "@/app/components/pageTopNav";
 import { VentInput, VentTextarea } from "@/app/components/ventField";
@@ -132,7 +136,25 @@ function moodLabel(
 // Daily writing prompts live in @/lib/dailyPrompts so the dashboard's
 // "Tomorrow" preview tile can read from the same source. Add or edit
 // prompts there — both surfaces pick them up automatically.
-function todaysPrompt() {
+//
+// SH-120 (spine Ship 2A) — when content adaptation is on and the member
+// is placed on the path, the day's question is drawn from that stage's
+// slice of the same pool rather than the whole rotation: calm questions
+// work on the nervous system, clarity on seeing the pattern, strength
+// on what to do about it.
+//
+// Worth knowing, since the design brief assumed otherwise: these
+// prompts are hardcoded, not DB rows. There is no blog_posts prompt
+// category to filter, so the "step filter" is a pool narrowing in code.
+// Rotation stays deterministic by day-of-year either way, so a member
+// still sees one question per day and the same one on every reload.
+// A null stage, or a stage with no prompts, falls back to the full
+// rotation — the member never lands on an empty prompt.
+function todaysPrompt(stage?: RoadmapStage | null) {
+  if (stage) {
+    const scoped = stagePromptForDay(stage);
+    if (scoped) return scoped.question;
+  }
   return sharedTodaysPrompt();
 }
 
@@ -316,6 +338,10 @@ export default function JournalPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  // SH-120 — the stage of the member's current roadmap step, or null
+  // when content adaptation doesn't apply. Only narrows which prompt
+  // the day serves; nothing else on this surface reads it.
+  const [spineStage, setSpineStage] = useState<RoadmapStage | null>(null);
   // Account age drives progressive disclosure of new healing-path features.
   // null until the profile loads; treat as "no features unlocked" while null.
   const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
@@ -553,12 +579,22 @@ export default function JournalPage() {
     const { data: gateRow } = await supabase
       .from("profiles")
       .select(
-        "created_at, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave",
+        "created_at, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave, current_roadmap_step_id",
       )
       .eq("id", session.id)
       .single();
     setUserId(session.id);
     setUserCreatedAt(gateRow?.created_at ?? null);
+
+    // SH-120 — narrows today's prompt to the member's stage of the path.
+    // Null (flag off, unplaced, failed read) leaves the full rotation in
+    // place, which is exactly the pre-Ship-2A behavior. Reuses the step
+    // id from the read above rather than issuing its own.
+    const spine = await resolveSpineContent(
+      supabase,
+      gateRow?.current_roadmap_step_id as string | null | undefined,
+    );
+    setSpineStage(spine?.stage ?? null);
     setLineageContent({
       fatherGrief: gateRow?.lineage_father_grief ?? null,
       fatherAnger: gateRow?.lineage_father_anger ?? null,
@@ -1027,7 +1063,7 @@ export default function JournalPage() {
             <p
               className={`${serif.className} mt-2 text-xl italic leading-snug text-[var(--sh-text-primary)] md:text-2xl`}
             >
-              &ldquo;{todaysPrompt()}&rdquo;
+              &ldquo;{todaysPrompt(spineStage)}&rdquo;
             </p>
             <p className="mt-2 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
               {t("promptHelp")}
@@ -1781,12 +1817,12 @@ export default function JournalPage() {
             <p
               className={`${serif.className} mt-1.5 text-[20px] italic font-medium tracking-[-0.01em]`}
             >
-              {todaysPrompt()}
+              {todaysPrompt(spineStage)}
             </p>
             {!editingEntryId && content.length === 0 && (
               <button
                 type="button"
-                onClick={() => setContent(todaysPrompt() + "\n\n")}
+                onClick={() => setContent(todaysPrompt(spineStage) + "\n\n")}
                 style={{ outline: "none", outlineOffset: 0 }}
                 className={`${sans.className} mt-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--sh-accent-gold)] transition-colors hover:text-[var(--sh-accent-gold-bright)]`}
               >
