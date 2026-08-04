@@ -32,6 +32,7 @@ import { TodayIntention } from "@/app/components/todayIntention";
 import { TodaysInvitation } from "@/app/components/todaysInvitation";
 import { StoryInvitationCard } from "@/app/components/storyInvitationCard";
 import { CurrentStepPanel } from "@/app/dashboard/components/currentStepPanel";
+import { CardSkeleton } from "@/app/components/cardSkeleton";
 import {
   dismissalKey,
   resolveActiveAcknowledgment,
@@ -320,15 +321,25 @@ function localizedAckCopy(
  * uses identical pacing. Only the section-to-step mapping is
  * page-specific.
  */
+// SH-123 — these indices are the entrance choreography, and after the
+// §3.5 reorder they have to agree with the new reading order or the
+// page assembles itself out of sequence: elements would fade in
+// bottom-up while the eye travels top-down.
+//
+// Beat 0 — the current-step panel alone. It is now the first card in
+//   the stack and the frame everything below hangs off, so it lands
+//   first and by itself.
+// Beat 1 — everything the step frames: today's invitation (the
+//   harbor's offer), today's intention (the member's answer), and the
+//   story card.
+// Beats 2, 3 — the closing horizon mark, then the rooms strip.
+//
+// Still four beats, so the total entrance is the same length it was
+// before the reorder.
 const CASCADE_STEPS = {
-  todayIntention: 0,
-  // SH-109 — the current-step panel arrives on the same beat as today's
-  // intention. It sits below the personal writing prompt and above the
-  // story card, so sharing a step index keeps the cascade even.
   currentStepPanel: 0,
-  // SH-120 — today's invitation lands one beat after the step panel it
-  // hangs off, so the frame arrives before the thing inside it.
   todaysInvitation: 1,
+  todayIntention: 1,
   storyCard: 1,
   horizonMark: 2,
   roomsStrip: 3,
@@ -375,6 +386,10 @@ export default function DashboardCenteredPage() {
   // condition for the current-step panel to render at all.
   const [currentStep, setCurrentStep] = useState<RoadmapStep | null>(null);
   const [nextStep, setNextStep] = useState<RoadmapStep | null>(null);
+  // SH-123 — true until the spine read settles, so the step panel can
+  // hold its space instead of appearing late and displacing the cards
+  // beneath it. Starts true: at first paint the answer is unknown.
+  const [spineLoading, setSpineLoading] = useState(true);
 
   useEffect(() => {
     void loadAll();
@@ -437,6 +452,11 @@ export default function DashboardCenteredPage() {
         setNextStep(findNextStep(allSteps, stepId));
       } catch (e) {
         console.warn("[dashboard] spine read failed; rendering without it.", e);
+      } finally {
+        // SH-123 — every path above, including the early returns for
+        // "flag off" and "not placed yet", ends the skeleton. It shows
+        // only while the answer is genuinely unknown.
+        if (alive) setSpineLoading(false);
       }
     })();
     return () => {
@@ -810,6 +830,10 @@ export default function DashboardCenteredPage() {
               <PersonalizedGreeting
                 name={profile.display_name || profile.username || null}
                 userId={userId}
+                // SH-123 — drives the tenure-branched recognition line.
+                // Same value the SmallThing and Lineage gates already
+                // read, so no extra query.
+                createdAt={userCreatedAt}
               />
             )}
           </div>
@@ -1028,28 +1052,6 @@ export default function DashboardCenteredPage() {
               </motion.section>
             )}
 
-            {/* ───── Tonight's intention ─────
-                TodayIntention stays at column-width because it's the
-                quiet personal writing prompt. The Story to tell card
-                renders OUTSIDE this column (below) at a wider
-                max-w-[920px] so it reads as the day's feature panel
-                instead of just another card in the stack. */}
-            {userId && (
-              <motion.div
-                {...cascadeFadeUp}
-                transition={cascadeTransition(CASCADE_STEPS.todayIntention)}
-                className="mb-12"
-              >
-                <TodayIntention userId={userId} />
-              </motion.div>
-            )}
-
-            {/* ───── Small thing (day 75+, cadenced) ───── */}
-            {showSmallThing && userId && (
-              <div className="mb-12">
-                <SmallThing userId={userId} />
-              </div>
-            )}
           </div>
 
           {/* ───── Current step (SH-109, spine Ship 1) ─────
@@ -1057,10 +1059,17 @@ export default function DashboardCenteredPage() {
               840px width tier the acknowledgment card uses on lg+ —
               wide enough to read as the frame the rooms sit inside,
               short of the story card's 920px feature width.
-              Sits below today's intention and above the rooms strip,
-              per design brief §5.2. Absent entirely when the flag is
-              off or the member hasn't been placed on the path. */}
-          {currentStep && (
+              Absent entirely when the flag is off or the member hasn't
+              been placed on the path.
+
+              SH-123 — promoted to the top of the card stack. It used to
+              sit BELOW today's intention, which inverted the spine's
+              own logic: the step is the frame everything else hangs
+              off, so a member met their own writing prompt before they
+              were told where they stand. Reading order is now
+              where-you-are (step) → what's-offered (invitation) →
+              what-you-answer (intention). */}
+          {currentStep ? (
             <motion.div
               {...cascadeFadeUp}
               transition={cascadeTransition(CASCADE_STEPS.currentStepPanel)}
@@ -1071,7 +1080,16 @@ export default function DashboardCenteredPage() {
             >
               <CurrentStepPanel currentStep={currentStep} nextStep={nextStep} />
             </motion.div>
-          )}
+          ) : spineLoading ? (
+            // Same width tier and margin as the panel it stands in for.
+            // Four body rows: the loaded panel carries a title, a
+            // description, and the peek-at-next block, so a shorter
+            // skeleton would just move the jump rather than remove it.
+            <CardSkeleton
+              lines={4}
+              className="mx-auto mb-14 w-full max-w-[720px] px-10 lg:max-w-[920px]"
+            />
+          ) : null}
 
           {/* ───── Today's invitation (SH-120, spine Ship 2A) ─────
               The harbor's offer for the day, sitting directly under the
@@ -1097,6 +1115,40 @@ export default function DashboardCenteredPage() {
               cascadeStep={CASCADE_STEPS.todaysInvitation}
             />
           )}
+
+          {/* ───── The member's own column ─────
+              Reopens the 720px reading column below the step block.
+              Today's intention and the small thing are the member's
+              side of the exchange — what they write back — so they sit
+              under the harbor's offer rather than above it (SH-123
+              §3.5). Column width, not the 840px step tier: these are
+              personal-register, and the narrower measure is the visual
+              cue for that. No pt-* here — the block above already
+              carries its own bottom margin. */}
+          <div className="mx-auto flex max-w-[720px] flex-col px-10">
+            {/* ───── Tonight's intention ─────
+                TodayIntention stays at column-width because it's the
+                quiet personal writing prompt. The Story to tell card
+                renders OUTSIDE this column (below) at a wider
+                max-w-[920px] so it reads as the day's feature panel
+                instead of just another card in the stack. */}
+            {userId && (
+              <motion.div
+                {...cascadeFadeUp}
+                transition={cascadeTransition(CASCADE_STEPS.todayIntention)}
+                className="mb-12"
+              >
+                <TodayIntention userId={userId} />
+              </motion.div>
+            )}
+
+            {/* ───── Small thing (day 75+, cadenced) ───── */}
+            {showSmallThing && userId && (
+              <div className="mb-12">
+                <SmallThing userId={userId} />
+              </div>
+            )}
+          </div>
 
           {/* ───── A story to tell (FEATURE PANEL) ─────
               Lives OUTSIDE the max-w-[720px] column at max-w-[920px]
@@ -1162,10 +1214,18 @@ export default function DashboardCenteredPage() {
                 meditationCopy={c.meditation}
                 keepersEnabled={keepersEnabled}
                 // SH-109 — the strip only takes a section header once the
-                // member is on a step, and then it names the new
-                // relationship: rooms are tools, the step is the frame.
-                // Null = no header, which is exactly today's layout.
-                header={currentStep ? tRooms("headerForSpine") : null}
+                // member is on a step. Null = no header, which is
+                // exactly the pre-spine layout.
+                //
+                // SH-123 — the label used to read "Rooms available for
+                // this step", which promised a filtering the strip does
+                // not do: all ten rooms render regardless of which step
+                // the member is on. The header now describes what is
+                // actually there. The key was renamed too — the old
+                // `headerForSpine` implied step-conditional content.
+                // If a later ship really does filter rooms by step, the
+                // step-aware label can come back and mean it.
+                header={currentStep ? tRooms("header") : null}
               />
             </motion.div>
           )}
@@ -1494,10 +1554,27 @@ function RoomsCarousel({
   // `offsetWidth` (which can include padding, scrollbar gutter, and
   // other browser-specific quirks). `block: "nearest"` prevents any
   // unwanted vertical scroll on the page.
+  //
+  // SH-123 — the centering is DESKTOP-ONLY now.
+  //
+  // Verified at a 375px viewport: the strip was never truncated or
+  // broken — `overflow-x-auto` has always let it scroll. The real
+  // defect was subtler and worse. On a phone the visible window is
+  // ~295px, about one and a half cards, and `scrollIntoView` was
+  // dropping the member into the MIDDLE of a ten-card row. Vent,
+  // Roadmap, Messages and The Map sat off-screen to the LEFT, behind a
+  // scroll gesture nobody signals you can make. Rooms were reachable
+  // in the sense that a thing at the bottom of a drawer is reachable.
+  //
+  // Under 640px we leave the strip at scroll position 0, so the row
+  // starts where the eye starts and the edge fade below advertises
+  // that it continues. 640px matches the `sm:` breakpoint where the
+  // mobile tab bar hands over to the desktop layouts.
   const scrollRef = useRef<HTMLDivElement | null>(null);
   useLayoutEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
+    if (window.matchMedia("(max-width: 639px)").matches) return;
     const journalCard = container.children[defaultIdx] as
       | HTMLElement
       | undefined;
@@ -1515,12 +1592,55 @@ function RoomsCarousel({
     container.style.scrollBehavior = previousBehavior;
   }, [defaultIdx]);
 
+  // Edge fades — the scroll affordance. A hard-cut card at the frame
+  // edge reads as a layout bug; a card dissolving into the background
+  // reads as "there is more this way." Tracked rather than static so
+  // the fade only appears on the side that actually has content
+  // hidden, which is what makes it informative instead of decorative.
+  //
+  // Implemented as a mask on the scroll container rather than a
+  // gradient overlay: a gradient would have to know the page's
+  // background color, which is theme-dependent (cream on Sunlit,
+  // near-black on Dusk) and painted by globals.css on the body rather
+  // than by anything this component can read. A mask fades the content
+  // itself to transparent and is correct against any backdrop.
+  const [edges, setEdges] = useState({ start: false, end: true });
+  useLayoutEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const update = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      setEdges({
+        start: scrollLeft > 4,
+        // 4px of slack absorbs sub-pixel rounding at fractional zoom
+        // levels, where scrollLeft + clientWidth lands a hair short of
+        // scrollWidth even when scrolled fully to the end.
+        end: scrollLeft + clientWidth < scrollWidth - 4,
+      });
+    };
+    update();
+    container.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      container.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  const maskImage = `linear-gradient(to right, ${
+    edges.start ? "transparent 0, #000 32px" : "#000 0"
+  }, ${edges.end ? "#000 calc(100% - 32px), transparent 100%" : "#000 100%"})`;
+
   return (
     // Section width matches the journal's entries-strip section: wide
     // enough that the inner row can reach its max-w-[1200px] without
     // the section's padding squeezing it. The row itself has the
     // max-w cap; the section just gives it room.
-    <section className="mx-auto max-w-[1440px] px-10 pb-16">
+    // SH-123 — px-5 under sm. At 375px the old flat px-10 spent 80px of
+    // a 375px screen on empty gutters, leaving under two cards visible;
+    // px-5 gives that width back to the rooms. Desktop keeps px-10 so
+    // the strip still lines up with the rest of the dashboard.
+    <section className="mx-auto max-w-[1440px] px-5 pb-16 sm:px-10">
       {header && (
         <p
           className={`${sans.className} mx-auto mb-4 w-full max-w-[1200px] text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]`}
@@ -1530,8 +1650,16 @@ function RoomsCarousel({
       )}
       <div
         ref={scrollRef}
-        className="mx-auto flex w-full max-w-[1200px] gap-3 overflow-x-auto scroll-smooth"
-        style={{ scrollbarWidth: "none" }}
+        // snap-x + snap-start on each card: a phone swipe now settles
+        // with a card flush to the left edge instead of stranding one
+        // half-cut mid-frame, which is what made the row look truncated
+        // rather than scrollable.
+        className="mx-auto flex w-full max-w-[1200px] snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth"
+        style={{
+          scrollbarWidth: "none",
+          maskImage,
+          WebkitMaskImage: maskImage,
+        }}
         onMouseLeave={() => setHoveredIdx(null)}
       >
         {rooms.map((room, i) => (
@@ -1616,7 +1744,7 @@ function RoomCard({
       // reading as a beam fanning outward as it descends. No hard
       // edges, no rectangle, no symmetric oval. Just a soft cone of
       // light falling on the door.
-      className="relative flex flex-shrink-0 flex-col gap-1 px-3.5 py-3 transition-[background] duration-300"
+      className="relative flex flex-shrink-0 snap-start flex-col gap-1 px-3.5 py-3 transition-[background] duration-300"
       style={
         isHighlighted
           ? {

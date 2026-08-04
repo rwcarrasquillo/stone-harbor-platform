@@ -1,17 +1,39 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, MessageCircle, Compass, User } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { Home, BookOpen, MessageCircle, MoreHorizontal, User } from "lucide-react";
+import { MobileMoreMenu } from "@/app/components/mobileMoreMenu";
 
 /**
  * Stone Harbor — mobile tab bar.
  *
- * Fixed bottom navigation visible on mobile only (md:hidden). Five
- * tabs: Home, Journal, Messages, Roadmap, Me. One tap from anywhere
+ * Fixed bottom navigation visible on phones only (sm:hidden). Five
+ * slots: Home, Journal, Messages, More, Me. One tap from anywhere
  * to anywhere — the single highest-impact change for the "scroll
  * forever" feeling, because members never have to scroll back to a
  * nav link.
+ *
+ * SH-123 — the Roadmap tab gave up its slot to "More".
+ *   Five slots, thirteen rooms: four tabs could never cover the harbor,
+ *   so eight rooms had no path from the bottom nav at all. "More" opens
+ *   a bottom sheet holding every one of them (see mobileMoreMenu.tsx),
+ *   which makes the whole harbor two taps deep instead of leaving most
+ *   of it reachable only by scrolling the dashboard's ten-card strip.
+ *
+ *   Roadmap is the safe slot to trade because it keeps three other
+ *   doors: the "See the whole path →" link in the dashboard's
+ *   CurrentStepPanel, the "Your path" card in the rooms strip, and its
+ *   own entry in the More sheet. It loses one tap, not its reachability.
+ *
+ * Labels:
+ *   The `tabBar.*` catalog keys have existed in both locales since the
+ *   bar shipped, but the component hardcoded English strings and never
+ *   read them — so Spanish members saw an English nav, and the
+ *   Messages tab read "Messages" where the catalog says "Brotherhood"
+ *   / "Hermandad". Wired up here.
  *
  * Pathname gate:
  *   Public + auth + wizard pages are excluded — the tab bar belongs
@@ -69,8 +91,10 @@ const HIDDEN_PREFIXES = [
 const isPublicHome = (pathname: string) => pathname === "/";
 
 type Tab = {
-  href: string;
-  label: string;
+  /** `null` marks the sheet trigger — it opens the More menu, not a route. */
+  href: string | null;
+  /** Key under the `tabBar` catalog namespace. */
+  labelKey: string;
   icon: typeof Home;
   /** Match this prefix to consider the tab active. */
   match: (pathname: string) => boolean;
@@ -79,31 +103,44 @@ type Tab = {
 const TABS: Tab[] = [
   {
     href: "/dashboard",
-    label: "Home",
+    labelKey: "home",
     icon: Home,
     match: (p) => p === "/dashboard" || p.startsWith("/dashboard/"),
   },
   {
     href: "/journal",
-    label: "Journal",
+    labelKey: "journal",
     icon: BookOpen,
     match: (p) => p.startsWith("/journal"),
   },
   {
     href: "/messages",
-    label: "Messages",
+    labelKey: "messages",
     icon: MessageCircle,
     match: (p) => p.startsWith("/messages"),
   },
   {
-    href: "/roadmap",
-    label: "Roadmap",
-    icon: Compass,
-    match: (p) => p.startsWith("/roadmap"),
+    // Sheet trigger. Highlights when the member is standing in one of
+    // the rooms the sheet holds, so "where am I" stays answerable from
+    // the bar even for destinations that never had a tab.
+    href: null,
+    labelKey: "more",
+    icon: MoreHorizontal,
+    match: (p) =>
+      [
+        "/vent",
+        "/meditation",
+        "/roadmap",
+        "/map",
+        "/letters",
+        "/resources",
+        "/rhythm",
+        "/lineage",
+      ].some((prefix) => p.startsWith(prefix) || p.startsWith(`/en${prefix}`) || p.startsWith(`/es${prefix}`)),
   },
   {
     href: "/profile",
-    label: "Me",
+    labelKey: "me",
     icon: User,
     // /profile is the canonical destination; /welcome kept in the match
     // so the tab still highlights during the /welcome → /profile redirect.
@@ -113,11 +150,30 @@ const TABS: Tab[] = [
 
 export function MobileTabBar() {
   const pathname = usePathname() || "/";
+  const t = useTranslations("tabBar");
+
+  // The sheet's open state is stored as "which route was it opened on"
+  // rather than a bare boolean, so that navigating anywhere closes it
+  // for free — `openAt` stops matching `pathname` and the sheet is
+  // derived shut.
+  //
+  // The room links inside the sheet already close it on tap, but that
+  // does not cover browser back/forward, nor a member tapping through
+  // to a HIDDEN_PREFIXES surface like /vent (where the whole bar
+  // unmounts). With a boolean, the sheet would still be flagged open
+  // and would spring back the moment they returned to the harbor.
+  // Deriving it also keeps this off the effect-with-setState path the
+  // react-hooks rule warns about.
+  const [openAt, setOpenAt] = useState<string | null>(null);
+  const moreOpen = openAt !== null && openAt === pathname;
+  const setMoreOpen = (next: boolean) => setOpenAt(next ? pathname : null);
 
   if (isPublicHome(pathname)) return null;
   if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return null;
 
   return (
+    <>
+    <MobileMoreMenu open={moreOpen} onClose={() => setMoreOpen(false)} />
     <nav
       aria-label="Primary"
       // Phones-only tab bar (< sm = 640px). Tablets at 640px+ get the
@@ -134,30 +190,52 @@ export function MobileTabBar() {
     >
       <ul className="flex items-stretch justify-around">
         {TABS.map((tab) => {
-          const active = tab.match(pathname);
+          const active = tab.href === null ? moreOpen || tab.match(pathname) : tab.match(pathname);
           const Icon = tab.icon;
+          // Shared between the Link tabs and the sheet-trigger button so
+          // the five slots stay pixel-identical.
+          const inner = (
+            <>
+              <Icon
+                size={20}
+                strokeWidth={active ? 2.25 : 1.75}
+                aria-hidden="true"
+              />
+              <span>{t(tab.labelKey)}</span>
+            </>
+          );
+          const className = `flex w-full flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
+            active
+              ? "text-[var(--sh-accent-gold-dusk)]"
+              : "text-stone-500 hover:text-stone-200"
+          }`;
           return (
-            <li key={tab.href} className="flex-1">
-              <Link
-                href={tab.href}
-                aria-current={active ? "page" : undefined}
-                className={`flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
-                  active
-                    ? "text-[var(--sh-accent-gold-dusk)]"
-                    : "text-stone-500 hover:text-stone-200"
-                }`}
-              >
-                <Icon
-                  size={20}
-                  strokeWidth={active ? 2.25 : 1.75}
-                  aria-hidden="true"
-                />
-                <span>{tab.label}</span>
-              </Link>
+            <li key={tab.labelKey} className="flex-1">
+              {tab.href === null ? (
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen(!moreOpen)}
+                  aria-expanded={moreOpen}
+                  aria-haspopup="dialog"
+                  style={{ outline: "none", outlineOffset: 0 }}
+                  className={className}
+                >
+                  {inner}
+                </button>
+              ) : (
+                <Link
+                  href={tab.href}
+                  aria-current={active ? "page" : undefined}
+                  className={className}
+                >
+                  {inner}
+                </Link>
+              )}
             </li>
           );
         })}
       </ul>
     </nav>
+    </>
   );
 }

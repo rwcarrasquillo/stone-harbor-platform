@@ -37,7 +37,23 @@
     "journal": "Diario",
     "messages": "Hermandad",
     "roadmap": "Ruta",
-    "me": "Yo"
+    "more": "Más",
+    "me": "Yo",
+    "moreMenu": {
+      "ariaLabel": "Más salas",
+      "title": "El resto de la dársena.",
+      "close": "Cerrar",
+      "rooms": {
+        "vent": "Desahogo",
+        "breath": "La Respiración",
+        "roadmap": "Ruta",
+        "map": "El Mapa",
+        "letters": "Cartas",
+        "resources": "Curado",
+        "rhythm": "Ritmo",
+        "lineage": "Linaje"
+      }
+    }
   },
   "crisisFooter": {
     "patience": "La dársena es paciente.",
@@ -420,7 +436,11 @@
         "lateNightSalutation": "Es tarde, {name}.",
         "lateNightBody": "El refugio está aquí. Tómate tu tiempo.",
         "salutation": "{greeting}, {name}.",
-        "body": "El refugio te recuerda. No le debes nada a nadie hoy."
+        "recognition": {
+          "newMember": "El refugio te reserva un lugar. Nada aquí te pide nada hoy.",
+          "walking": "El refugio es paciente. Has estado caminando. Nada aquí exige nada hoy.",
+          "remembered": "El refugio te recuerda. No le debes nada a nadie hoy."
+        }
       },
       "longGone": {
         "salutation": "Bienvenido de regreso, {name}.",
@@ -1676,6 +1696,6 @@
     }
   },
   "dashboardRooms": {
-    "headerForSpine": "Salas disponibles para este paso"
+    "header": "Cada puerta de la dársena"
   }
 }
