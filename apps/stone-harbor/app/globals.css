@@ -374,3 +374,49 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* 4. Loading-skeleton shimmer (SH-123). Used by <CardSkeleton>.
+ *
+ *    A band of slightly-brighter fill travels left to right across the
+ *    placeholder. Deliberately slow (2.4s) and low-contrast: the point
+ *    is to say "this is coming" without pulling the eye, which is the
+ *    opposite of what a spinner does. The harbor does not hurry the
+ *    member and its loading states should not either.
+ *
+ *    The animation rides on a pseudo-element so the skeleton's own
+ *    background stays a flat token fill and only the highlight moves.
+ */
+.sh-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--sh-bg-card-tinted);
+  opacity: 0.55;
+}
+.sh-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(196, 147, 78, 0.10) 50%,
+    transparent 100%
+  );
+  animation: sh-skeleton-shimmer 2.4s ease-in-out infinite;
+}
+
+@keyframes sh-skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Members who ask the OS for less motion get the placeholder without
+ * the travelling band. The shape still communicates "loading"; only
+ * the movement goes. */
+@media (prefers-reduced-motion: reduce) {
+  .sh-skeleton::after {
+    animation: none;
+  }
+}

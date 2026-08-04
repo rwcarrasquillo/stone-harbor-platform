@@ -46,6 +46,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { cascadeFadeUp, cascadeTransition } from "@/lib/motion";
 import { serif, sans } from "@/lib/fonts";
 import { HairlineLens } from "@/app/components/hairlineLens";
+import { CardSkeleton } from "@/app/components/cardSkeleton";
 import { useTheme } from "@/app/components/themeProvider";
 import { supabase } from "@/lib/supabaseClient";
 import {
@@ -156,6 +157,11 @@ export function TodaysInvitation({
   const isDusk = theme === "dusk";
 
   const [invitation, setInvitation] = useState<Invitation | null>(null);
+  // SH-123 — distinguishes "still asking" from "nothing today", which
+  // this component previously collapsed into the same null invitation.
+  // Both rendered nothing, so the card popped in late and shoved the
+  // rest of the dashboard down; now only the second one renders nothing.
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let alive = true;
@@ -214,6 +220,11 @@ export function TodaysInvitation({
         }
       } catch {
         // Never the reason a dashboard fails to compose.
+      } finally {
+        // Runs on every exit above, including the early returns inside
+        // the loop — so the skeleton always resolves to either a card
+        // or nothing, and can never strand itself shimmering.
+        if (alive) setLoading(false);
       }
     })();
     return () => {
@@ -223,6 +234,17 @@ export function TodaysInvitation({
     // them would refetch the letter on every theme re-render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+
+  // Still asking. Same width tier and margin as the real card, so the
+  // page it hands over to is the page the member was already reading.
+  if (loading) {
+    return (
+      <CardSkeleton
+        lines={2}
+        className="mx-auto mb-14 w-full max-w-[720px] px-10 lg:max-w-[920px]"
+      />
+    );
+  }
 
   // Nothing today — and that includes the surrounding spacing. The
   // component owns its own margin precisely so a quiet day costs the

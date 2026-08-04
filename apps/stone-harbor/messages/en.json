@@ -37,7 +37,23 @@
     "journal": "Journal",
     "messages": "Brotherhood",
     "roadmap": "Roadmap",
-    "me": "Me"
+    "more": "More",
+    "me": "Me",
+    "moreMenu": {
+      "ariaLabel": "More rooms",
+      "title": "The rest of the harbor.",
+      "close": "Close",
+      "rooms": {
+        "vent": "Vent",
+        "breath": "The Breath",
+        "roadmap": "Roadmap",
+        "map": "The Map",
+        "letters": "Letters",
+        "resources": "Curated",
+        "rhythm": "Rhythm",
+        "lineage": "Lineage"
+      }
+    }
   },
   "crisisFooter": {
     "patience": "The harbor is patient.",
@@ -420,7 +436,11 @@
         "lateNightSalutation": "It's late, {name}.",
         "lateNightBody": "The harbor is here. Take your time.",
         "salutation": "{greeting}, {name}.",
-        "body": "The harbor remembers you. You don't owe anyone anything today."
+        "recognition": {
+          "newMember": "The harbor holds a place for you. Nothing here asks anything of you today.",
+          "walking": "The harbor is patient. You've been walking. Nothing here demands anything today.",
+          "remembered": "The harbor remembers you. You don't owe anyone anything today."
+        }
       },
       "longGone": {
         "salutation": "Welcome back, {name}.",
@@ -1676,6 +1696,6 @@
     }
   },
   "dashboardRooms": {
-    "headerForSpine": "Rooms available for this step"
+    "header": "Every door in the harbor"
   }
 }

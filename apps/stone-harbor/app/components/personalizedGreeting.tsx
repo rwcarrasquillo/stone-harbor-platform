@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { serif } from "@/lib/fonts";
 import { DURATION, EASE } from "@/lib/motion";
+import { daysSinceSignup, getPreviewDayOverride } from "@/lib/userProgress";
 
 /**
  * Stone Harbor — PersonalizedGreeting.
@@ -40,7 +41,53 @@ type Props = {
   name?: string | null;
   /** Member's user id — used to key the last-visit timestamp per account. */
   userId?: string | null;
+  /**
+   * `profiles.created_at` — the member's signup timestamp, used for the
+   * tenure-branched recognition line (SH-123). The dashboard already
+   * reads this column for the SmallThing and Lineage unlock gates, so
+   * it arrives as a prop rather than costing a second query — and
+   * passing it down keeps this component clear of the SH-113 rule
+   * against reading auth state outside an already-guarded parent.
+   */
+  createdAt?: string | null;
 };
+
+/**
+ * Two different clocks run in this component and they answer different
+ * questions:
+ *
+ *   daysSinceLastVisit — "how long since you were here?"  (localStorage)
+ *   daysSinceSignup    — "how long have you been here?"   (profiles.created_at)
+ *
+ * The salutation and the away-gap copy belong to the first. The
+ * recognition line — the second sentence, the one that says what the
+ * harbor knows about this member — belongs to the second.
+ *
+ * SH-123 fixes a mismatch between them. "The harbor remembers you"
+ * shipped on the neutral path, which is exactly the path a brand-new
+ * member lands on: first visit ever, nothing in localStorage. So the
+ * very first sentence the harbor ever spoke to a member claimed a
+ * history that did not exist. Three tenure variants replace the one
+ * line so the claim is true whenever it is made.
+ *
+ * Returns "remembered" when there is no signup date at all — the safest
+ * of the three. Greeting a member of two years as brand new is a worse
+ * failure than greeting a newcomer as familiar, and a null here means
+ * the profile read failed rather than that the member is new.
+ */
+function recognitionVariant(
+  createdAt: string | null | undefined,
+): "newMember" | "walking" | "remembered" {
+  // daysSinceSignup(null) returns 0, which would read as "brand new" —
+  // so the null case is caught before it gets there. The preview
+  // override still wins, because ?previewDay=3 is how the founder
+  // checks the day-3 copy from a years-old account.
+  if (!createdAt && getPreviewDayOverride() === null) return "remembered";
+  const days = daysSinceSignup(createdAt);
+  if (days < 7) return "newMember";
+  if (days < 30) return "walking";
+  return "remembered";
+}
 
 type GreetingCopy = {
   salutation: string;
@@ -70,11 +117,13 @@ function chooseGreeting({
   hour,
   daysSinceLastVisit,
   name,
+  createdAt,
   t,
 }: {
   hour: number;
   daysSinceLastVisit: number | null;
   name?: string | null;
+  createdAt?: string | null;
   t: (key: string, params?: Record<string, string | number>) => string;
 }): GreetingCopy {
   const first = firstName(name, t("fallbackName"));
@@ -102,7 +151,10 @@ function chooseGreeting({
         greeting: timeOfDayGreeting,
         name: first,
       }),
-      body: t("firstVisit.body"),
+      // The tenure-branched recognition line (SH-123). Only this path
+      // takes it: the away-gap paths below already say something true
+      // about the member's history, so they keep their own copy.
+      body: t(`firstVisit.recognition.${recognitionVariant(createdAt)}`),
     };
   }
 
@@ -138,7 +190,7 @@ function chooseGreeting({
   };
 }
 
-export function PersonalizedGreeting({ name, userId }: Props) {
+export function PersonalizedGreeting({ name, userId, createdAt }: Props) {
   const t = useTranslations("dashboard.personalizedGreeting");
   const [copy, setCopy] = useState<GreetingCopy>({
     salutation: t("defaultSalutation"),
@@ -165,8 +217,8 @@ export function PersonalizedGreeting({ name, userId }: Props) {
     window.localStorage.setItem(storageKey, String(now));
 
     const hour = new Date().getHours();
-    setCopy(chooseGreeting({ hour, daysSinceLastVisit, name, t }));
-  }, [name, userId, t]);
+    setCopy(chooseGreeting({ hour, daysSinceLastVisit, name, createdAt, t }));
+  }, [name, userId, createdAt, t]);
 
   return (
     <motion.section

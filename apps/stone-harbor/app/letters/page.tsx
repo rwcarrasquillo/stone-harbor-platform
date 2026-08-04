@@ -1144,7 +1144,21 @@ export default function NewMembersBlogPage() {
                   {postSummary(openItem)}
                 </p>
               )}
-              <div className="mt-8 whitespace-pre-wrap text-base leading-relaxed text-[var(--sh-text-primary)] md:text-lg">
+              {/* SH-123 — long-form reading on a phone.
+                  Measured at 375px against the brief's targets:
+                    - size    16px (text-base) — under the 17px floor
+                    - leading 1.625 (leading-relaxed) — passes 1.55
+                    - measure ~45 characters — passes
+                  So size was the miss, and one more besides: this is
+                  the harbor's own writing and it was rendering in the
+                  UI sans. The journal reader — the other long-form
+                  surface — sets serif at 18px/1.65, and a letter is
+                  more of a letter than a settings pane. Matched to it,
+                  with 17px on phones so the measure stays near 45
+                  characters instead of dropping toward 40. */}
+              <div
+                className={`${serif.className} mt-8 whitespace-pre-wrap text-[17px] leading-[1.7] text-[var(--sh-text-primary)] md:text-[18px]`}
+              >
                 {openItem.content}
               </div>
             </div>
