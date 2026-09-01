@@ -42,6 +42,7 @@ const PHASE_2_PAGES = new Set([
   "settle-in",
   "meditation",
   "vent",
+  "practice",
   "founder",
   "admin", // legacy admin redirect — keep until /admin is fully removed
   "admins", // admin-group management lives at /admins

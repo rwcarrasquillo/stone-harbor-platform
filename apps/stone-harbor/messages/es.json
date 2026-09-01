@@ -1695,6 +1695,42 @@
       "currentlyOn": "Actualmente en el Paso {n}: {title}."
     }
   },
+  "practice": {
+    "brandCrumb": "Práctica",
+    "loading": "Buscando la forma…",
+    "emptyState": {
+      "eyebrow": "COMENZAR",
+      "title": "Una forma a la que volver",
+      "body": "Tres bloques. Tus propias palabras. Nada programado. Nada registrado. Cuando la forma se desdibuje, aquí es donde vuelves."
+    },
+    "declaredState": {
+      "eyebrow": "TU PRÁCTICA",
+      "title": "La forma a la que vuelves.",
+      "subheader": "Cámbiala cuando la forma se desdibuje."
+    },
+    "blocks": {
+      "morningAnchor": "Ancla de la mañana",
+      "middayTouch": "Toque del mediodía",
+      "eveningClose": "Cierre de la tarde",
+      "morningPlaceholder": "p. ej., caminar, una respiración, un café afuera",
+      "middayPlaceholder": "p. ej., estirarte, respirar hondo, una comida sencilla",
+      "eveningPlaceholder": "p. ej., escribir, una ducha, una página leída",
+      "emptyPlaceholder": "Añade tu {blockLabel}"
+    },
+    "actions": {
+      "save": "Guardar la forma",
+      "edit": "Editar",
+      "saveBlock": "Guardar",
+      "cancel": "Cancelar"
+    },
+    "horizonMark": {
+      "signature": "El refugio está aquí. Vuelve cuando la forma se desdibuje."
+    },
+    "rooms": {
+      "label": "Práctica",
+      "tagline": "Tu forma."
+    }
+  },
   "dashboardRooms": {
     "header": "Cada puerta de la dársena"
   }

@@ -1695,6 +1695,42 @@
       "currentlyOn": "Currently on Step {n}: {title}."
     }
   },
+  "practice": {
+    "brandCrumb": "Practice",
+    "loading": "Finding the shape…",
+    "emptyState": {
+      "eyebrow": "BEGIN",
+      "title": "A shape to return to",
+      "body": "Three blocks. Your own words. Nothing scheduled. Nothing tracked. When the shape drifts, this is where you return."
+    },
+    "declaredState": {
+      "eyebrow": "YOUR PRACTICE",
+      "title": "The shape you return to.",
+      "subheader": "Change it when the shape drifts."
+    },
+    "blocks": {
+      "morningAnchor": "Morning anchor",
+      "middayTouch": "Midday touch",
+      "eveningClose": "Evening close",
+      "morningPlaceholder": "e.g., walking, one breath, coffee outside",
+      "middayPlaceholder": "e.g., stretch, deep breath, small meal",
+      "eveningPlaceholder": "e.g., journal, shower, one page read",
+      "emptyPlaceholder": "Add a {blockLabel}"
+    },
+    "actions": {
+      "save": "Save the shape",
+      "edit": "Edit",
+      "saveBlock": "Save",
+      "cancel": "Cancel"
+    },
+    "horizonMark": {
+      "signature": "The harbor is here. Return when the shape drifts."
+    },
+    "rooms": {
+      "label": "Practice",
+      "tagline": "Your shape."
+    }
+  },
   "dashboardRooms": {
     "header": "Every door in the harbor"
   }
