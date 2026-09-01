@@ -1723,6 +1723,28 @@
       "saveBlock": "Guardar",
       "cancel": "Cancelar"
     },
+    "card": {
+      "morning": {
+        "template": "Mañana. Tu ancla es {anchor}. Comienza."
+      },
+      "midday": {
+        "template": "Mediodía. Tu toque es {touch}. Una respiración, si quieres."
+      },
+      "evening": {
+        "template": "Tarde. Tu cierre es {close}. Vuelve aquí."
+      }
+    },
+    "returnCard": {
+      "eyebrow": "REGRESAR",
+      "title": "Tu forma está aquí.",
+      "body": "¿Por dónde te gustaría empezar de nuevo?",
+      "options": {
+        "morning": "Mañana",
+        "midday": "Mediodía",
+        "evening": "Tarde",
+        "startFresh": "Empezar de nuevo"
+      }
+    },
     "horizonMark": {
       "signature": "El refugio está aquí. Vuelve cuando la forma se desdibuje."
     },

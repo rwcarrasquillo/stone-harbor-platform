@@ -245,3 +245,244 @@ export async function touchLastSeen(
     return false;
   }
 }
+
+/**
+ * One day's aggregate presence signal, produced by
+ * {@link getPresenceForRange} for PR 3's reflection band.
+ *
+ * `hasSignal` collapses the sources into "was he present at all that
+ * day". `sources` keeps the granularity so PR 3 can distinguish a
+ * journal day from a step-advance-only day if the visual ever calls
+ * for it.
+ */
+export type PresenceDay = {
+  /** ISO date, YYYY-MM-DD, in UTC. */
+  date: string;
+  /** True if any source signal fired on this date. */
+  hasSignal: boolean;
+  /** Which signals fired. Empty when hasSignal is false. */
+  sources: Array<"journal" | "last_seen" | "step_entered">;
+};
+
+/**
+ * Which practice block does this instant belong to?
+ *
+ * Three bands per design brief §4.1:
+ *   - hour < 12       → morning_anchor
+ *   - hour in [12,18) → midday_touch
+ *   - hour >= 18      → evening_close
+ *
+ * Pure, and the caller passes its own Date, so tests freeze the clock
+ * without faking globals. Client callers must read `new Date()` inside
+ * an effect rather than during render — the answer depends on the
+ * browser's timezone, and computing it during render would make the
+ * server and client disagree on first paint.
+ */
+export function getTimeOfDayBlock(now: Date): PracticeBlockKey {
+  const hour = now.getHours();
+  if (hour < 12) return "morning_anchor";
+  if (hour < 18) return "midday_touch";
+  return "evening_close";
+}
+
+/**
+ * UTC YYYY-MM-DD for a timestamp, or null if the value isn't a real
+ * date. `journal_entries.created_at` is nullable in the live schema
+ * (verified), and `new Date(null).toISOString()` throws — so every
+ * timestamp entering the presence map goes through here first.
+ */
+function utcDateKey(value: unknown): string | null {
+  if (typeof value !== "string" || !value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
+}
+
+/**
+ * Aggregate presence signals over the last `days` calendar days, UTC.
+ * PR 3's reflection band consumes this to render its dots.
+ *
+ * Signal sources (design brief §7):
+ *   - `journal_entries` — one row per entry, a real per-day signal
+ *   - `profiles.last_seen_at` — singleton, latest visit only
+ *   - `profiles.current_step_entered_at` — singleton, last step advance
+ *
+ * Two of the three are singletons, so presence on any given historical
+ * day is dominated by whether he journaled that day. PR 3 accepts
+ * this: the band is a soft rhythm indicator, never a metric, and the
+ * brief forbids scoring it.
+ *
+ * Returns oldest → newest so the caller can render left to right.
+ *
+ * Error path: any failure yields `days` entries all with
+ * hasSignal=false. A quiet band beats a broken surface.
+ */
+export async function getPresenceForRange(
+  client: SupabaseClient,
+  userId: string,
+  days = 14,
+): Promise<PresenceDay[]> {
+  const rangeStart = new Date();
+  rangeStart.setUTCDate(rangeStart.getUTCDate() - (days - 1));
+  rangeStart.setUTCHours(0, 0, 0, 0);
+
+  // Per-day skeleton, oldest → newest, plus an index so marking a
+  // signal is a map lookup rather than a scan per row.
+  const skeleton: PresenceDay[] = [];
+  const byDate = new Map<string, PresenceDay>();
+  for (let i = 0; i < days; i++) {
+    const d = new Date(rangeStart);
+    d.setUTCDate(rangeStart.getUTCDate() + i);
+    const day: PresenceDay = {
+      date: d.toISOString().slice(0, 10),
+      hasSignal: false,
+      sources: [],
+    };
+    skeleton.push(day);
+    byDate.set(day.date, day);
+  }
+
+  const mark = (
+    value: unknown,
+    source: PresenceDay["sources"][number],
+  ): void => {
+    const key = utcDateKey(value);
+    if (!key) return;
+    const day = byDate.get(key);
+    if (!day || day.sources.includes(source)) return;
+    day.sources.push(source);
+    day.hasSignal = true;
+  };
+
+  try {
+    // 1. Journal entries in range — the one true multi-day signal.
+    //    Column verified as user_id (not member_id) against the live
+    //    schema. Only idx_journal_entries_user_id exists, so this
+    //    filters by user then scans that member's rows for the date
+    //    window; at realistic per-member entry counts that is cheap.
+    const { data: journalRows } = await client
+      .from("journal_entries")
+      .select("created_at")
+      .eq("user_id", userId)
+      .gte("created_at", rangeStart.toISOString());
+
+    for (const row of journalRows ?? []) {
+      mark(row.created_at, "journal");
+    }
+
+    // 2. Singleton signals on the profile.
+    const { data: profileRow } = await client
+      .from("profiles")
+      .select("last_seen_at, current_step_entered_at")
+      .eq("id", userId)
+      .maybeSingle();
+
+    mark(profileRow?.last_seen_at, "last_seen");
+    mark(profileRow?.current_step_entered_at, "step_entered");
+  } catch (err) {
+    console.error("[practice] getPresenceForRange failed:", err);
+    // Fall through — the skeleton is already the quiet answer.
+  }
+
+  return skeleton;
+}
+
+/**
+ * The return card gate (design brief §4.2). All three must hold:
+ *
+ *   - he has declared a shape (otherwise there is nothing to return to)
+ *   - `last_seen_at` is at least {@link PRACTICE_ABSENCE_THRESHOLD_DAYS}
+ *     days old
+ *   - `return_card_last_shown_at` is null or older than 24 hours
+ *
+ * Returns the diagnostic fields alongside `eligible` so a caller can
+ * tell WHICH gate closed without re-querying. Errors return
+ * `eligible: false` — a quiet dashboard beats a broken one.
+ *
+ * A member who has never been stamped reads as infinitely absent,
+ * which is the honest answer: nothing has seen him.
+ */
+export async function getReturnCardEligibility(
+  client: SupabaseClient,
+  userId: string,
+): Promise<{
+  eligible: boolean;
+  hasDeclaredShape: boolean;
+  daysSinceLastSeen: number;
+  alreadyShownWithin24hr: boolean;
+}> {
+  try {
+    const { data } = await client
+      .from("profiles")
+      .select("practice_shape, last_seen_at, return_card_last_shown_at")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const shape = (data?.practice_shape as PracticeShape | null) ?? null;
+    const declared = hasDeclaredShape(shape);
+
+    const lastSeenKey = data?.last_seen_at;
+    const lastSeen =
+      typeof lastSeenKey === "string" ? new Date(lastSeenKey) : null;
+    const daysSinceLastSeen =
+      lastSeen && !Number.isNaN(lastSeen.getTime())
+        ? Math.floor((Date.now() - lastSeen.getTime()) / (1000 * 60 * 60 * 24))
+        : Infinity;
+
+    const lastShownKey = data?.return_card_last_shown_at;
+    const lastShown =
+      typeof lastShownKey === "string" ? new Date(lastShownKey) : null;
+    const alreadyShownWithin24hr =
+      lastShown && !Number.isNaN(lastShown.getTime())
+        ? Date.now() - lastShown.getTime() < 24 * 60 * 60 * 1000
+        : false;
+
+    return {
+      eligible:
+        declared &&
+        daysSinceLastSeen >= PRACTICE_ABSENCE_THRESHOLD_DAYS &&
+        !alreadyShownWithin24hr,
+      hasDeclaredShape: declared,
+      daysSinceLastSeen,
+      alreadyShownWithin24hr,
+    };
+  } catch (err) {
+    console.error("[practice] getReturnCardEligibility failed:", err);
+    return {
+      eligible: false,
+      hasDeclaredShape: false,
+      daysSinceLastSeen: 0,
+      alreadyShownWithin24hr: false,
+    };
+  }
+}
+
+/**
+ * Stamp `return_card_last_shown_at` = now. Same fire-and-forget
+ * contract as {@link touchLastSeen}: never throws, never blocks a
+ * render.
+ *
+ * Called by the return card on mount. If it fails, the worst case is
+ * that he sees the card once more on a same-day revisit — a quiet
+ * failure, not a broken feature.
+ */
+export async function stampReturnCardShown(
+  client: SupabaseClient,
+  userId: string,
+): Promise<boolean> {
+  try {
+    const { error } = await client
+      .from("profiles")
+      .update({ return_card_last_shown_at: new Date().toISOString() })
+      .eq("id", userId);
+
+    if (error) {
+      console.error("[practice] stampReturnCardShown failed:", error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[practice] stampReturnCardShown failed:", err);
+    return false;
+  }
+}
