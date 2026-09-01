@@ -1723,6 +1723,28 @@
       "saveBlock": "Save",
       "cancel": "Cancel"
     },
+    "card": {
+      "morning": {
+        "template": "Morning. Your anchor is {anchor}. Start."
+      },
+      "midday": {
+        "template": "Midday. Your touch is {touch}. One breath, if you want."
+      },
+      "evening": {
+        "template": "Evening. Your close is {close}. Return here."
+      }
+    },
+    "returnCard": {
+      "eyebrow": "RETURN",
+      "title": "Your shape is here.",
+      "body": "Where would you like to begin again?",
+      "options": {
+        "morning": "Morning",
+        "midday": "Midday",
+        "evening": "Evening",
+        "startFresh": "Start fresh"
+      }
+    },
     "horizonMark": {
       "signature": "The harbor is here. Return when the shape drifts."
     },

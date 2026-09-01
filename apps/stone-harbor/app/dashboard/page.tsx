@@ -32,12 +32,20 @@ import { TodayIntention } from "@/app/components/todayIntention";
 import { TodaysInvitation } from "@/app/components/todaysInvitation";
 import { StoryInvitationCard } from "@/app/components/storyInvitationCard";
 import { CurrentStepPanel } from "@/app/dashboard/components/currentStepPanel";
+import { PracticeCard } from "@/app/dashboard/components/practiceCard";
+import { ReturnCard } from "@/app/dashboard/components/returnCard";
 import { CardSkeleton } from "@/app/components/cardSkeleton";
 import {
   dismissalKey,
   resolveActiveAcknowledgment,
   type Acknowledgment,
 } from "@/lib/seasonalAcknowledgments";
+import {
+  getPracticeEnabled,
+  getPracticeShape,
+  getReturnCardEligibility,
+  type PracticeShape,
+} from "@/lib/practice";
 import {
   findNextStep,
   getAllSteps,
@@ -391,6 +399,18 @@ export default function DashboardCenteredPage() {
   // beneath it. Starts true: at first paint the answer is unknown.
   const [spineLoading, setSpineLoading] = useState(true);
 
+  // SH-135 — /practice PR 2. The flag, the member's declared shape, and
+  // the return-card gate. All three default to the "render nothing"
+  // answer, so the dashboard composes exactly as it does today until
+  // the flag is flipped AND the member has a shape.
+  const [practiceEnabled, setPracticeEnabled] = useState(false);
+  const [practiceShape, setPracticeShape] = useState<PracticeShape | null>(
+    null,
+  );
+  const [returnEligibility, setReturnEligibility] = useState<{
+    eligible: boolean;
+  } | null>(null);
+
   useEffect(() => {
     void loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -457,6 +477,41 @@ export default function DashboardCenteredPage() {
         // "flag off" and "not placed yet", ends the skeleton. It shows
         // only while the answer is genuinely unknown.
         if (alive) setSpineLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [userId]);
+
+  // SH-135 — /practice PR 2. Same client-side shape as the SH-109 spine
+  // read above: this dashboard is a "use client" component, so every
+  // flag it consults is read here in an effect rather than passed down
+  // from a server component.
+  //
+  // The flag is checked first and short-circuits: with practice_enabled
+  // false — its default — this costs exactly one app_settings read and
+  // touches profiles not at all.
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    void (async () => {
+      try {
+        const enabled = await getPracticeEnabled(supabase);
+        if (!alive || !enabled) return;
+        setPracticeEnabled(true);
+
+        const [shape, eligibility] = await Promise.all([
+          getPracticeShape(supabase, userId),
+          getReturnCardEligibility(supabase, userId),
+        ]);
+        if (!alive) return;
+        setPracticeShape(shape);
+        setReturnEligibility(eligibility);
+      } catch (e) {
+        // Same contract as the spine read: /practice must never be the
+        // reason a member can't reach their rooms.
+        console.warn("[dashboard] practice read failed; rendering without it.", e);
       }
     })();
     return () => {
@@ -1069,6 +1124,19 @@ export default function DashboardCenteredPage() {
               were told where they stand. Reading order is now
               where-you-are (step) → what's-offered (invitation) →
               what-you-answer (intention). */}
+          {/* ───── Return card (SH-135, /practice PR 2) ─────
+              Above the step panel because after five days away this is
+              the first thing that should meet him — before the path
+              tells him where he stands. Self-hides on every gate: flag
+              off, no declared shape, not actually absent, or already
+              shown in the last 24 hours. Same width tier as the step
+              panel so the two read as one column. */}
+          <ReturnCard
+            practiceEnabled={practiceEnabled}
+            eligibility={returnEligibility}
+            userId={userId}
+          />
+
           {currentStep ? (
             <motion.div
               {...cascadeFadeUp}
@@ -1090,6 +1158,18 @@ export default function DashboardCenteredPage() {
               className="mx-auto mb-14 w-full max-w-[720px] px-10 lg:max-w-[920px]"
             />
           ) : null}
+
+          {/* ───── Practice card (SH-135, /practice PR 2) ─────
+              Between the step panel and the harbor's daily offer, per
+              design brief §9: the shape he named for himself sits
+              directly under where-you-are, and above what's-offered.
+              Self-hides when the flag is off, when he has no declared
+              shape, and when the block matching this hour is one he
+              left unnamed. */}
+          <PracticeCard
+            practiceEnabled={practiceEnabled}
+            practiceShape={practiceShape}
+          />
 
           {/* ───── Today's invitation (SH-120, spine Ship 2A) ─────
               The harbor's offer for the day, sitting directly under the
@@ -1213,6 +1293,7 @@ export default function DashboardCenteredPage() {
                 lineageDoorSeenAt={lineageDoorSeenAt}
                 meditationCopy={c.meditation}
                 keepersEnabled={keepersEnabled}
+                practiceEnabled={practiceEnabled}
                 // SH-109 — the strip only takes a section header once the
                 // member is on a step. Null = no header, which is
                 // exactly the pre-spine layout.
@@ -1335,6 +1416,7 @@ function RoomsCarousel({
   lineageDoorSeenAt,
   meditationCopy,
   keepersEnabled,
+  practiceEnabled,
   header,
 }: {
   locale: "en" | "es";
@@ -1347,6 +1429,7 @@ function RoomsCarousel({
     cta: string;
   };
   keepersEnabled: boolean;
+  practiceEnabled: boolean;
   /**
    * Optional section header above the strip (SH-109). Null — the
    * pre-spine default — renders no header at all, which is how the
@@ -1471,6 +1554,31 @@ function RoomsCarousel({
       tagline:
         locale === "es" ? "Lo que tu día dice." : "What your day says.",
     },
+    // SH-135 — /practice room. Sits immediately after Rhythm: the two
+    // are companion time-oriented surfaces (design brief §14.7), one
+    // reflecting the shape his days took, one holding the shape he
+    // named. Gated on practice_enabled, same spread idiom as Keepers
+    // below, so the strip stays at ten cards until the flag flips.
+    //
+    // Copy note: the strip builds its own bilingual strings inline
+    // rather than reading messages/*.json (every one of the ten cards
+    // does), so PR 1's practice.rooms.* keys are not consumed here —
+    // the Room shape needs three strings and PR 1 shipped two.
+    // Flagged for the founder in the PR body.
+    ...(practiceEnabled
+      ? [
+          {
+            key: "practice",
+            href: "/practice",
+            eyebrow: locale === "es" ? "Práctica" : "Practice",
+            name:
+              locale === "es"
+                ? "La forma a la que vuelves"
+                : "The shape you return to",
+            tagline: locale === "es" ? "Tu forma." : "Your shape.",
+          },
+        ]
+      : []),
     {
       key: "lineage",
       // /lineage is the dedicated Phase 2 surface (app/lineage/page.tsx),

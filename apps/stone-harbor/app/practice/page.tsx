@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { serif, sans } from "@/lib/fonts";
@@ -97,6 +98,29 @@ const EMPTY_DRAFTS: Record<PracticeBlockKey, string> = {
 
 export default function PracticePage() {
   const t = useTranslations("practice");
+  const searchParams = useSearchParams();
+
+  // SH-135 — the dashboard cards hand off through the URL.
+  //
+  //   ?block=<key>    → scroll that block into view and hold a brief
+  //                     gold ring on it, so the card he tapped is the
+  //                     thing his eye lands on.
+  //   ?reshape=true   → force the onboarding view even when a shape
+  //                     exists. This is the return card's "Start
+  //                     fresh": recovery is non-linear, and the shape
+  //                     that carried him six months ago may not carry
+  //                     him now (design brief §4.2).
+  const requestedBlock = (() => {
+    const raw = searchParams.get("block");
+    return PRACTICE_BLOCK_KEYS.find((key) => key === raw) ?? null;
+  })();
+  const forceReshape = searchParams.get("reshape") === "true";
+
+  const blockRefs = useRef<Partial<Record<PracticeBlockKey, HTMLElement | null>>>(
+    {},
+  );
+  const [highlightedBlock, setHighlightedBlock] =
+    useState<PracticeBlockKey | null>(null);
 
   // null = still loading; the shape itself may legitimately be null
   // (never declared), so readiness is tracked separately.
@@ -176,6 +200,28 @@ export default function PracticePage() {
     setEditingValue("");
   }, []);
 
+  // Scroll the requested block into view and hold the ring for a beat.
+  // Waits on `ready` because the block cards don't exist until the
+  // shape has loaded. prefers-reduced-motion gets an instant jump
+  // rather than a smooth scroll.
+  useEffect(() => {
+    if (!ready || !requestedBlock || forceReshape) return;
+    const node = blockRefs.current[requestedBlock];
+    if (!node) return;
+
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    node.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "center",
+    });
+    setHighlightedBlock(requestedBlock);
+
+    const timer = window.setTimeout(() => setHighlightedBlock(null), 1600);
+    return () => window.clearTimeout(timer);
+  }, [ready, requestedBlock, forceReshape]);
+
   // ───── Loading state ─────
   if (!ready) {
     return (
@@ -191,7 +237,10 @@ export default function PracticePage() {
     );
   }
 
-  const declared = hasDeclaredShape(shape);
+  // "Start fresh" shows the onboarding view over an existing shape.
+  // Nothing is deleted up front — the save path overwrites, so he
+  // can still leave without losing what he had.
+  const declared = !forceReshape && hasDeclaredShape(shape);
 
   // A save with nothing named would write three blank blocks and land
   // the member back on this same view. Keep the button quiet until
@@ -271,7 +320,14 @@ export default function PracticePage() {
                   return (
                     <section
                       key={key}
-                      className="flex flex-col gap-2 rounded-[10px] border border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)] px-5 py-5"
+                      ref={(node) => {
+                        blockRefs.current[key] = node;
+                      }}
+                      className={`flex flex-col gap-2 rounded-[10px] border bg-[var(--sh-bg-card-tinted)] px-5 py-5 transition-colors duration-500 ${
+                        highlightedBlock === key
+                          ? "border-[var(--sh-accent-gold)]"
+                          : "border-[var(--sh-border-subtle)]"
+                      }`}
                     >
                       <div className="flex items-baseline justify-between gap-4">
                         <p
