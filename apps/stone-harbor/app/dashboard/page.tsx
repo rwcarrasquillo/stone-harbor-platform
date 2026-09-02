@@ -1137,6 +1137,28 @@ export default function DashboardCenteredPage() {
             userId={userId}
           />
 
+          {/* ───── Practice card (SH-135, /practice PR 2 · moved SH-136) ─────
+              Above the step panel, directly under the return card, so
+              both scaffold surfaces sit ahead of the spine anchor. It
+              used to sit between the step panel and the harbor's offer
+              (brief §14.3 — "spine + practice pair naturally"), but the
+              founder's live review of the shipped state found a cadence
+              mismatch: the step panel is weeks-to-months context, while
+              this card is a thrice-daily action. The higher-cadence card
+              buries under the lower-cadence frame when it sits below it,
+              and §4.1's deliberate quietness — small, one line, no CTA —
+              compounds the burial. Up here it is the first small anchor
+              the eye finds after the greeting: quiet by design, found by
+              position. Live review supersedes §14.3.
+
+              Self-hides when the flag is off, when he has no declared
+              shape, and when the block matching this hour is one he
+              left unnamed. */}
+          <PracticeCard
+            practiceEnabled={practiceEnabled}
+            practiceShape={practiceShape}
+          />
+
           {currentStep ? (
             <motion.div
               {...cascadeFadeUp}
@@ -1158,18 +1180,6 @@ export default function DashboardCenteredPage() {
               className="mx-auto mb-14 w-full max-w-[720px] px-10 lg:max-w-[920px]"
             />
           ) : null}
-
-          {/* ───── Practice card (SH-135, /practice PR 2) ─────
-              Between the step panel and the harbor's daily offer, per
-              design brief §9: the shape he named for himself sits
-              directly under where-you-are, and above what's-offered.
-              Self-hides when the flag is off, when he has no declared
-              shape, and when the block matching this hour is one he
-              left unnamed. */}
-          <PracticeCard
-            practiceEnabled={practiceEnabled}
-            practiceShape={practiceShape}
-          />
 
           {/* ───── Today's invitation (SH-120, spine Ship 2A) ─────
               The harbor's offer for the day, sitting directly under the
