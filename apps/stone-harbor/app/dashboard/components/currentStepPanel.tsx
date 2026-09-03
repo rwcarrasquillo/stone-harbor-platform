@@ -43,6 +43,24 @@ export function CurrentStepPanel({
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
 
+  // SH-137 — "See the whole path" hands the member's position to
+  // /roadmap through the URL rather than dropping him on the default
+  // tab. Both values ride along on the step this panel already
+  // renders (lib/spine.ts RoadmapStep), so no new prop and no second
+  // query: ?stage= opens the right tab, ?step= brings the card he was
+  // just reading about into view.
+  //
+  // The guard is for shape, not for absence — a rendered panel always
+  // has a step. It costs one falsy check to make sure a seed row with
+  // a blank slug degrades to the bare path instead of building
+  // "/roadmap?stage=calm&step=".
+  const roadmapHref =
+    currentStep.stage && currentStep.slug
+      ? `/roadmap?stage=${encodeURIComponent(
+          currentStep.stage,
+        )}&step=${encodeURIComponent(currentStep.slug)}`
+      : "/roadmap";
+
   return (
     <section
       className={`relative overflow-hidden px-6 py-7 lg:px-8 lg:py-8 ${
@@ -106,7 +124,7 @@ export function CurrentStepPanel({
 
       <div className="mt-6 flex justify-end">
         <Link
-          href="/roadmap"
+          href={roadmapHref}
           className={`${sans.className} text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] underline-offset-4 transition-colors hover:text-[var(--sh-accent-gold)] hover:underline`}
         >
           {t("currentStep.seeWholePath")}

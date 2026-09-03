@@ -1,11 +1,13 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { requireActiveSession } from "@/lib/authGuards";
 import { getSpineFlags } from "@/lib/spine";
+import { parseRoadmapParams, resolveMemberStage } from "@/lib/roadmap";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { AnchorMark } from "@/app/components/anchorMark";
 import { HairlineLens } from "@/app/components/hairlineLens";
@@ -81,13 +83,6 @@ const stages: {
   { value: "strength", accent: GOLD_DEEP, accentRgb: GOLD_DEEP_RGB, Icon: Mountain },
 ];
 
-function normalizeStage(value: string | null | undefined): Stage {
-  const lower = value?.toLowerCase().trim();
-  if (lower === "calm") return "calm";
-  if (lower === "strength" || lower === "strenght") return "strength";
-  return "clarity";
-}
-
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString([], {
     month: "short",
@@ -103,6 +98,23 @@ export default function RoadmapPage() {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
 
+  // SH-137 — the dashboard's current-step panel hands the member's
+  // position over through the URL, the same way SH-135's practice
+  // cards hand off to /practice:
+  //
+  //   ?stage=<stage>  → open that stage's tab instead of the default
+  //   ?step=<slug>    → bring that step's card into view and hold a
+  //                     brief gold ring on it
+  //
+  // Read once at mount, not watched: this is a handoff, not a
+  // controlled input. Tapping a stage tab afterwards is the member
+  // steering, and the stale param in the address bar must not fight
+  // him for the tab — which is why loadAll reads these through the
+  // refs below rather than re-deriving them.
+  const searchParams = useSearchParams();
+  const { requestedStage, requestedStepSlug } =
+    parseRoadmapParams(searchParams);
+
   // SH-109 — the member's current step on the path. Additive only: the
   // checklist model (user_roadmap_progress + mark_roadmap_step_complete)
   // is untouched here and coexists with the new current-step model until
@@ -114,7 +126,14 @@ export default function RoadmapPage() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [userStage, setUserStage] = useState<Stage>("clarity");
-  const [activeStage, setActiveStage] = useState<Stage>("clarity");
+  // Seeded from ?stage= when the dashboard sent one. The whole surface
+  // is behind the `loading` gate below, so this is not a first-paint
+  // concern — nothing renders until loadAll resolves. It matters
+  // because loadAll only overwrites the tab when the URL didn't ask
+  // for one, and this is where "the URL asked" is recorded.
+  const [activeStage, setActiveStage] = useState<Stage>(
+    requestedStage ?? "clarity",
+  );
   const [steps, setSteps] = useState<RoadmapStep[]>([]);
   // step_id -> completed_at ISO string
   const [progress, setProgress] = useState<Map<string, string>>(new Map());
@@ -139,6 +158,25 @@ export default function RoadmapPage() {
   // just because the cursor moved.
   const [hoveredStage, setHoveredStage] = useState<Stage | null>(null);
   const [hoveredStepId, setHoveredStepId] = useState<string | null>(null);
+
+  // SH-137 — deep-link landing. `stepRefs` holds the DESKTOP cards
+  // only: mobile renders one hero card plus a compact path strip, not
+  // five cards, so "bring it into view" there means swapping the step
+  // into the hero slot (which sits at the top of the list already) and
+  // scrolling nothing. A ref map shared across both branches would
+  // also break on desktop — the md:hidden mobile hero is still in the
+  // DOM, and whichever branch mounted last would win the slug key,
+  // handing scrollIntoView a display:none node that silently no-ops.
+  const stepRefs = useRef<Record<string, HTMLElement | null>>({});
+  const [highlightedStepSlug, setHighlightedStepSlug] = useState<string | null>(
+    null,
+  );
+  // The ?stage= the page mounted with, held in a ref so loadAll can
+  // read it without closing over render scope. It is a handoff, not a
+  // controlled input: once the member taps a stage tab, the stale
+  // param in the address bar must not fight him for the tab.
+  const requestedStageRef = useRef(requestedStage);
+  const requestedStepSlugRef = useRef(requestedStepSlug);
 
   // Mobile hero + path strip pattern. On phone widths the step list
   // collapses from a 5-card vertical scroll to a single hero card
@@ -171,20 +209,15 @@ export default function RoadmapPage() {
       .eq("id", session.id)
       .single();
 
-    const stage = normalizeStage(profile?.healing_stage);
-    setUserStage(stage);
-    setActiveStage(stage);
-
     // SH-109 — the current-step marker only appears once the flag is on.
     // Failing soft leaves the surface exactly as it renders today.
     // SH-120 reads both flags in the one round trip: `content` gates
     // the soft out-of-sequence note below and nothing else here.
     const flags = await getSpineFlags(supabase);
-    setCurrentStepId(
-      flags.spine
-        ? ((profile?.current_roadmap_step_id as string | null) ?? null)
-        : null,
-    );
+    const placedStepId = flags.spine
+      ? ((profile?.current_roadmap_step_id as string | null) ?? null)
+      : null;
+    setCurrentStepId(placedStepId);
     setSpineContentEnabled(flags.spine && flags.content);
 
     const { data: stepsData, error: stepsErr } = await supabase
@@ -196,7 +229,54 @@ export default function RoadmapPage() {
     if (stepsErr) {
       console.error("Could not load roadmap steps:", stepsErr.message);
     }
-    setSteps((stepsData ?? []) as RoadmapStep[]);
+    const loadedSteps = (stepsData ?? []) as RoadmapStep[];
+    setSteps(loadedSteps);
+
+    // SH-137 (Layer 4) — which stage is "yours".
+    //
+    // This used to read profiles.healing_stage straight, which is why
+    // "See the whole path" could open a stage the member left weeks
+    // ago: healing_stage is the value /api/register stamps at signup
+    // and nothing on the path ever updates. His live position is the
+    // step. See lib/roadmap.ts for why these two columns legitimately
+    // disagree and why the step is the truer answer — /letters and
+    // /resources have read it this way since SH-120.
+    //
+    // Resolved from the step list already in hand, so the repoint
+    // costs no extra query. Falls back to healing_stage for a member
+    // who hasn't been placed yet, or when the spine flag is off.
+    const stage = resolveMemberStage({
+      currentStepId: placedStepId,
+      steps: loadedSteps,
+      healingStage: profile?.healing_stage as string | null | undefined,
+    });
+    setUserStage(stage);
+
+    // SH-137 — resolve the ?step= handoff here, where the loaded step
+    // list is already in hand. The slug is checked against real steps
+    // rather than trusted: that is the validation ?stage= gets in
+    // parseRoadmapParams and a free-text slug cannot get there.
+    //
+    // Precedence, strongest first:
+    //   1. a ?step= that names a real step — its own stage wins the
+    //      tab, so the card we are about to ring is actually on screen
+    //      even when ?stage= is absent or disagrees
+    //   2. a valid ?stage= — the member arrived with an intent
+    //   3. the stage resolved from his position on the path
+    const deepLinkedStep = requestedStepSlugRef.current
+      ? (loadedSteps.find((s) => s.slug === requestedStepSlugRef.current) ??
+        null)
+      : null;
+
+    if (deepLinkedStep) {
+      setActiveStage(deepLinkedStep.stage);
+      // Mobile's equivalent of scrolling: put the step in the hero
+      // slot, which already sits at the top of the list.
+      setMobileActiveStepId(deepLinkedStep.id);
+      setHighlightedStepSlug(deepLinkedStep.slug);
+    } else if (!requestedStageRef.current) {
+      setActiveStage(stage);
+    }
 
     const { data: progressData, error: progressErr } = await supabase
       .from("user_roadmap_progress")
@@ -281,6 +361,33 @@ export default function RoadmapPage() {
       nextIdx >= 0 ? stageSteps[nextIdx].id : stageSteps[0].id,
     );
   }, [activeStage, steps, progress, mobileActiveStepId]);
+
+  // Scroll to the deep-linked card and let the ring fade on its own.
+  //
+  // loadAll sets the slug, the stage and `loading` in one batch, so by
+  // the time this runs the tab has switched and the card is mounted —
+  // scrollIntoView on a node that doesn't exist yet is a silent no-op,
+  // and the guard below keeps that honest if the branch ever changes.
+  //
+  // The clear is deferred, not synchronous, so this stays out of the
+  // set-state-in-effect pattern the rest of the file is flagged for.
+  useEffect(() => {
+    if (!highlightedStepSlug) return;
+
+    const node = stepRefs.current[highlightedStepSlug];
+    if (node) {
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      node.scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "center",
+      });
+    }
+
+    const timer = window.setTimeout(() => setHighlightedStepSlug(null), 1600);
+    return () => window.clearTimeout(timer);
+  }, [highlightedStepSlug]);
 
   const stagedSteps = useMemo(() => {
     const grouped = new Map<Stage, RoadmapStep[]>();
@@ -659,6 +766,7 @@ export default function RoadmapPage() {
                   steps={activeStageSteps}
                   progress={progress}
                   currentStepId={currentStepId}
+                  highlightedStepSlug={highlightedStepSlug}
                   busyStepId={busyStepId}
                   activeAccent={activeAccent}
                   activeAccentRgb={activeAccentRgb}
@@ -693,9 +801,14 @@ export default function RoadmapPage() {
                     hoveredStepId !== null
                       ? isHovered
                       : isCompleted || isNext;
+                  // SH-137 — the card the member was sent here to see.
+                  const isDeepLinked = highlightedStepSlug === step.slug;
                   return (
                     <motion.article
                       key={step.id}
+                      ref={(node: HTMLElement | null) => {
+                        stepRefs.current[step.slug] = node;
+                      }}
                       initial={{ opacity: 0, y: 12 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, margin: "-40px" }}
@@ -706,12 +819,20 @@ export default function RoadmapPage() {
                           current === step.id ? null : current,
                         )
                       }
-                      className={`relative p-5 transition md:p-6 ${
+                      className={`relative p-5 transition-colors duration-500 md:p-6 ${
                         isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-[var(--sh-bg-card-tinted)]"
                       }`}
                       style={{
+                        // The deep-link ring borrows the stage accent
+                        // rather than a fixed gold, so landing in Calm
+                        // reads as Calm. Fades out with the border
+                        // transition when the 1600ms timer clears it.
                         border: `1px solid ${
-                          isDusk ? "rgba(255,255,255,0.08)" : "#e7e5e4"
+                          isDeepLinked
+                            ? activeAccent
+                            : isDusk
+                              ? "rgba(255,255,255,0.08)"
+                              : "#e7e5e4"
                         }`,
                         opacity: isCompleted ? 0.85 : 1,
                       }}
@@ -881,6 +1002,7 @@ function MobileStepList({
   steps,
   progress,
   currentStepId,
+  highlightedStepSlug,
   busyStepId,
   activeAccent,
   activeAccentRgb,
@@ -897,6 +1019,8 @@ function MobileStepList({
   progress: Map<string, string>;
   /** SH-109 — the member's current step, or null when the spine is off. */
   currentStepId: string | null;
+  /** SH-137 — the deep-linked step, already swapped into the hero. */
+  highlightedStepSlug: string | null;
   busyStepId: string | null;
   activeAccent: string;
   activeAccentRgb: string;
@@ -927,12 +1051,19 @@ function MobileStepList({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className={`relative p-5 ${
+        className={`relative p-5 transition-colors duration-500 ${
           isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-[var(--sh-bg-card-tinted)]"
         }`}
         style={{
+          // SH-137 — the deep-link ring, same accent as desktop. The
+          // hero is already at the top of the list, so arriving here
+          // needs no scroll; the ring is the whole "this is the one".
           border: `1px solid ${
-            isDusk ? "rgba(255,255,255,0.08)" : "#e7e5e4"
+            highlightedStepSlug === heroStep.slug
+              ? activeAccent
+              : isDusk
+                ? "rgba(255,255,255,0.08)"
+                : "#e7e5e4"
           }`,
           opacity: heroIsCompleted ? 0.9 : 1,
         }}
