@@ -1110,8 +1110,13 @@ export default function DashboardCenteredPage() {
             </DashboardZone>
           )}
 
-          {/* ───── Zone divider (SH-142) ───── */}
-          <CenteredHorizonMark variant="divider" />
+          {/* ───── Zone divider (SH-142, wrapped SH-143) ─────
+              The wrapper mirrors the zone containers' outer geometry
+              (mx-auto + w-full + max-w-[920px]) so both are centred by
+              the same mechanism rather than two that merely agree. */}
+          <div className="mx-auto w-full max-w-[920px]">
+            <CenteredHorizonMark variant="divider" />
+          </div>
 
           {/* ═════ Zone 2 — TODAY (SH-142) ═════
               What the harbor is offering. The day's invitation, then
@@ -1157,8 +1162,13 @@ export default function DashboardCenteredPage() {
             </DashboardZone>
           )}
 
-          {/* ───── Zone divider (SH-142) ───── */}
-          <CenteredHorizonMark variant="divider" />
+          {/* ───── Zone divider (SH-142, wrapped SH-143) ─────
+              The wrapper mirrors the zone containers' outer geometry
+              (mx-auto + w-full + max-w-[920px]) so both are centred by
+              the same mechanism rather than two that merely agree. */}
+          <div className="mx-auto w-full max-w-[920px]">
+            <CenteredHorizonMark variant="divider" />
+          </div>
 
           {/* ═════ Zone 3 — IF YOU'D LIKE (SH-142) ═════
               The member's own side of the exchange — what he writes
