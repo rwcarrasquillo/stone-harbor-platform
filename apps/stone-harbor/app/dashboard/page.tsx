@@ -14,7 +14,7 @@ import {
   Logout,
   Message,
 } from "@/app/components/icons";
-import { X } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import {
   SmallThing,
   shouldShowSmallThingToday,
@@ -44,6 +44,7 @@ import {
   getPracticeEnabled,
   getPracticeShape,
   getReturnCardEligibility,
+  hasDeclaredShape,
   type PracticeShape,
 } from "@/lib/practice";
 import {
@@ -107,10 +108,12 @@ type Profile = {
   username: string | null;
   healing_stage: string | null;
   avatar_url: string | null;
-  // cover_url is the member's uploaded profile-cover image. Used as
-  // the portada texture on the dashboard greeting band — the band
-  // shows whatever the member chose, falling back to /forest-hero.png
-  // when the member hasn't uploaded a cover.
+  // cover_url is the member's uploaded profile-cover image. It used to
+  // be the portada texture behind the dashboard greeting; SH-142
+  // dropped that band (dark scrim under near-black Sunlit text). Kept
+  // on the shape because the dashboard's profile read is shared and
+  // one unused column is cheaper than a second query shape to
+  // maintain — /profile is where this value is actually rendered.
   cover_url: string | null;
   birth_month?: number | null;
   birth_day?: number | null;
@@ -356,7 +359,7 @@ const CASCADE_STEPS = {
 export default function DashboardCenteredPage() {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
-  useTranslations("dashboard");
+  const tDash = useTranslations("dashboard");
   const tRooms = useTranslations("dashboardRooms");
 
   const [locale, setLocale] = useState<"en" | "es">("en");
@@ -637,6 +640,22 @@ export default function DashboardCenteredPage() {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }
 
+  // SH-142 — whether Zone 1 has a practice card to introduce.
+  //
+  // Deliberately the CHEAP half of PracticeCard's own gate: flag on,
+  // and a shape with at least one named block. The card additionally
+  // hides when the block matching the current hour is the unnamed
+  // one, which depends on the browser's timezone and is therefore
+  // resolved inside the card after mount — not knowable here without
+  // duplicating that state.
+  //
+  // Over-approximating is the safe direction. It can only leave Zone 1
+  // rendering for a member who has a shape but nothing for this hour
+  // AND no step on the path, and the .sh-zone :has() rule in
+  // globals.css catches that case by hiding a zone holding nothing but
+  // its label.
+  const practiceMayRender = practiceEnabled && hasDeclaredShape(practiceShape);
+
   const showSmallThing =
     userId !== null &&
     userCreatedAt !== null &&
@@ -744,155 +763,60 @@ export default function DashboardCenteredPage() {
           </nav>
         </header>
 
-        {/* ===== Anchor strip — the day's greeting reads here =====
-            Mirroring /journal's "Today's prompt" strip, but the
-            content is the day-aware PersonalizedGreeting. Members
-            land on the dashboard and see "Welcome back, [name]" or
-            the appropriate days-since-last-visit line as the first
-            literary moment.
+          {/* ===== Anchor strip — the day's greeting reads here =====
+              Mirroring /journal's "Today's prompt" strip, but the
+              content is the day-aware PersonalizedGreeting. Members
+              land on the dashboard and see "Welcome back, [name]" or
+              the appropriate days-since-last-visit line as the first
+              literary moment.
 
-            PORTADA TEST (2026-06-20) — the band carries the
-            member's own profile-cover image as a soft texture
-            behind the greeting. Falls back to the home-page hero
-            (/forest-hero.png) when the member hasn't uploaded a
-            cover, so new members still get the marketing-language
-            continuity (home → login → dashboard) while returning
-            members see their own atmosphere. Dialed down for daily
-            exposure:
-              - Image opacity 0.22 (vs home's 0.45) — texture, not awe.
-              - No Ken Burns slow zoom — a static still. The harbor
-                doesn't move. A 24s repeating zoom would be wallpaper
-                by week 2 and irritation by month 3.
-              - Scrim runs from-black/70 via-black/45 to-black/80 so
-                the lightest point of the gradient sits in the
-                vertical middle where the eyebrow + greeting + body
-                copy land, giving the typography a soft spotlight.
-              - overflow-hidden + relative on the section clip the
-                image at the existing border-b hairline. The image
-                does NOT bleed onto the scrollable content below —
-                the rooms strip, today's intention, story card stay
-                on the flat dark surface so the dashboard's working
-                area still reads as journal-baseline calm.
-              - Text wrapped in relative z-10 so it floats above
-                both image + scrim. */}
-        <section className="relative flex flex-shrink-0 flex-col items-center overflow-hidden px-10 py-5">
-          {/* Portada — three layered passes (blurred underlay,
-              sharp focal pass, scrim). All three share the SAME
-              radial vignette mask so the band as a whole dissolves
-              into the page's natural dark at the edges instead of
-              terminating in a rectangle. The bottom hairline
-              (border-b) is dropped for the same reason — a crisp
-              line at the band's foot would re-introduce the
-              rectangle silhouette the mask is working to dissolve.
+              SH-142 — the portada image band is gone. It carried the
+              member's profile cover (falling back to /forest-hero.png)
+              under a fixed `from-black/70 via-black/45 to-black/80`
+              scrim. That scrim was never theme-conditional, and
+              PersonalizedGreeting renders --sh-text-primary, which is
+              near-black on Sunlit: dark text on a dark band, every
+              morning, for every member on the light theme. Dusk got
+              away with it because its text is already light.
 
-              The shared mask: radial-gradient(ellipse 80% 100% at
-              center, black 38%, transparent 100%) — fully opaque
-              until 38% from center (the middle stays solid so the
-              greeting reads against full image+scrim contrast),
-              fading to transparent at the ellipse boundary. This
-              mirrors how the dashboard RoomCard farol fades to
-              transparent at the corners — same dissolution
-              language across the harbor's lit surfaces.
+              Dropped rather than lightened. A scrim tuned to pass
+              contrast in both themes ends up too weak to justify the
+              image underneath, and SH-115 already set the rule when
+              /journal stopped rendering PageAmbience — a surface a
+              member returns to daily is not a hero-imagery moment. The
+              greeting now reads on the ambient page background, which
+              is the pairing --sh-text-primary was calibrated against.
 
-              Layer A (blurred underlay) — same image, heavy blur.
-              `scale(1.08)` pushes the blur algorithm's own soft
-              fringe outside the band's visible bounds so the blur
-              reads as filling cleanly inside the mask (without
-              the scale the blur edges would fade prematurely and
-              compete with the mask's intended fade).
-
-              Layer B (sharp focal pass) — same image, no blur.
-              Reads as the eye-line texture of the band.
-
-              Layer C (scrim) — middle-light vertical gradient
-              (dark top/bottom, lighter middle) so the typography
-              has a soft spotlight where it lands. */}
-          {/* Gate both image layers on `profile !== null` so the
-              dashboard never paints the forest-hero fallback on
-              first render and then swap it for the member's cover
-              once the profile query resolves. Until profile loads,
-              the band shows just the scrim vignette + eyebrow —
-              the dark structural presence is there from frame 1
-              while the personal texture waits for the data it
-              needs. Same pattern the greeting already uses
-              (gated on profile !== null) to avoid the friend →
-              Rafael name swap. Once profile resolves, both image
-              layers fade in together over 0.7s using the harbor's
-              standard cascade easing so the texture arrives as a
-              quiet reveal, not a pop. */}
-          {profile !== null && (
-            <>
-              <motion.div
-                aria-hidden="true"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.14 }}
-                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="pointer-events-none absolute inset-0 bg-cover bg-center grayscale"
-                style={{
-                  backgroundImage: `url('${profile.cover_url ?? "/forest-hero.png"}')`,
-                  filter: "blur(18px)",
-                  transform: "scale(1.08)",
-                  maskImage:
-                    "radial-gradient(ellipse 80% 100% at center, black 38%, transparent 100%)",
-                  WebkitMaskImage:
-                    "radial-gradient(ellipse 80% 100% at center, black 38%, transparent 100%)",
-                }}
-              />
-              <motion.div
-                aria-hidden="true"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.22 }}
-                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="pointer-events-none absolute inset-0 bg-cover bg-center grayscale"
-                style={{
-                  backgroundImage: `url('${profile.cover_url ?? "/forest-hero.png"}')`,
-                  maskImage:
-                    "radial-gradient(ellipse 65% 85% at center, black 25%, transparent 95%)",
-                  WebkitMaskImage:
-                    "radial-gradient(ellipse 65% 85% at center, black 25%, transparent 95%)",
-                }}
-              />
-            </>
-          )}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/70 via-black/45 to-black/80"
-            style={{
-              maskImage:
-                "radial-gradient(ellipse 80% 100% at center, black 38%, transparent 100%)",
-              WebkitMaskImage:
-                "radial-gradient(ellipse 80% 100% at center, black 38%, transparent 100%)",
-            }}
-          />
-
-          <p
-            className={`${sans.className} relative z-10 text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]`}
-          >
-            {c.anchor.eyebrow}
-          </p>
-          {/* Gate the greeting on `profile !== null` so members never
-              see the awkward "friend" → "Rafael" flash. Before the
-              profile query resolves, the dashboard has no idea what
-              name to use; rendering the greeting immediately with
-              name=null forces the component to fall back to "friend",
-              then re-render once the name arrives. Holding the render
-              until the query completes means the greeting fades in
-              once, already with the correct salutation. Brief moment
-              of empty space during the initial query is preferable
-              to the swap mid-page-load. */}
-          <div className="relative z-10 mt-2 max-w-[720px]">
-            {profile !== null && (
-              <PersonalizedGreeting
-                name={profile.display_name || profile.username || null}
-                userId={userId}
-                // SH-123 — drives the tenure-branched recognition line.
-                // Same value the SmallThing and Lineage gates already
-                // read, so no extra query.
-                createdAt={userCreatedAt}
-              />
-            )}
-          </div>
-        </section>
+              `profiles.cover_url` is still selected in loadDashboard;
+              it stays in the profile shape for /profile's own use and
+              costs one column on a query that already runs. */}
+          <section className="flex flex-shrink-0 flex-col items-center px-10 pb-8 pt-8">
+            <p
+              className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]`}
+            >
+              {c.anchor.eyebrow}
+            </p>
+            {/* Gate the greeting on `profile !== null` so members never
+                see the awkward "friend" → "Rafael" flash. Before the
+                profile query resolves, the dashboard has no idea what
+                name to use; rendering the greeting immediately with
+                name=null forces the component to fall back to "friend",
+                then re-render once the name arrives. Holding the render
+                until the query completes means the greeting fades in
+                once, already with the correct salutation. */}
+            <div className="mt-2 max-w-[720px]">
+              {profile !== null && (
+                <PersonalizedGreeting
+                  name={profile.display_name || profile.username || null}
+                  userId={userId}
+                  // SH-123 — drives the tenure-branched recognition line.
+                  // Same value the SmallThing and Lineage gates already
+                  // read, so no extra query.
+                  createdAt={userCreatedAt}
+                />
+              )}
+            </div>
+          </section>
 
         {/* ===== Main scrollable content =====
             Single column scroll: Recognition + Offering bands, then
@@ -1129,144 +1053,148 @@ export default function DashboardCenteredPage() {
               the first thing that should meet him — before the path
               tells him where he stands. Self-hides on every gate: flag
               off, no declared shape, not actually absent, or already
-              shown in the last 24 hours. Same width tier as the step
-              panel so the two read as one column. */}
+              shown in the last 24 hours.
+
+              SH-142 — stays OUTSIDE Zone 1. It is the rare interrupt
+              (five days away, at most once a day), and an interrupt
+              that arrives already filed under a heading has stopped
+              interrupting. Its own width matches the zone's cards, so
+              the column still reads straight down. */}
           <ReturnCard
             practiceEnabled={practiceEnabled}
             eligibility={returnEligibility}
             userId={userId}
           />
 
-          {/* ───── Practice card (SH-135, /practice PR 2 · moved SH-136) ─────
-              Above the step panel, directly under the return card, so
-              both scaffold surfaces sit ahead of the spine anchor. It
-              used to sit between the step panel and the harbor's offer
-              (brief §14.3 — "spine + practice pair naturally"), but the
-              founder's live review of the shipped state found a cadence
-              mismatch: the step panel is weeks-to-months context, while
-              this card is a thrice-daily action. The higher-cadence card
-              buries under the lower-cadence frame when it sits below it,
-              and §4.1's deliberate quietness — small, one line, no CTA —
-              compounds the burial. Up here it is the first small anchor
-              the eye finds after the greeting: quiet by design, found by
-              position. Live review supersedes §14.3.
+          {/* ═════ Zone 1 — YOUR ANCHOR (SH-142) ═════
+              Where he stands. The practice block matching this hour,
+              then the step he is on.
 
-              Self-hides when the flag is off, when he has no declared
-              shape, and when the block matching this hour is one he
-              left unnamed. */}
-          <PracticeCard
-            practiceEnabled={practiceEnabled}
-            practiceShape={practiceShape}
-          />
+              Order within the zone is SH-136's and unchanged: the
+              thrice-daily action sits above the weeks-cadence context
+              so the higher-cadence card is not buried by the lower.
 
-          {currentStep ? (
-            <motion.div
-              {...cascadeFadeUp}
-              transition={cascadeTransition(CASCADE_STEPS.currentStepPanel)}
-              // px-10 on a 920px cap puts the panel's own edges at 840px
-              // on lg+ — the same width the acknowledgment card reaches
-              // via its -mx-[100px] extension off the 720px column.
-              className="mx-auto mb-14 w-full max-w-[720px] px-10 lg:max-w-[920px]"
-            >
-              <CurrentStepPanel currentStep={currentStep} nextStep={nextStep} />
-            </motion.div>
-          ) : spineLoading ? (
-            // Same width tier and margin as the panel it stands in for.
-            // Four body rows: the loaded panel carries a title, a
-            // description, and the peek-at-next block, so a shorter
-            // skeleton would just move the jump rather than remove it.
-            <CardSkeleton
-              lines={4}
-              className="mx-auto mb-14 w-full max-w-[720px] px-10 lg:max-w-[920px]"
-            />
-          ) : null}
+              Both children self-hide, and the zone hides with them —
+              see zoneHasContent below. With practice_enabled false the
+              zone renders the step panel alone; with the member also
+              unplaced it does not render at all, which is the
+              pre-SH-142 composition exactly. */}
+          {(practiceMayRender || currentStep || spineLoading) && (
+            <DashboardZone label={tDash("zones.anchor")}>
+              <PracticeCard
+                practiceEnabled={practiceEnabled}
+                practiceShape={practiceShape}
+              />
 
-          {/* ───── Today's invitation (SH-120, spine Ship 2A) ─────
-              The harbor's offer for the day, sitting directly under the
-              step panel at the same 840px tier so the two read as one
-              block: here is where you are, and here is one thing for
-              today. Distinct from TodayIntention above, which is the
-              member's own input rather than something served to them.
-
-              Note the design brief placed this "above TodayIntention";
-              on the built dashboard TodayIntention sits above the step
-              panel, not below it, so honoring "below the current-step
-              panel" puts it here.
-
-              Self-hides on Sunday, when content adaptation is off, when
-              the member isn't placed, and when the day's class has
-              nothing to offer — so it is mounted unconditionally for
-              any signed-in member and decides for itself. It carries
-              its own cascade wrapper and margin so that a quiet day
-              leaves no gap behind. */}
-          {userId && (
-            <TodaysInvitation
-              userId={userId}
-              cascadeStep={CASCADE_STEPS.todaysInvitation}
-            />
+              {currentStep ? (
+                <motion.div
+                  {...cascadeFadeUp}
+                  transition={cascadeTransition(CASCADE_STEPS.currentStepPanel)}
+                  // px-10 on a 920px cap puts the panel's own edges at 840px
+                  // on lg+ — the same width the acknowledgment card reaches
+                  // via its -mx-[100px] extension off the 720px column.
+                  className="mx-auto mb-14 w-full max-w-[720px] px-10 lg:max-w-[920px]"
+                >
+                  <CurrentStepPanel currentStep={currentStep} nextStep={nextStep} />
+                </motion.div>
+              ) : spineLoading ? (
+                // Same width tier and margin as the panel it stands in for.
+                // Four body rows: the loaded panel carries a title, a
+                // description, and the peek-at-next block, so a shorter
+                // skeleton would just move the jump rather than remove it.
+                <CardSkeleton
+                  lines={4}
+                  className="mx-auto mb-14 w-full max-w-[720px] px-10 lg:max-w-[920px]"
+                />
+              ) : null}
+            </DashboardZone>
           )}
 
-          {/* ───── The member's own column ─────
-              Reopens the 720px reading column below the step block.
-              Today's intention and the small thing are the member's
-              side of the exchange — what they write back — so they sit
-              under the harbor's offer rather than above it (SH-123
-              §3.5). Column width, not the 840px step tier: these are
-              personal-register, and the narrower measure is the visual
-              cue for that. No pt-* here — the block above already
-              carries its own bottom margin. */}
-          <div className="mx-auto flex max-w-[720px] flex-col px-10">
-            {/* ───── Tonight's intention ─────
-                TodayIntention stays at column-width because it's the
-                quiet personal writing prompt. The Story to tell card
-                renders OUTSIDE this column (below) at a wider
-                max-w-[920px] so it reads as the day's feature panel
-                instead of just another card in the stack. */}
-            {userId && (
+          {/* ───── Zone divider (SH-142) ───── */}
+          <CenteredHorizonMark variant="divider" />
+
+          {/* ═════ Zone 2 — TODAY (SH-142) ═════
+              What the harbor is offering. The day's invitation, then
+              tonight's story prompt.
+
+              SH-142 moves the story card UP into this zone. It used to
+              render below the member's own column, which put a harbor
+              offer underneath the member's reply to it — the exact
+              inversion the comment on that column (SH-123 §3.5) was
+              written to prevent. Grouping by who is speaking puts it
+              right. Its own weight is unchanged: same 920px feature
+              width, same card. (The collapse-when-idle treatment from
+              the mockups is deliberately NOT in this ship.)
+
+              Both children self-hide — TodaysInvitation on Sundays and
+              for unplaced members, StoryInvitationCard when no prompt
+              is queued — so a quiet day drops the zone entirely rather
+              than leaving a titled empty box. */}
+          {userId && (
+            <DashboardZone label={tDash("zones.today")}>
+              <TodaysInvitation
+                userId={userId}
+                cascadeStep={CASCADE_STEPS.todaysInvitation}
+              />
+
+              {/* Lives at max-w-[920px] rather than the zone's inner
+                  840px tier so it still breaks the reading width and
+                  reads as the day's feature panel. Wrapped in a cascade
+                  motion.div whose delay slots it into the dashboard's
+                  coordinated entrance sequence; the motion.section
+                  inside StoryInvitationCard runs its own quick fade
+                  invisibly within this wrapper. */}
+              <motion.div
+                {...cascadeFadeUp}
+                transition={cascadeTransition(CASCADE_STEPS.storyCard)}
+                className="mx-auto mb-14 max-w-[920px] px-10"
+              >
+                <StoryInvitationCard
+                  userId={userId}
+                  userEmail={profile?.email ?? null}
+                />
+              </motion.div>
+            </DashboardZone>
+          )}
+
+          {/* ───── Zone divider (SH-142) ───── */}
+          <CenteredHorizonMark variant="divider" />
+
+          {/* ═════ Zone 3 — IF YOU'D LIKE (SH-142) ═════
+              The member's own side of the exchange — what he writes
+              back. Nothing here is asked of him.
+
+              These two keep the narrower 720px column (640px of text)
+              rather than the zone's 840px tier. That was deliberate
+              before this ship and stays deliberate: personal-register
+              writing gets the shorter measure, and the width itself is
+              the cue for whose voice it is. Zone 3's tint is doing the
+              grouping work now, so the two cards sitting narrower
+              inside it reads as intent rather than drift. */}
+          {userId && (
+            <DashboardZone label={tDash("zones.ifYouLike")}>
+              {/* Each card carries the 720px column on its own wrapper
+                  rather than sharing one column div. That makes them
+                  direct children of the zone, which is what the
+                  `.sh-zone > *` rhythm rules in globals.css key on — a
+                  shared wrapper would leave the last card's own
+                  bottom margin stranded inside the zone's padding as a
+                  block of dead space under the final item. */}
               <motion.div
                 {...cascadeFadeUp}
                 transition={cascadeTransition(CASCADE_STEPS.todayIntention)}
-                className="mb-12"
+                className="mx-auto w-full max-w-[720px] px-10"
               >
                 <TodayIntention userId={userId} />
               </motion.div>
-            )}
 
-            {/* ───── Small thing (day 75+, cadenced) ───── */}
-            {showSmallThing && userId && (
-              <div className="mb-12">
-                <SmallThing userId={userId} />
-              </div>
-            )}
-          </div>
-
-          {/* ───── A story to tell (FEATURE PANEL) ─────
-              Lives OUTSIDE the max-w-[720px] column at max-w-[920px]
-              so it breaks the reading width to become the day's
-              feature. The personal cards above (acknowledgment,
-              notification, intention, small thing) are column-width
-              because they're personal-tier; the Story to tell is
-              tonight's deliberate invitation and earns more presence.
-              StoryInvitationCard self-hides when no eligible prompt
-              is available — on those days the page composes without
-              this band.
-              Wrapped in a cascade motion.div whose delay slots this
-              element into the dashboard's coordinated entrance
-              sequence (see CASCADE_STEPS at top of file). The inner
-              motion.section inside StoryInvitationCard still runs
-              its own quick fade but happens invisibly inside the
-              outer wrapper before the wrapper reveals it. */}
-          {userId && (
-            <motion.div
-              {...cascadeFadeUp}
-              transition={cascadeTransition(CASCADE_STEPS.storyCard)}
-              className="mx-auto mb-14 max-w-[920px] px-10"
-            >
-              <StoryInvitationCard
-                userId={userId}
-                userEmail={profile?.email ?? null}
-              />
-            </motion.div>
+              {/* ───── Small thing (day 75+, cadenced) ───── */}
+              {showSmallThing && (
+                <div className="mx-auto w-full max-w-[720px] px-10">
+                  <SmallThing userId={userId} />
+                </div>
+              )}
+            </DashboardZone>
           )}
 
           {/* ───── Horizon mark — the day's recognition closes here ─────
@@ -1327,6 +1255,50 @@ export default function DashboardCenteredPage() {
 }
 
 // ============================================================================
+// Dashboard zone (SH-142).
+// ============================================================================
+//
+// One of the three grouped bands the dashboard's cards sit inside —
+// Your anchor / Today / If you'd like. A tinted, rounded container
+// with a small gold heading, so a member scanning the page sees three
+// groups rather than seven unrelated cards.
+//
+// Width: max-w-[920px] with NO horizontal padding of its own. The
+// cards inside carry `px-10` against the same 920px cap, which is the
+// idiom that puts their edges at 840px on lg+. Padding the zone too
+// would inset them to 760px and break their alignment with ReturnCard,
+// which sits outside the zones at the full 840px. The tint therefore
+// bleeds 40px past each card edge, which is what makes it read as a
+// container the cards rest in rather than a second card.
+//
+// Vertical rhythm and the empty-zone case are handled by `.sh-zone` in
+// globals.css — see the block comment there for why they can't live on
+// these class names.
+
+function DashboardZone({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      className="sh-zone mx-auto mb-8 w-full max-w-[920px] rounded-[10px] py-5"
+      style={{ background: "var(--sh-bg-zone)" }}
+    >
+      <p
+        data-sh-zone-label=""
+        className={`${sans.className} px-10 text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]`}
+      >
+        {label}
+      </p>
+      {children}
+    </section>
+  );
+}
+
+// ============================================================================
 // Centered horizon mark (compact, theme-aware, breathing).
 // ============================================================================
 //
@@ -1336,8 +1308,26 @@ export default function DashboardCenteredPage() {
 // /journal and /dashboard (and eventually /vent etc.) it should be
 // extracted into a single component in app/components/.
 
-function CenteredHorizonMark() {
+function CenteredHorizonMark({
+  variant = "closing",
+}: {
+  /**
+   * SH-142 — two registers of the same mark.
+   *
+   * "closing" (default) is the one that has ended the dashboard since
+   * SH-65: full width, breathing, and the "The harbor is patient."
+   * voice signature underneath. Unchanged.
+   *
+   * "divider" is the section transition between zones. Same anchor and
+   * the same HorizonSegment hairlines, deliberately quieter — narrower,
+   * dimmer, no tagline, no breathing. A section break should register
+   * as a held breath, not as the day ending three times on the way
+   * down the page.
+   */
+  variant?: "closing" | "divider";
+} = {}) {
   const { theme } = useTheme();
+  const isDivider = variant === "divider";
   const goldRgb = theme === "sunlit" ? "169,121,61" : "196,147,78";
   const filterShadow =
     theme === "sunlit"
@@ -1347,11 +1337,26 @@ function CenteredHorizonMark() {
   const lineAlphaMid = theme === "sunlit" ? 0.5 : 0.4;
 
   return (
-    <div className="flex flex-shrink-0 flex-col items-center justify-center pb-3 pt-8">
+    <div
+      className={`flex flex-shrink-0 flex-col items-center justify-center ${
+        isDivider ? "py-2" : "pb-3 pt-8"
+      }`}
+    >
+      {/* The closing mark breathes; the divider holds still at a lower
+          opacity. Animating three of these down one page would turn a
+          quiet signature into a pulse the eye keeps catching — and a
+          static divider needs no prefers-reduced-motion branch. */}
       <motion.div
-        animate={{ opacity: [0.78, 1, 0.78] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className="flex w-3/4 max-w-[640px] items-center justify-center gap-3"
+        animate={isDivider ? undefined : { opacity: [0.78, 1, 0.78] }}
+        transition={
+          isDivider
+            ? undefined
+            : { duration: 4, repeat: Infinity, ease: "easeInOut" }
+        }
+        style={isDivider ? { opacity: 0.5 } : undefined}
+        className={`flex items-center justify-center gap-3 ${
+          isDivider ? "w-3/5 max-w-[440px]" : "w-3/4 max-w-[640px]"
+        }`}
       >
         <HorizonSegment
           direction="left"
@@ -1361,11 +1366,19 @@ function CenteredHorizonMark() {
           filter={filterShadow}
         />
         <motion.div
-          animate={{ scale: [1, 1.04, 1] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          animate={isDivider ? undefined : { scale: [1, 1.04, 1] }}
+          transition={
+            isDivider
+              ? undefined
+              : { duration: 4, repeat: Infinity, ease: "easeInOut" }
+          }
           style={{ transformOrigin: "center" }}
         >
-          <AnchorMark size={20} shaftHeight={42} fill="var(--sh-accent-gold)" />
+          <AnchorMark
+            size={isDivider ? 12 : 20}
+            shaftHeight={isDivider ? 26 : 42}
+            fill="var(--sh-accent-gold)"
+          />
         </motion.div>
         <HorizonSegment
           direction="right"
@@ -1375,11 +1388,13 @@ function CenteredHorizonMark() {
           filter={filterShadow}
         />
       </motion.div>
-      <p
-        className={`${serif.className} mt-3 text-[14px] italic text-[var(--sh-text-tertiary)]`}
-      >
-        The harbor is patient.
-      </p>
+      {!isDivider && (
+        <p
+          className={`${serif.className} mt-3 text-[14px] italic text-[var(--sh-text-tertiary)]`}
+        >
+          The harbor is patient.
+        </p>
+      )}
     </div>
   );
 }
@@ -1766,32 +1781,60 @@ function RoomsCarousel({
           {header}
         </p>
       )}
-      <div
-        ref={scrollRef}
-        // snap-x + snap-start on each card: a phone swipe now settles
-        // with a card flush to the left edge instead of stranding one
-        // half-cut mid-frame, which is what made the row look truncated
-        // rather than scrollable.
-        className="mx-auto flex w-full max-w-[1200px] snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth"
-        style={{
-          scrollbarWidth: "none",
-          maskImage,
-          WebkitMaskImage: maskImage,
-        }}
-        onMouseLeave={() => setHoveredIdx(null)}
-      >
-        {rooms.map((room, i) => (
-          <RoomCard
-            key={room.key}
-            href={room.href}
-            eyebrow={room.eyebrow}
-            name={room.name}
-            tagline={room.tagline}
-            accent={room.accent}
-            isHighlighted={highlightedIdx === i}
-            onHover={() => setHoveredIdx(i)}
-          />
-        ))}
+      {/* SH-142 — relative wrapper so the chevron below can sit against
+          the strip's own right edge rather than the section's padding.
+          The width cap moves here; the scroll container fills it. */}
+      <div className="relative mx-auto w-full max-w-[1200px]">
+        <div
+          ref={scrollRef}
+          // snap-x + snap-start on each card: a phone swipe now settles
+          // with a card flush to the left edge instead of stranding one
+          // half-cut mid-frame, which is what made the row look truncated
+          // rather than scrollable.
+          className="flex w-full snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth"
+          style={{
+            scrollbarWidth: "none",
+            maskImage,
+            WebkitMaskImage: maskImage,
+          }}
+          onMouseLeave={() => setHoveredIdx(null)}
+        >
+          {rooms.map((room, i) => (
+            <RoomCard
+              key={room.key}
+              href={room.href}
+              eyebrow={room.eyebrow}
+              name={room.name}
+              tagline={room.tagline}
+              accent={room.accent}
+              isHighlighted={highlightedIdx === i}
+              onHover={() => setHoveredIdx(i)}
+            />
+          ))}
+        </div>
+
+        {/* SH-142 — the chevron half of the scroll affordance.
+            The fade was already here and is NOT a gradient overlay:
+            it is a mask on the scroll container itself, tracked per
+            edge (see the `edges` state above), because a gradient
+            would have to know the page background and that is
+            theme-dependent. The chevron follows the same rule — it
+            renders only while there is actually more to the right, so
+            it stays information rather than decoration, and it
+            disappears at the end of the row instead of pointing at
+            nothing.
+
+            pointer-events-none is load-bearing: this sits over the
+            masked strip edge, and a touch swipe starting under it
+            must still reach the scroll container. */}
+        {edges.end && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[var(--sh-accent-gold)]"
+          >
+            <ChevronRight size={20} strokeWidth={1.5} />
+          </div>
+        )}
       </div>
     </section>
   );

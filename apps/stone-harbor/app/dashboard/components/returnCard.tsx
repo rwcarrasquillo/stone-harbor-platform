@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { serif, sans } from "@/lib/fonts";
+import { HairlineLens } from "@/app/components/hairlineLens";
+import { useTheme } from "@/app/components/themeProvider";
 import { supabase } from "@/lib/supabaseClient";
 import { stampReturnCardShown } from "@/lib/practice";
 
@@ -69,6 +71,9 @@ export function ReturnCard({
   eligibility: { eligible: boolean } | null;
   userId: string | null;
 }) {
+  // SH-142 — read only for the hairline, whose shadow model differs
+  // per theme.
+  const { theme } = useTheme();
   const t = useTranslations("practice");
 
   const showing = !!practiceEnabled && !!eligibility?.eligible && !!userId;
@@ -89,8 +94,16 @@ export function ReturnCard({
   return (
     <section className="mx-auto mb-14 w-full max-w-[720px] px-10 lg:max-w-[920px]">
       <div
-        className={`${sans.variable} ${serif.variable} flex w-full flex-col gap-3 rounded-[10px] border border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)] px-5 py-5`}
+        className={`${sans.variable} ${serif.variable} relative flex w-full flex-col gap-3 overflow-hidden rounded-[10px] border border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)] px-5 py-5`}
       >
+        {/* SH-142 — the gold thread, at the quiet-card strength. */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 block h-px"
+          style={{ opacity: 0.55 }}
+        >
+          <HairlineLens position="top" theme={theme} />
+        </span>
         <p
           className={`${sans.className} text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]`}
         >

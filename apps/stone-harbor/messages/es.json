@@ -258,6 +258,11 @@
   },
   "dashboard": {
     "loading": "Volviendo a tu refugio.",
+    "zones": {
+      "anchor": "Tu ancla",
+      "today": "Hoy",
+      "ifYouLike": "Si quieres"
+    },
     "nav": {
       "backToHome": "← Stone Harbor",
       "tagline": "Un espacio para la claridad, la calma y la fortaleza de los hombres.",

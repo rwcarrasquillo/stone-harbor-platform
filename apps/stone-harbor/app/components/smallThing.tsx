@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { HairlineLens } from "@/app/components/hairlineLens";
 import { useTheme } from "@/app/components/themeProvider";
 import { supabase } from "@/lib/supabaseClient";
 import { trackMilestone } from "@/lib/memberUsage";
@@ -165,6 +166,17 @@ export function SmallThing({ userId }: Props) {
       }`}
       aria-label="A small thing for today"
     >
+      {/* SH-142 — the gold thread, at the quiet-card strength. The
+          wrapper already carries relative + overflow-hidden, so the
+          lens clips to the card's own edges. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 block h-px"
+        style={{ opacity: 0.55 }}
+      >
+        <HairlineLens position="top" theme={theme} />
+      </span>
+
       {/* Quiet category eyebrow */}
       <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]">
         A small thing, if you&apos;d like
