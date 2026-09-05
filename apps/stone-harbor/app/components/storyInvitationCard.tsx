@@ -31,6 +31,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { supabase } from "@/lib/supabaseClient";
 import { serif } from "@/lib/fonts";
+import { HairlineLens } from "@/app/components/hairlineLens";
 import { useTheme } from "@/app/components/themeProvider";
 import {
   createPendingInvitation,
@@ -227,6 +228,17 @@ export function StoryInvitationCard({ userId, userEmail }: Props) {
             : "border-stone-200 bg-gradient-to-br from-[#f6f0e6] via-[#f1ebde] to-[#ece4d3]"
         }`}
       >
+        {/* SH-142 — the gold thread. Primary strength, matching the
+            step panel and the day's invitation this card now sits
+            beside inside Zone 2. */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 block h-px"
+          style={{ opacity: 0.7 }}
+        >
+          <HairlineLens position="top" theme={theme} />
+        </span>
+
         <div className="relative mx-auto max-w-3xl text-center">
           <p
             className={`mb-3 text-[10px] font-bold uppercase tracking-[0.32em] md:mb-4 md:tracking-[0.38em] ${

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { sans } from "@/lib/fonts";
+import { HairlineLens } from "@/app/components/hairlineLens";
+import { useTheme } from "@/app/components/themeProvider";
 import {
   getTimeOfDayBlock,
   hasDeclaredShape,
@@ -35,6 +37,9 @@ export function PracticeCard({
   practiceShape: PracticeShape | null;
 }) {
   const t = useTranslations("practice");
+  // SH-142 — read only for the hairline below, which draws a different
+  // shadow model per theme (ink impression on cream, halo on black).
+  const { theme } = useTheme();
 
   // Which block the hour belongs to. Null until after mount: the
   // answer depends on the browser's timezone, so computing it during
@@ -85,8 +90,18 @@ export function PracticeCard({
       <Link
         href={`/practice?block=${currentBlock}`}
         style={{ outline: "none", outlineOffset: 0 }}
-        className={`${sans.className} flex min-h-[44px] w-full items-center rounded-[10px] border border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)] px-5 py-3 text-[13px] leading-[1.6] text-[var(--sh-text-secondary)] transition-colors hover:bg-[var(--sh-bg-card-tinted-hover)] hover:text-[var(--sh-text-primary)]`}
+        className={`${sans.className} relative flex min-h-[44px] w-full items-center overflow-hidden rounded-[10px] border border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)] px-5 py-3 text-[13px] leading-[1.6] text-[var(--sh-text-secondary)] transition-colors hover:bg-[var(--sh-bg-card-tinted-hover)] hover:text-[var(--sh-text-primary)]`}
       >
+        {/* SH-142 — the gold thread. The same HairlineLens the step
+            panel and the day's invitation carry, held at 0.55 so this
+            quiet card reads a shade under the primary ones. */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 block h-px"
+          style={{ opacity: 0.55 }}
+        >
+          <HairlineLens position="top" theme={theme} />
+        </span>
         {/* Truncation is CSS, not JS: the member's own words are never
             cut in the data layer, only in the rendering of this line. */}
         <span className="min-w-0 truncate">

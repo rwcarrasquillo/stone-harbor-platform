@@ -258,6 +258,11 @@
   },
   "dashboard": {
     "loading": "Returning to your harbor…",
+    "zones": {
+      "anchor": "Your anchor",
+      "today": "Today",
+      "ifYouLike": "If you'd like"
+    },
     "nav": {
       "backToHome": "← Stone Harbor",
       "tagline": "Men's Mental Wellness",
