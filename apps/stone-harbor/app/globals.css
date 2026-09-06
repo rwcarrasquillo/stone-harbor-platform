@@ -475,3 +475,27 @@ body {
 .sh-zone:not(:has(> :not([data-sh-zone-label]):not(:empty))) {
   display: none;
 }
+
+/* SH-144 — vertically centre the horizon-mark divider between zones.
+ *
+ * SH-142 gave every zone `mb-8` (32px) and gave the divider only
+ * `py-2`. All of that 32px landed ABOVE the divider with nothing
+ * balancing it below, so the anchor sat 46px under the zone above and
+ * 14px over the zone below — hard against the wrong neighbour. That is
+ * the "not centralized" founder reported; SH-143 established the
+ * horizontal axis was already correct and the skew was vertical.
+ *
+ * A matching 32px on every zone AFTER the first restores the symmetry
+ * (measured 46/46, skew 0). It goes on the zone rather than the
+ * divider so the first zone keeps its flush top edge.
+ *
+ * The general sibling combinator, not the adjacent one: a divider
+ * wrapper sits between the zones today (SH-143), so `+` would match
+ * nothing. `~` keeps the rule true whatever ends up in that gap.
+ *
+ * No collapse risk with the zone's own mb-8 above it — the two are
+ * separated by the divider element, so both margins apply in full.
+ * ------------------------------------------------------------------ */
+.sh-zone ~ .sh-zone {
+  margin-top: 2rem;
+}
