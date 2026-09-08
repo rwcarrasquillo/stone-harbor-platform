@@ -93,12 +93,13 @@ export function PracticeCard({
         className={`${sans.className} relative flex min-h-[44px] w-full items-center overflow-hidden rounded-[10px] border border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)] px-5 py-3 text-[13px] leading-[1.6] text-[var(--sh-text-secondary)] transition-colors hover:bg-[var(--sh-bg-card-tinted-hover)] hover:text-[var(--sh-text-primary)]`}
       >
         {/* SH-142 — the gold thread. The same HairlineLens the step
-            panel and the day's invitation carry, held at 0.55 so this
-            quiet card reads a shade under the primary ones. */}
+            panel and the day's invitation carry, held at the quiet
+            strength so this card reads a shade under the primary
+            ones. SH-146 moved the value into a per-theme token. */}
         <span
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 top-0 block h-px"
-          style={{ opacity: 0.55 }}
+          style={{ opacity: "var(--sh-hairline-quiet-opacity)" }}
         >
           <HairlineLens position="top" theme={theme} />
         </span>

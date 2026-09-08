@@ -172,7 +172,7 @@ export function SmallThing({ userId }: Props) {
       <span
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 block h-px"
-        style={{ opacity: 0.55 }}
+        style={{ opacity: "var(--sh-hairline-quiet-opacity)" }}
       >
         <HairlineLens position="top" theme={theme} />
       </span>
