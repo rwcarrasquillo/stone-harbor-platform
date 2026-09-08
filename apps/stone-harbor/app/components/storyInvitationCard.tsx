@@ -234,7 +234,7 @@ export function StoryInvitationCard({ userId, userEmail }: Props) {
         <span
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 top-0 block h-px"
-          style={{ opacity: 0.7 }}
+          style={{ opacity: "var(--sh-hairline-primary-opacity)" }}
         >
           <HairlineLens position="top" theme={theme} />
         </span>

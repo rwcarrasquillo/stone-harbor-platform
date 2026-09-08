@@ -50,13 +50,6 @@
   --sh-bg-card: #ffffff;
   --sh-bg-card-tinted: #f8f4ed;
   --sh-bg-card-translucent: rgba(255, 255, 255, 0.7);
-  /* SH-142 — the dashboard's zone containers. A shade DARKER than the
-     page on sunlit and a shade LIGHTER on dusk: in both themes the
-     zone should read as a recess the cards sit in, and on cream the
-     only direction that recedes is down. Deliberately weaker than
-     --sh-bg-card-tinted so a card still separates from the zone
-     holding it. */
-  --sh-bg-zone: #eeeadf;
 
   --sh-text-primary: #1c1917;   /* stone-900 */
   --sh-text-secondary: #57534e; /* stone-600 */
@@ -105,6 +98,19 @@
   --sh-hairline-rgb-dusk: 196, 147, 78;
   --sh-hairline-rgb: var(--sh-hairline-rgb-sunlit);
 
+  /* SH-146 — hairline strength, per theme. Design brief §5 asks the
+     gold thread to carry hierarchy: a primary card's lens reads louder
+     than a quiet card's. The RATIO is the design; the absolute values
+     are per-theme because the same alpha does not survive both grounds.
+     On cream these land as intended. On dusk they ghosted, so both
+     step up (0.55 → 0.70 quiet, 0.70 → 0.80 primary) — the gap
+     narrows but the ordering, which is the part that signals, holds.
+     Consumed as `style={{ opacity: "var(--sh-hairline-quiet-opacity)" }}`
+     on the wrapper span, never inside HairlineLens itself: the lens is
+     shared by a dozen surfaces that tune their own strength. */
+  --sh-hairline-quiet-opacity: 0.55;
+  --sh-hairline-primary-opacity: 0.70;
+
   /* Warm hover surface. Defined here so Wave 2 can adopt it; nothing
      consumes it yet. */
   --sh-bg-card-tinted-hover: #efe8dc;
@@ -115,9 +121,6 @@
   --sh-bg-card: rgba(0, 0, 0, 0.35);
   --sh-bg-card-tinted: rgba(0, 0, 0, 0.30);
   --sh-bg-card-translucent: rgba(0, 0, 0, 0.30);
-  /* Near-black can't recede any further, so dusk's zone lifts instead
-     — a barely-there white wash. Same role, opposite direction. */
-  --sh-bg-zone: rgba(255, 255, 255, 0.03);
 
   --sh-text-primary: #f5f5f4;   /* stone-100 */
   --sh-text-secondary: #d6d3d1; /* stone-300 */
@@ -139,6 +142,11 @@
   --sh-moss: #7d8a7a;
 
   --sh-hairline-rgb: var(--sh-hairline-rgb-dusk);
+
+  /* SH-146 — see the :root block. Dusk's near-black ground swallowed
+     the sunlit alphas; these are the values that actually register. */
+  --sh-hairline-quiet-opacity: 0.70;
+  --sh-hairline-primary-opacity: 0.80;
 
   --sh-bg-card-tinted-hover: rgba(255, 255, 255, 0.08);
 }

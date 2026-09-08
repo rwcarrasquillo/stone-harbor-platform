@@ -1269,17 +1269,23 @@ export default function DashboardCenteredPage() {
 // ============================================================================
 //
 // One of the three grouped bands the dashboard's cards sit inside —
-// Your anchor / Today / If you'd like. A tinted, rounded container
-// with a small gold heading, so a member scanning the page sees three
-// groups rather than seven unrelated cards.
+// Your anchor / Today / If you'd like. A layout band with a small gold
+// heading, so a member scanning the page sees three groups rather than
+// seven unrelated cards.
+//
+// SH-146 removed the tinted, rounded container this used to be (and
+// with it --sh-bg-zone). Grouping is carried entirely by the eyebrow
+// label, the spacing between zones, and the horizon-mark dividers —
+// a box drawn around cards that already sit on a common ground was
+// box-in-box chrome, not grouping. The element stays: `.sh-zone` is
+// the hook for the rhythm and empty-zone rules, and the max-width cap
+// is what aligns the cards inside it.
 //
 // Width: max-w-[920px] with NO horizontal padding of its own. The
 // cards inside carry `px-10` against the same 920px cap, which is the
 // idiom that puts their edges at 840px on lg+. Padding the zone too
 // would inset them to 760px and break their alignment with ReturnCard,
-// which sits outside the zones at the full 840px. The tint therefore
-// bleeds 40px past each card edge, which is what makes it read as a
-// container the cards rest in rather than a second card.
+// which sits outside the zones at the full 840px.
 //
 // Vertical rhythm and the empty-zone case are handled by `.sh-zone` in
 // globals.css — see the block comment there for why they can't live on
@@ -1293,10 +1299,7 @@ function DashboardZone({
   children: React.ReactNode;
 }) {
   return (
-    <section
-      className="sh-zone mx-auto mb-8 w-full max-w-[920px] rounded-[10px] py-5"
-      style={{ background: "var(--sh-bg-zone)" }}
-    >
+    <section className="sh-zone mx-auto mb-8 w-full max-w-[920px] py-5">
       <p
         data-sh-zone-label=""
         className={`${sans.className} px-10 text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]`}
