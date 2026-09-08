@@ -90,7 +90,7 @@ export function PracticeCard({
       <Link
         href={`/practice?block=${currentBlock}`}
         style={{ outline: "none", outlineOffset: 0 }}
-        className={`${sans.className} relative flex min-h-[44px] w-full items-center overflow-hidden rounded-[10px] border border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)] px-5 py-3 text-[13px] leading-[1.6] text-[var(--sh-text-secondary)] transition-colors hover:bg-[var(--sh-bg-card-tinted-hover)] hover:text-[var(--sh-text-primary)]`}
+        className={`${sans.className} relative flex min-h-[44px] w-full items-center overflow-hidden rounded-[10px] border border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-dash-quiet)] px-5 py-3 text-[13px] leading-[1.6] text-[var(--sh-text-secondary)] transition-colors hover:bg-[var(--sh-bg-card-tinted-hover)] hover:text-[var(--sh-text-primary)]`}
       >
         {/* SH-142 — the gold thread. The same HairlineLens the step
             panel and the day's invitation carry, held at the quiet

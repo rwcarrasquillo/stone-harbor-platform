@@ -65,7 +65,7 @@ export function CurrentStepPanel({
     <section
       className={`relative overflow-hidden px-6 py-7 lg:px-8 lg:py-8 ${
         isDusk
-          ? "bg-black/35 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-md"
+          ? "bg-[var(--sh-bg-card-dash)] shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-md"
           : "bg-[var(--sh-bg-card-tinted)] shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
       }`}
       style={{

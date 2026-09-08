@@ -161,7 +161,7 @@ export function SmallThing({ userId }: Props) {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className={`relative overflow-hidden border p-6 text-center backdrop-blur-md md:p-8 ${
         isDusk
-          ? "border-white/10 bg-black/35"
+          ? "border-white/10 bg-[var(--sh-bg-card-dash-quiet)]"
           : "border-[var(--sh-border-subtle)] bg-white/70"
       }`}
       aria-label="A small thing for today"
