@@ -541,3 +541,47 @@ body {
 .sh-zone ~ .sh-zone {
   margin-top: 2rem;
 }
+
+/* SH-145 — a divider earns its place only between two zones that are
+ * both actually rendering something.
+ *
+ * Ungated, the two dividers flanking a hidden zone land ~28px apart and
+ * read as one doubled mark. The reproduction is every Sunday for a
+ * member with no story queued: TodaysInvitation stands down on Sundays,
+ * StoryInvitationCard hides with nothing to ask, Zone 2 empties, and
+ * the rule above hides it — leaving its two dividers adjacent.
+ *
+ * The gating is split because the zones' visibility is settled two
+ * different ways. Zone 1's is derivable at the parent (practice flag,
+ * current step, spine still loading) and so is gated in JSX, where a
+ * boolean belongs. Zone 2's is not: TodaysInvitation and
+ * StoryInvitationCard each decide from their own async fetch, and the
+ * story card can hide itself again later when the member skips a
+ * prompt. Nothing at the parent can know that without duplicating both
+ * fetches or threading callbacks back up through two components, so
+ * that one case is settled here, by the same :has() test that hides the
+ * zone in the first place.
+ *
+ * Only the divider AFTER an empty zone is dropped, never the one
+ * before. Dropping both would leave the two surviving zones with no
+ * separator between them at all; dropping just the trailing one leaves
+ * exactly one mark, which is the composition the zones want.
+ *
+ * The same rule covers Zone 1 rendering but coming up empty — the
+ * over-approximation its parent gate deliberately allows.
+ *
+ * What it deliberately does NOT cover is the last zone in the run.
+ * Dropping a divider whose FOLLOWING zone is empty would need :has()
+ * nested inside :has(), which the spec disallows, and the wrapper
+ * grouping that would avoid the nesting would break the sibling chain
+ * `.sh-zone ~ .sh-zone` (SH-144) depends on. It costs nothing today:
+ * Zone 3 holds TodayIntention, which has no null path, so a rendered
+ * Zone 3 is never empty. Should that change, the gate belongs in the
+ * JSX beside the divider, not here.
+ *
+ * Degradation matches SH-142's: where :has() is unsupported the rule
+ * does not apply and the dividers render as they do today.
+ * ------------------------------------------------------------------ */
+.sh-zone:not(:has(> :not([data-sh-zone-label]):not(:empty))) + .sh-zone-divider {
+  display: none;
+}

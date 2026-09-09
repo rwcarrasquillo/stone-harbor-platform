@@ -656,6 +656,15 @@ export default function DashboardCenteredPage() {
   // its label.
   const practiceMayRender = practiceEnabled && hasDeclaredShape(practiceShape);
 
+  // SH-145 — whether Zone 1 renders at all. Hoisted out of the JSX
+  // because the divider below Zone 1 has to ask the same question: a
+  // divider under a zone that never rendered is a mark separating one
+  // thing from nothing.
+  //
+  // This is the half of the gating that CAN live here. Zone 2's cannot
+  // — see the SH-145 rule in globals.css for why.
+  const zone1HasContent = practiceMayRender || currentStep || spineLoading;
+
   const showSmallThing =
     userId !== null &&
     userCreatedAt !== null &&
@@ -1079,7 +1088,7 @@ export default function DashboardCenteredPage() {
               zone renders the step panel alone; with the member also
               unplaced it does not render at all, which is the
               pre-SH-142 composition exactly. */}
-          {(practiceMayRender || currentStep || spineLoading) && (
+          {zone1HasContent && (
             <DashboardZone label={tDash("zones.anchor")}>
               <PracticeCard
                 practiceEnabled={practiceEnabled}
@@ -1110,13 +1119,21 @@ export default function DashboardCenteredPage() {
             </DashboardZone>
           )}
 
-          {/* ───── Zone divider (SH-142, wrapped SH-143) ─────
+          {/* ───── Zone divider (SH-142, wrapped SH-143, gated SH-145) ─────
               The wrapper mirrors the zone containers' outer geometry
               (mx-auto + w-full + max-w-[920px]) so both are centred by
-              the same mechanism rather than two that merely agree. */}
-          <div className="mx-auto w-full max-w-[920px]">
-            <CenteredHorizonMark variant="divider" />
-          </div>
+              the same mechanism rather than two that merely agree.
+
+              SH-145 — renders only when there is a zone on both sides
+              of it. Zone 1 is gated at the parent and Zone 2 needs a
+              signed-in member, so both conditions are answerable here;
+              the case that is not (Zone 2 rendering but empty) is
+              handled by the SH-145 rule in globals.css. */}
+          {zone1HasContent && userId && (
+            <div className="sh-zone-divider mx-auto w-full max-w-[920px]">
+              <CenteredHorizonMark variant="divider" />
+            </div>
+          )}
 
           {/* ═════ Zone 2 — TODAY (SH-142) ═════
               What the harbor is offering. The day's invitation, then
@@ -1162,13 +1179,24 @@ export default function DashboardCenteredPage() {
             </DashboardZone>
           )}
 
-          {/* ───── Zone divider (SH-142, wrapped SH-143) ─────
-              The wrapper mirrors the zone containers' outer geometry
-              (mx-auto + w-full + max-w-[920px]) so both are centred by
-              the same mechanism rather than two that merely agree. */}
-          <div className="mx-auto w-full max-w-[920px]">
-            <CenteredHorizonMark variant="divider" />
-          </div>
+          {/* ───── Zone divider (SH-142, wrapped SH-143, gated SH-145) ─────
+              Same geometry as the first divider. Zones 2 and 3 both
+              hang off `userId`, so their presence is one condition;
+              Zone 2 rendering but empty is again the CSS rule's job.
+
+              Zone 3 needs no emptiness test: TodayIntention has a
+              single return and no null path, so a rendered Zone 3
+              always holds content. That is load-bearing rather than
+              incidental — the CSS rule can only drop a divider that
+              FOLLOWS an empty zone, and nothing follows Zone 3. If
+              TodayIntention ever gains a null path, a zone3HasContent
+              boolean belongs in this gate; the stylesheet cannot reach
+              the case. */}
+          {userId && (
+            <div className="sh-zone-divider mx-auto w-full max-w-[920px]">
+              <CenteredHorizonMark variant="divider" />
+            </div>
+          )}
 
           {/* ═════ Zone 3 — IF YOU'D LIKE (SH-142) ═════
               The member's own side of the exchange — what he writes
