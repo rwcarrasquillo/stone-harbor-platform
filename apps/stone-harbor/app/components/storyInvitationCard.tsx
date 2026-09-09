@@ -223,7 +223,7 @@ export function StoryInvitationCard({ userId, userEmail }: Props) {
       <div
         className={`relative overflow-hidden rounded-none border px-4 py-6 shadow-[0_10px_30px_rgba(0,0,0,0.05)] md:px-10 md:py-10 ${
           isDusk
-            ? "border-white/10 bg-black/30 backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.4)]"
+            ? "border-white/10 bg-[var(--sh-bg-card-dash)] backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.4)]"
             // eslint-disable-next-line no-restricted-syntax -- bespoke Sunlit cream gradient, no token
             : "border-stone-200 bg-gradient-to-br from-[#f6f0e6] via-[#f1ebde] to-[#ece4d3]"
         }`}

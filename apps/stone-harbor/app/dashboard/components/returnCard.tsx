@@ -94,7 +94,7 @@ export function ReturnCard({
   return (
     <section className="mx-auto mb-14 w-full max-w-[720px] px-10 lg:max-w-[920px]">
       <div
-        className={`${sans.variable} ${serif.variable} relative flex w-full flex-col gap-3 overflow-hidden rounded-[10px] border border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-tinted)] px-5 py-5`}
+        className={`${sans.variable} ${serif.variable} relative flex w-full flex-col gap-3 overflow-hidden rounded-[10px] border border-[var(--sh-border-subtle)] bg-[var(--sh-bg-card-dash-quiet)] px-5 py-5`}
       >
         {/* SH-142 — the gold thread, at the quiet-card strength. */}
         <span

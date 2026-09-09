@@ -51,6 +51,31 @@
   --sh-bg-card-tinted: #f8f4ed;
   --sh-bg-card-translucent: rgba(255, 255, 255, 0.7);
 
+  /* SH-147 — /dashboard card fills. Dashboard-scoped on purpose.
+
+     The Dusk card tokens are semi-transparent BLACK, so over the
+     #0A0A0B page they compute darker than the page and the cards read
+     as sunk rectangles with hard edges. SH-142's zone tints used to
+     hide that behind a lighter middle layer; SH-146 removed the layer
+     and exposed it.
+
+     The obvious fix — inverting --sh-bg-card-tinted globally — does
+     not work: 29 of its 41 call sites are the Sunlit branch of a Dusk
+     ternary, and six of the dashboard's eight card surfaces hard-code
+     `bg-black/25..35` in their own Dusk branch rather than reading the
+     token at all. Flipping the global token would lift two dashboard
+     cards, leave six sunk, and change six unrelated surfaces nobody
+     reported. So the lift lives in its own pair of tokens that only
+     /dashboard consumes.
+
+     On Sunlit they alias --sh-bg-card-tinted, which is exactly what
+     the two unconditional consumers (PracticeCard, ReturnCard) already
+     rendered — Sunlit is unchanged by construction. The other six read
+     these only inside an `isDusk` branch, so the Sunlit value is
+     inert there. */
+  --sh-bg-card-dash: var(--sh-bg-card-tinted);
+  --sh-bg-card-dash-quiet: var(--sh-bg-card-tinted);
+
   --sh-text-primary: #1c1917;   /* stone-900 */
   --sh-text-secondary: #57534e; /* stone-600 */
   --sh-text-tertiary: #78716c;  /* stone-500 */
@@ -121,6 +146,15 @@
   --sh-bg-card: rgba(0, 0, 0, 0.35);
   --sh-bg-card-tinted: rgba(0, 0, 0, 0.30);
   --sh-bg-card-translucent: rgba(0, 0, 0, 0.30);
+
+  /* SH-147 — see the :root block. White at a few percent over the
+     near-black page, so a dashboard card sits a shade ABOVE its
+     ground the way a white card sits above cream on Sunlit. The two
+     strengths follow the hierarchy SH-146 established for the
+     hairlines: the primary surfaces carry both the louder thread and
+     the stronger lift. */
+  --sh-bg-card-dash: rgba(255, 255, 255, 0.05);
+  --sh-bg-card-dash-quiet: rgba(255, 255, 255, 0.03);
 
   --sh-text-primary: #f5f5f4;   /* stone-100 */
   --sh-text-secondary: #d6d3d1; /* stone-300 */

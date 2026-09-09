@@ -262,7 +262,7 @@ export function TodaysInvitation({
     <section
       className={`relative overflow-hidden px-6 py-6 lg:px-8 ${
         isDusk
-          ? "bg-black/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)] backdrop-blur-md"
+          ? "bg-[var(--sh-bg-card-dash)] shadow-[0_10px_30px_rgba(0,0,0,0.3)] backdrop-blur-md"
           : "bg-[var(--sh-bg-card-tinted)] shadow-[0_10px_30px_rgba(0,0,0,0.05)]"
       }`}
       style={{
