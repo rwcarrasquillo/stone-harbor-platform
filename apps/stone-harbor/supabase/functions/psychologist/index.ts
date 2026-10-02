@@ -1,6 +1,7 @@
 // apps/stone-harbor/supabase/functions/psychologist/index.ts
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { authorizeCaller, secretKey } from "../_shared/auth.ts";
 
 /**
  * Stone Harbor — psychologist (SH-87, DRAFT — NOT YET DEPLOYED).
@@ -181,7 +182,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceKey = secretKey();
   const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!supabaseUrl || !serviceKey || !anthropicKey) {
     return new Response(JSON.stringify({ error: "Missing SUPABASE/ANTHROPIC env" }), {
@@ -200,6 +201,8 @@ serve(async (req) => {
   }
 
   const supabase = createClient(supabaseUrl, serviceKey);
+  const caller = await authorizeCaller(req, supabase, corsHeaders);
+  if (caller instanceof Response) return caller;
 
   // ── Settings + cadence gate ────────────────────────────────────────────────
   const { data: settings } = await supabase

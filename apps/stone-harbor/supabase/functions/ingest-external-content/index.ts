@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { authorizeCaller, secretKey } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -192,7 +193,7 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const serviceKey = secretKey();
     const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
     if (!supabaseUrl || !serviceKey || !openaiApiKey) {
       return new Response(
@@ -212,6 +213,8 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
+    const caller = await authorizeCaller(req, supabase, corsHeaders);
+    if (caller instanceof Response) return caller;
     const model = "gpt-4o-mini";
     const lookbackCutoff = Date.now() - MAX_LOOKBACK_DAYS * 24 * 60 * 60 * 1000;
 

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { authorizeCaller, secretKey } from "../_shared/auth.ts";
 
 /**
  * Stone Harbor — suggest-external-sources (DB-driven prompts).
@@ -143,7 +144,7 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const serviceKey = secretKey();
     const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     if (!supabaseUrl || !serviceKey) {
@@ -162,6 +163,8 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
+    const caller = await authorizeCaller(req, supabase, corsHeaders);
+    if (caller instanceof Response) return caller;
 
     const [{ data: settings }, { data: tmpl }, { data: existing }] = await Promise.all([
       supabase.from("admin_settings")
