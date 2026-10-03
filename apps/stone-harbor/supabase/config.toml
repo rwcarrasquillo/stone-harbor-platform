@@ -1,0 +1,29 @@
+# Supabase CLI config for the Stone Harbor project (fbqcmtcvgijlemfpncay).
+#
+# Edge functions run with verify_jwt = false (SH-154): the platform JWT gate
+# only understands the legacy JWT keys and rejects the new sb_secret_ key.
+# Every function authorizes its caller in code via functions/_shared/auth.ts
+# (secret key in `apikey`, or a signed-in admin's JWT). Never add a function
+# here without that check.
+project_id = "fbqcmtcvgijlemfpncay"
+
+[functions.generate-daily-quote]
+verify_jwt = false
+
+[functions.generate-blog-posts]
+verify_jwt = false
+
+[functions.ingest-external-content]
+verify_jwt = false
+
+[functions.suggest-external-sources]
+verify_jwt = false
+
+[functions.translate-blog-post]
+verify_jwt = false
+
+[functions.score-blog-draft]
+verify_jwt = false
+
+[functions.psychologist]
+verify_jwt = false
