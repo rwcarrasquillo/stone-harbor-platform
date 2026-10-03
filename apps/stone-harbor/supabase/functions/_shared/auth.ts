@@ -17,20 +17,19 @@ import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
  * Anything else, including the public publishable key on its own, gets 401.
  */
 
-/** The new secret key, falling back to the legacy service-role key. */
+/**
+ * The project's `default` secret key. The legacy service-role key was
+ * deactivated in SH-149 phase 8 (2026-10-03), so there is no fallback.
+ */
 export function secretKey(): string | null {
   const raw = Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (raw) {
-    try {
-      const key = JSON.parse(raw)?.default;
-      if (typeof key === "string" && key) return key;
-    } catch (_) {
-      // fall through to the legacy key
-    }
+  if (!raw) return null;
+  try {
+    const key = JSON.parse(raw)?.default;
+    return typeof key === "string" && key ? key : null;
+  } catch (_) {
+    return null;
   }
-  // TODO(SH-149 phase 8): drop this fallback once the legacy keys are
-  // deactivated.
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? null;
 }
 
 function safeEqual(a: string, b: string): boolean {
@@ -59,14 +58,6 @@ export async function authorizeCaller(
 
   const secret = secretKey();
   if (secret && apikey && safeEqual(apikey, secret)) return { kind: "server" };
-
-  // TODO(SH-149 phase 8): remove. Lets pg_cron keep using the legacy
-  // service-role key (Authorization: Bearer) until its vault secret and
-  // job headers are switched to the new key.
-  const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (legacy && ((bearer && safeEqual(bearer, legacy)) || (apikey && safeEqual(apikey, legacy)))) {
-    return { kind: "server" };
-  }
 
   if (bearer) {
     const { data: { user } } = await supabase.auth.getUser(bearer);
