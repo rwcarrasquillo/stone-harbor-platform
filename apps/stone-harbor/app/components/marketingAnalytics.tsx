@@ -3,37 +3,27 @@
 import { Analytics } from "@vercel/analytics/next";
 
 /**
- * Authenticated route prefixes. Analytics events for any of these are
- * dropped via the beforeSend callback before being transmitted, so
- * Vercel Web Analytics only ever sees the marketing / pre-auth surface
- * of the app.
+ * Public marketing routes: the ONLY pages Vercel Web Analytics may see
+ * (SH-160, review finding 10). This used to be a denylist of member routes,
+ * and new member pages (/practice, /lineage, /settle-in, /rhythm…) silently
+ * escaped it. An allowlist fails closed: a new page is private until it's
+ * deliberately added here.
  *
- * This implements Stone Harbor's privacy promise: anonymous marketing
- * visitors get aggregate pageview counts; signed-in members are never
- * tracked by external analytics (member behavior is captured separately
- * by MemberUsageTracker, which writes to our own RLS-protected tables
- * and never leaves the platform).
- *
- * When adding a new authenticated route, add its top-level prefix here.
- * When adding a new public/pre-auth route (privacy, terms, crisis-
- * resources, marketing landing pages, /register variants, etc.), it is
- * tracked by default — no change to this list is required.
+ * Exact matches only (after stripping /en or /es). Members are never
+ * tracked by external analytics; member behavior is captured separately by
+ * MemberUsageTracker, which writes to our own RLS-protected tables.
  */
-const AUTHENTICATED_PATH_PREFIXES = [
-  "/dashboard",
-  "/journal",
-  "/vent",
-  "/messages",
-  "/letters",
-  "/welcome",
-  "/profile",
-  "/meditation",
-  "/resources",
-  "/map",
-  "/start-here",
-  "/roadmap",
-  "/suspended",
-];
+const PUBLIC_MARKETING_PATHS = new Set([
+  "/",
+  "/about",
+  "/crisis-resources",
+  "/privacy",
+  "/terms",
+  "/register",
+  "/login",
+  "/forgot-password",
+  "/keepers",
+]);
 
 /**
  * Strip a locale prefix (/en, /es) from a pathname so that the
@@ -44,16 +34,18 @@ function stripLocalePrefix(pathname: string): string {
   return pathname.replace(/^\/(en|es)(?=\/|$)/, "");
 }
 
-function isAuthenticatedRoute(url: string): boolean {
+/** Returns the event URL without query/hash if it's a public marketing
+ *  page, or null if the event must not be sent. */
+function publicMarketingUrl(url: string): string | null {
   try {
-    const path = stripLocalePrefix(new URL(url).pathname);
-    return AUTHENTICATED_PATH_PREFIXES.some(
-      (prefix) => path === prefix || path.startsWith(`${prefix}/`)
-    );
+    const u = new URL(url);
+    const path = stripLocalePrefix(u.pathname) || "/";
+    if (!PUBLIC_MARKETING_PATHS.has(path)) return null;
+    // Query strings can carry tokens or identifiers; never send them.
+    return `${u.origin}${u.pathname}`;
   } catch {
-    // Malformed URL — fail closed (do NOT send the event). Safer than
-    // tracking something we can't categorize.
-    return true;
+    // Malformed URL — fail closed.
+    return null;
   }
 }
 
@@ -61,8 +53,8 @@ function isAuthenticatedRoute(url: string): boolean {
  * Vercel Web Analytics scoped to public / marketing routes only.
  *
  * The Analytics component is mounted once in the root layout, but the
- * beforeSend callback drops any event whose URL maps to an authenticated
- * member route. Result: only anonymous marketing-funnel pageviews reach
+ * beforeSend callback drops any event whose URL isn't an allowlisted
+ * public marketing page. Result: only anonymous marketing-funnel pageviews reach
  * Vercel, in line with Stone Harbor's "members are not tracked" promise
  * (documented in `Stone_Harbor_Privacy_Policy.md` §2.3 and §3).
  *
@@ -73,8 +65,8 @@ export function MarketingAnalytics() {
   return (
     <Analytics
       beforeSend={(event) => {
-        if (isAuthenticatedRoute(event.url)) return null;
-        return event;
+        const url = publicMarketingUrl(event.url);
+        return url ? { ...event, url } : null;
       }}
     />
   );

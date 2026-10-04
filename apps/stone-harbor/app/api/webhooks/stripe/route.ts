@@ -5,16 +5,19 @@
  *   1. Read the RAW body (signature verification needs the exact bytes).
  *   2. Verify the `stripe-signature` header against STRIPE_WEBHOOK_SECRET.
  *      Bad signature → 400, zero side effects.
- *   3. Idempotency: claim the event in `webhook_events` (insert,
- *      ignore-duplicates). If the row already existed, Stripe is
- *      re-delivering an event we already handled → 200, no work.
+ *   3. Idempotency: claim the event via claim_webhook_event() (SH-160).
+ *      Only a `completed` event is a duplicate → 200, no work. A `failed`
+ *      event, or a `processing` claim that has gone stale, is re-claimed
+ *      and processed again; a fresh `processing` claim (concurrent
+ *      delivery) → 409 so Stripe retries later.
  *   4. Route by event.type, update `profiles` + append a `patron_events`
  *      audit row, and (on the first successful subscription/one-time
  *      confirmation) send the thank-you email.
  *   5. Record a handler_result summary on the webhook_events row.
  *
- * On any handler exception we return 500 so Stripe retries; the
- * idempotency ledger guarantees a retry can't double-process.
+ * On any handler exception the event is marked `failed` and we return 500,
+ * so Stripe's retry processes it again. Handlers stay idempotent (UNIQUE
+ * guards on patron_events) because a retry can follow partial work.
  */
 
 import { adminClient } from "@/lib/apiSupabase";
@@ -55,37 +58,58 @@ export async function POST(req: Request) {
     return Response.json({ error: "server_misconfigured" }, { status: 500 });
   }
 
-  // 3. Idempotency claim. ignoreDuplicates → a re-delivered event returns
-  //    an empty set, meaning we've already processed it.
-  const { data: claimed, error: claimErr } = await admin
-    .from("webhook_events")
-    .upsert(
-      { event_id: event.id, event_type: event.type },
-      { onConflict: "event_id", ignoreDuplicates: true },
-    )
-    .select("event_id");
+  // 3. Idempotency claim (atomic, in the database).
+  const { data: claim, error: claimErr } = await admin.rpc(
+    "claim_webhook_event",
+    { p_event_id: event.id, p_event_type: event.type },
+  );
 
   if (claimErr) {
     console.error("/api/webhooks/stripe: idempotency claim failed", claimErr);
     return Response.json({ error: "ledger_error" }, { status: 500 });
   }
-  if (!claimed || claimed.length === 0) {
-    // Already processed — acknowledge and stop.
+  if (claim === "duplicate") {
+    // Already completed — acknowledge and stop.
     return Response.json({ received: true, duplicate: true }, { status: 200 });
+  }
+  if (claim !== "claimed") {
+    // Another delivery is processing it right now. Non-2xx so Stripe
+    // retries later, by which point it's completed (→ duplicate) or the
+    // claim has gone stale (→ re-claimed).
+    return Response.json({ error: "in_progress" }, { status: 409 });
   }
 
   // 4. Handle.
   try {
     const result = await handleEvent(admin, event);
-    await admin
+    const { error: doneErr } = await admin
       .from("webhook_events")
-      .update({ handler_result: result })
+      .update({
+        status: "completed",
+        handler_result: result,
+        updated_at: new Date().toISOString(),
+      })
       .eq("event_id", event.id);
+    if (doneErr) {
+      // The work succeeded; only the bookkeeping failed. Still 200: a 500
+      // would make Stripe redeliver and the thank-you email could repeat.
+      console.error("/api/webhooks/stripe: could not mark event completed", doneErr);
+    }
     return Response.json({ received: true }, { status: 200 });
   } catch (e) {
     console.error(`/api/webhooks/stripe: handler failed for ${event.type}`, e);
-    // Leave the webhook_events row in place; the UNIQUE guards on
-    // patron_events keep a Stripe retry from duplicating audit rows.
+    const { error: failErr } = await admin
+      .from("webhook_events")
+      .update({
+        status: "failed",
+        last_error: (e instanceof Error ? e.message : String(e)).slice(0, 500),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("event_id", event.id);
+    if (failErr) {
+      // Couldn't mark it failed; the claim goes stale and is re-claimed.
+      console.error("/api/webhooks/stripe: could not mark event failed", failErr);
+    }
     return Response.json({ error: "handler_error" }, { status: 500 });
   }
 }

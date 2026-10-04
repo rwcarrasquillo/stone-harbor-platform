@@ -3,29 +3,19 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { sentryPrivacyOptions } from "./lib/sentryScrub";
 
 Sentry.init({
   dsn: "https://e6578f38514e2170dd8e79227b647c52@o4511498909646848.ingest.us.sentry.io/4511498937499648",
 
-  // Add optional integrations for additional features
-  integrations: [Sentry.replayIntegration()],
+  // SH-160: privacy-first settings (no PII, no logs, scrubbed events,
+  // 10% tracing). See lib/sentryScrub.ts.
+  ...sentryPrivacyOptions,
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
-
-  // Define how likely Replay events are sampled.
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: 0.1,
-
-  // Define how likely Replay events are sampled when an error occurs.
-  replaysOnErrorSampleRate: 1.0,
-
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  // Session Replay is off: a mental-wellness app shouldn't record member
+  // sessions, even masked. Errors are still captured.
+  replaysSessionSampleRate: 0,
+  replaysOnErrorSampleRate: 0,
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
