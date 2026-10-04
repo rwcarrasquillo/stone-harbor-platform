@@ -216,15 +216,13 @@ export function ThemeProvider({
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Upsert (not update) so a missing profile row is auto-created
-    // rather than silently swallowed as a zero-row update. The
-    // `onConflict` clause makes this safe to call repeatedly.
+    // Plain update of the member's own row. Every member has a profile
+    // row (created by the handle_new_user trigger), and SH-153 revoked
+    // UPDATE on `id`, which an upsert would try to write.
     const { error } = await supabase
       .from("profiles")
-      .upsert(
-        { id: user.id, theme_preference: next },
-        { onConflict: "id" },
-      );
+      .update({ theme_preference: next })
+      .eq("id", user.id);
 
     if (error) {
       // eslint-disable-next-line no-console

@@ -94,7 +94,6 @@ const GOLD_DEEP = "#a9793d";
 
 type Profile = {
   id: string;
-  email: string | null;
   display_name: string | null;
   username: string | null;
   avatar_url: string | null;
@@ -356,11 +355,11 @@ export default function MessagesPage() {
     const uniqueOtherUserIds = Array.from(new Set(otherUserIds));
     let profiles: Profile[] = [];
     if (uniqueOtherUserIds.length > 0) {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, email, display_name, username, avatar_url")
-        .in("id", uniqueOtherUserIds)
-        .eq("consumer", "stone_harbor");
+      // SH-153: other members' profiles are no longer directly readable;
+      // get_member_cards returns only public card fields (no email/PII).
+      const { data, error } = await supabase.rpc("get_member_cards", {
+        p_ids: uniqueOtherUserIds,
+      });
       if (error) {
         console.error("Could not load profiles:", error.message);
       }
@@ -432,7 +431,6 @@ export default function MessagesPage() {
             conversation.title ||
             otherMember?.display_name ||
             otherMember?.username ||
-            otherMember?.email ||
             "Stone Harbor Member",
           updated_at: conversation.updated_at,
           otherMember,
@@ -509,16 +507,11 @@ export default function MessagesPage() {
       return;
     }
     setSearching(true);
-    const safeQuery = query.replaceAll(",", "").replaceAll("%", "");
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, email, display_name, username, avatar_url")
-      .or(
-        `display_name.ilike.%${safeQuery}%,username.ilike.%${safeQuery}%,email.ilike.%${safeQuery}%`,
-      )
-      .neq("id", userId)
-      .eq("consumer", "stone_harbor")
-      .limit(10);
+    // SH-153: search by display name / username only. Matching on email
+    // let any member enumerate other members' addresses.
+    const { data, error } = await supabase.rpc("search_members", {
+      p_query: query,
+    });
     if (error) {
       console.error("Member search failed:", error.message);
       setSearchError(error.message);
@@ -1000,13 +993,12 @@ export default function MessagesPage() {
                             >
                               {member.display_name ||
                                 member.username ||
-                                member.email ||
                                 t("inbox.memberFallback")}
                             </p>
                             <p className="truncate text-[11px] text-[var(--sh-text-tertiary)]">
                               {member.username
                                 ? `@${member.username}`
-                                : member.email}
+                                : null}
                             </p>
                           </div>
                         </button>
@@ -1432,7 +1424,6 @@ export default function MessagesPage() {
                       >
                         {pendingRecipient.display_name ||
                           pendingRecipient.username ||
-                          pendingRecipient.email ||
                           t("inbox.memberFallback")}
                       </h2>
                     </div>
