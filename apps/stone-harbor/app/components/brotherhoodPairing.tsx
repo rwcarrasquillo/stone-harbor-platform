@@ -115,13 +115,12 @@ export function BrotherhoodPairing({ userId }: Props) {
 
       // Resolve partner display info. Don't surface email — that's
       // potentially identifying. display_name or username is enough.
-      const { data: partner } = await supabase
-        .from("profiles")
-        .select("display_name, username")
-        .eq("id", partnerId)
-        // Defense-in-depth: only resolve a Stone Harbor partner profile.
-        .eq("consumer", "stone_harbor")
-        .maybeSingle();
+      // SH-153: get_member_cards returns public card fields only, scoped
+      // to the caller's consumer.
+      const { data: cards } = await supabase.rpc("get_member_cards", {
+        p_ids: [partnerId],
+      });
+      const partner = cards?.[0] ?? null;
 
       setState({
         kind: "paired",

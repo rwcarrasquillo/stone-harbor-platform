@@ -651,13 +651,12 @@ export default function ProfilePage() {
     // is set. Case-insensitive match, excluding the member's own row.
     const username = formData.username.trim();
     if (username) {
-      const { data: clash } = await supabase
-        .from("profiles")
-        .select("id")
-        .ilike("username", username)
-        .neq("id", userId)
-        .maybeSingle();
-      if (clash) {
+      // SH-153: other members' rows aren't readable, so ask the database
+      // a yes/no question instead of looking for a clashing row.
+      const { data: available } = await supabase.rpc("is_username_available", {
+        p_username: username,
+      });
+      if (available === false) {
         setSaving(false);
         setFieldErrors((prev) => ({
           ...prev,
@@ -671,9 +670,10 @@ export default function ProfilePage() {
     const coverUrl = await uploadCover();
     const birthday = parseBirthdayForSave();
 
+    // SH-153: a plain update of the member's own row. Never send `id` or
+    // `email` (identity columns the member can't change); updated_at is
+    // set by the database trigger.
     const updatedProfile = {
-      id: userId,
-      email: formData.email,
       display_name: formData.display_name,
       username: formData.username,
       pronouns: formData.pronouns.trim() || null,
@@ -705,10 +705,12 @@ export default function ProfilePage() {
         formData.lineage_pattern_to_leave.trim() || null,
       known_languages: validated.known_languages,
       theme_preference: formData.theme_preference,
-      updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from("profiles").upsert(updatedProfile);
+    const { error } = await supabase
+      .from("profiles")
+      .update(updatedProfile)
+      .eq("id", userId);
 
     if (error) {
       setSaving(false);
