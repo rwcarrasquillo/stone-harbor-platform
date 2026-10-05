@@ -821,6 +821,13 @@ export default function JournalPage() {
     if (error) {
       // eslint-disable-next-line no-console
       console.error("[journal] saveEditingEntry failed:", error);
+      // SH-161: the database enforces the window too (journal_entries_guard).
+      if (error.message?.includes("journal_edit_window_closed")) {
+        window.alert(t("alerts.editWindowClosed"));
+        cancelEditingEntry();
+        await loadJournal();
+        return;
+      }
       window.alert(t("alerts.editFailed"));
       return;
     }

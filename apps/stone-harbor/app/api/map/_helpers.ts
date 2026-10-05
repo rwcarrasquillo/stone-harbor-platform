@@ -33,8 +33,8 @@ export function serviceClient() {
 }
 
 /**
- * Require a signed-in member. Returns the user's id, or a 401
- * response if the caller is anonymous.
+ * Require a signed-in, non-suspended member. Returns the user's id, a
+ * 401 response if the caller is anonymous, or a 403 if suspended.
  *
  * The request must carry a Supabase access-token header
  * (Authorization: Bearer <jwt>) — the member app's client sends this
@@ -62,6 +62,21 @@ export async function requireUser(
       response: NextResponse.json(
         { error: "unauthorized" },
         { status: 401 },
+      ),
+    };
+  }
+  // SH-161 (finding 8): these routes write through the service-role
+  // client, so RLS's suspension policies don't apply — check here.
+  const { data: profile } = await svc
+    .from("profiles")
+    .select("suspended_at")
+    .eq("id", data.user.id)
+    .maybeSingle();
+  if (profile?.suspended_at) {
+    return {
+      response: NextResponse.json(
+        { error: "suspended" },
+        { status: 403 },
       ),
     };
   }

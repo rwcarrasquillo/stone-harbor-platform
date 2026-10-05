@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser, serviceClient, err } from "../_helpers";
+import { allowRequest, RATE_LIMITS } from "@/lib/rateLimit";
 import {
   generateChapter1,
   type Bfi10Scores,
@@ -123,6 +124,11 @@ export async function POST(req: Request) {
   }
 
   const svc = serviceClient();
+
+  // SH-161 (finding 9): each call spends two paid model calls.
+  if (!(await allowRequest(svc, RATE_LIMITS.generateChapter, gate.userId))) {
+    return err(429, "rate_limited", "Chapter generation is limited to a few runs an hour. Please try again later.");
+  }
 
   // ---- 1) Pull layer scores ----
   const { data: layers, error: layersErr } = await svc

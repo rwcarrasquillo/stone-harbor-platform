@@ -18,6 +18,28 @@ const nextConfig = {
   compiler: { removeConsole: { exclude: ["error"] } },
   poweredByHeader: false,
   reactStrictMode: true,
+  // SH-161 (review finding 12): baseline security headers on every
+  // response. The CSP carries only directives that can't break script
+  // or style loading (framing, <base>, plugins, form targets); a full
+  // script-src policy is a follow-up that needs a report-only soak.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
+          },
+        ],
+      },
+    ];
+  },
   // SH-101 (2026-07-23): /members-blog renamed to /letters to match the
   // harbor vocabulary. Permanent 308 redirect for any inbound bookmarks,
   // dashboard cards from stale builds, or external links.
