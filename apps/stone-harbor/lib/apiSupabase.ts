@@ -63,18 +63,35 @@ export async function getBearerUser(
   return { id: data.user.id, email: data.user.email ?? null };
 }
 
+/** The production origin; the fallback for anything not on the allowlist. */
+const CANONICAL_ORIGIN = "https://www.stoneharbor.app";
+
+const PRODUCTION_ORIGINS = new Set([CANONICAL_ORIGIN, "https://stoneharbor.app"]);
+
+/** This project's Vercel preview URLs (Vercel Authentication protects them). */
+const PREVIEW_ORIGIN =
+  /^https:\/\/stone-harbor-[a-z0-9-]+-rafael-carrasquillo-s-projects\.vercel\.app$/;
+
+function isTrustedOrigin(origin: string): boolean {
+  if (PRODUCTION_ORIGINS.has(origin)) return true;
+  if (process.env.VERCEL_ENV === "preview" && PREVIEW_ORIGIN.test(origin)) return true;
+  if (process.env.NODE_ENV === "development" && /^http:\/\/localhost:\d+$/.test(origin)) {
+    return true;
+  }
+  return false;
+}
+
 /**
- * The app's public origin, derived from the incoming request. Prefer
- * the browser-sent Origin header; fall back to the forwarded host, then
- * to the request URL. Used to build Stripe success/cancel/return URLs.
+ * The origin to build Stripe success/cancel/return URLs from (SH-160,
+ * review finding 11). The browser's Origin header is used only when it's
+ * on the allowlist (production domains, this project's previews in the
+ * preview environment, localhost in dev); anything else, including a
+ * spoofed Origin or forwarded host, falls back to the canonical origin.
  */
 export function requestOrigin(req: Request): string {
   const origin = req.headers.get("origin");
-  if (origin) return origin;
-  const proto = req.headers.get("x-forwarded-proto") ?? "https";
-  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
-  if (host) return `${proto}://${host}`;
-  return new URL(req.url).origin;
+  if (origin && isTrustedOrigin(origin)) return origin;
+  return CANONICAL_ORIGIN;
 }
 
 /** Structured JSON error with a stable shape, mirroring existing routes. */
