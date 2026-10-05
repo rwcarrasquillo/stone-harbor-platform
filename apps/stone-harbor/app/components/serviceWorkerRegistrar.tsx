@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 /**
  * Stone Harbor — service worker registrar.
@@ -48,6 +49,15 @@ export function ServiceWorkerRegistrar() {
     } else {
       setTimeout(register, 1500);
     }
+
+    // SH-161 (review finding 14): on sign-out, tell the worker to drop
+    // its runtime cache so nothing from this session survives on a
+    // shared device. One listener here covers every sign-out button.
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_OUT") return;
+      navigator.serviceWorker.controller?.postMessage({ type: "clear-caches" });
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   return null;

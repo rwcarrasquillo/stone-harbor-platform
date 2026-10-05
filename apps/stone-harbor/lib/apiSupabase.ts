@@ -63,6 +63,25 @@ export async function getBearerUser(
   return { id: data.user.id, email: data.user.email ?? null };
 }
 
+/**
+ * True when the member's profile is suspended (SH-161, review finding
+ * 8). RLS already blocks a suspended member's direct table writes; API
+ * routes that write through the service-role client call this so they
+ * can't be used to route around that. A missing profile row reads as
+ * not suspended.
+ */
+export async function isSuspended(
+  admin: SupabaseClient,
+  userId: string,
+): Promise<boolean> {
+  const { data } = await admin
+    .from("profiles")
+    .select("suspended_at")
+    .eq("id", userId)
+    .maybeSingle();
+  return !!data?.suspended_at;
+}
+
 /** The production origin; the fallback for anything not on the allowlist. */
 const CANONICAL_ORIGIN = "https://www.stoneharbor.app";
 

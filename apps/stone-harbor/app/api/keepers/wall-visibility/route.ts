@@ -9,7 +9,7 @@
  *     view falls back to the display_name / full_name cascade)
  */
 
-import { adminClient, apiError, getBearerUser } from "@/lib/apiSupabase";
+import { adminClient, apiError, getBearerUser, isSuspended } from "@/lib/apiSupabase";
 
 export const runtime = "nodejs";
 
@@ -35,6 +35,11 @@ export async function POST(req: Request) {
   const admin = adminClient();
   if (!admin) {
     return apiError(500, "server_misconfigured");
+  }
+
+  // SH-161 (finding 8): the wall is public; suspended members can't edit it.
+  if (await isSuspended(admin, user.id)) {
+    return apiError(403, "suspended");
   }
 
   const update: { patron_wall_visible: boolean; patron_wall_name?: string | null } = {

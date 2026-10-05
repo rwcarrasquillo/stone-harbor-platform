@@ -30,6 +30,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { allowRequest, clientIp, RATE_LIMITS } from "@/lib/rateLimit";
 
 // Force the Node.js runtime — we rely on the service-role key, and we
 // keep the future option to use Node-only modules (e.g. for richer
@@ -128,6 +129,18 @@ export async function POST(req: NextRequest) {
       403,
       "registration_closed",
       "Stone Harbor is not currently open to new members.",
+    );
+  }
+
+  // SH-161 (finding 9): throttle sign-up attempts per IP and per email
+  // (Supabase Auth's own limits apply on top of these).
+  const ipAllowed = await allowRequest(admin, RATE_LIMITS.registerIp, clientIp(req));
+  const emailAllowed = ipAllowed && (await allowRequest(admin, RATE_LIMITS.registerEmail, email));
+  if (!ipAllowed || !emailAllowed) {
+    return err(
+      429,
+      "rate_limited",
+      "Too many sign-up attempts. Please wait a little while and try again.",
     );
   }
 

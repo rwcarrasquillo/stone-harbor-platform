@@ -15,6 +15,7 @@
  */
 
 import { adminClient, anonClient, apiError, getBearerUser, requestOrigin } from "@/lib/apiSupabase";
+import { allowRequest, clientIp, RATE_LIMITS } from "@/lib/rateLimit";
 import { getStripe } from "@/lib/stripe";
 import { tierToPriceId, type KeepersTier } from "@/lib/stripeMapping";
 import type Stripe from "stripe";
@@ -78,17 +79,24 @@ export async function POST(req: Request) {
 
   // ---------- 3. Optional signed-in caller ----------
   const user = await getBearerUser(req); // null when anonymous
-  let existingCustomerId: string | null = null;
-  if (user) {
-    const admin = adminClient();
-    if (admin) {
-      const { data: profile } = await admin
-        .from("profiles")
-        .select("stripe_customer_id")
-        .eq("id", user.id)
-        .maybeSingle();
-      existingCustomerId = profile?.stripe_customer_id ?? null;
+  const admin = adminClient();
+
+  // SH-161 (finding 9): each call creates a Stripe Checkout session.
+  if (admin) {
+    const subject = user ? `user:${user.id}` : `ip:${clientIp(req)}`;
+    if (!(await allowRequest(admin, RATE_LIMITS.checkout, subject))) {
+      return apiError(429, "rate_limited", "Too many checkout attempts. Please wait a few minutes and try again.");
     }
+  }
+
+  let existingCustomerId: string | null = null;
+  if (user && admin) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("stripe_customer_id")
+      .eq("id", user.id)
+      .maybeSingle();
+    existingCustomerId = profile?.stripe_customer_id ?? null;
   }
 
   // ---------- 4. Stripe Tax toggle (admin_settings, singleton id=1) ----------
