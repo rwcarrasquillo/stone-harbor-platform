@@ -147,8 +147,14 @@ export type PillarRecommendation = {
 export type CrisisLevel = "none" | "elevated" | "severe";
 
 export type SafetyAssessment = {
+  /** Crisis level. Only risk-assessing instruments may raise this (SH-150). */
   level: CrisisLevel;
-  signals: string[]; // e.g. ["phq2.severe", "gad2.severe"]
+  signals: string[]; // e.g. ["phq2.positive_screen", "gad2.positive_screen"]
+  /**
+   * A screener (PHQ-2 / GAD-2) came back positive. Means "worth a
+   * follow-up conversation", never crisis — present it neutrally.
+   */
+  followUpSuggested: boolean;
   recommendsResource: boolean;
   blockProgression: boolean; // when true, the consumer must surface crisis resources before allowing further progress
 };

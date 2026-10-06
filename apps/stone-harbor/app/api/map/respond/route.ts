@@ -109,6 +109,9 @@ export async function POST(req: Request) {
     })),
   );
 
+  // Only risk-assessing instruments raise `level`. A positive PHQ-2 /
+  // GAD-2 screen sets `followUpSuggested` instead and is not logged as a
+  // safety event (SH-150) — the responses themselves are already stored.
   if (safety.level !== "none") {
     await svc.from("eidos_safety_events").insert({
       user_id: gate.userId,

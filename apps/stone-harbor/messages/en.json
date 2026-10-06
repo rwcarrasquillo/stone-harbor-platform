@@ -1261,6 +1261,14 @@
       "weekLabel": "Week {n}",
       "preferNotToSay": "Prefer not to say",
       "signInError": "Sign in to continue.",
+      "followUp": {
+        "eyebrow": "Before you go on",
+        "body": "Your answers to these first questions suggest the last two weeks have been heavier than usual. That can be worth talking through with someone you trust: a doctor, a counselor, or a friend who listens. These few questions are a brief check-in, not a diagnosis.",
+        "crisisLine": "If it ever feels like more than you can carry, 988 answers at any hour.",
+        "call": "Call 988",
+        "text": "Text 988",
+        "continue": "Continue"
+      },
       "voiceSignature": "The harbor waits alongside you.",
       "modules": {
         "1_1": {

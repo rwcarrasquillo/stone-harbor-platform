@@ -196,6 +196,14 @@ export default function MapWeekPage() {
           submittingLabel={t("week.submitting")}
           preferNotToSayLabel={t("week.preferNotToSay")}
           signInError={t("week.signInError")}
+          followUp={{
+            eyebrow: t("week.followUp.eyebrow"),
+            body: t("week.followUp.body"),
+            crisisLine: t("week.followUp.crisisLine"),
+            call: t("week.followUp.call"),
+            text: t("week.followUp.text"),
+            continueLabel: t("week.followUp.continue"),
+          }}
           onComplete={() => {
             // Reload state — the server has already advanced the
             // session, so this picks up the next module or routes to
