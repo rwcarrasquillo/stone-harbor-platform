@@ -1261,6 +1261,14 @@
       "weekLabel": "Semana {n}",
       "preferNotToSay": "Prefiero no decir",
       "signInError": "Inicia sesión para continuar.",
+      "followUp": {
+        "eyebrow": "Antes de seguir",
+        "body": "Tus respuestas a estas primeras preguntas sugieren que las últimas dos semanas han pesado más de lo habitual. Puede valer la pena conversarlo con alguien de confianza: un médico, un consejero o un amigo que sepa escuchar. Estas pocas preguntas son un chequeo breve, no un diagnóstico.",
+        "crisisLine": "Si alguna vez sientes que es más de lo que puedes cargar, el 988 contesta a cualquier hora, también en español.",
+        "call": "Llamar al 988",
+        "text": "Escribir al 988",
+        "continue": "Continuar"
+      },
       "voiceSignature": "La dársena espera contigo.",
       "modules": {
         "1_1": {

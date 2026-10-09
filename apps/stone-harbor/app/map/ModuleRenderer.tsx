@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { CrisisModal } from "@/app/components/crisisModal";
 import { HairlineLens } from "@/app/components/hairlineLens";
 import { useTheme } from "@/app/components/themeProvider";
 import { MapActionButton } from "./MapChrome";
@@ -14,7 +13,7 @@ import { MapActionButton } from "./MapChrome";
  * list, a row of response chips per item, and a submit affordance that
  * POSTs to /api/map/respond. The module's eyebrow / title / intro now
  * live in the page's anchor strip (see week/[n]/page.tsx), so this
- * component renders only the items + submit + crisis modal.
+ * component renders only the items + submit + follow-up note.
  *
  * Voice-neutral: depends only on what the engine exports plus the
  * consumer-passed strings. Does NOT import from lib/eidos (server-side
@@ -25,9 +24,23 @@ import { MapActionButton } from "./MapChrome";
  * as the selected/hover/focus signal.
  *
  * On successful submit the onComplete callback fires with the scored
- * result so the parent page can advance. A safety-eval flag holds the
- * advance behind the CrisisModal until the member acknowledges it.
+ * result so the parent page can advance. When the server reports
+ * `followUpSuggested` (a positive PHQ-2 / GAD-2 screen), the advance
+ * waits behind a quiet inline note until the member continues.
+ *
+ * SH-150: a screen is not a crisis signal, so there is no crisis modal
+ * here and no "elevated"/"severe" language — just a neutral note with
+ * 988 one tap away.
  */
+
+export type FollowUpCopy = {
+  eyebrow: string;
+  body: string;
+  crisisLine: string;
+  call: string;
+  text: string;
+  continueLabel: string;
+};
 
 export type ModuleItem = {
   id: string;
@@ -59,6 +72,8 @@ type Props = {
   preferNotToSayLabel: string;
   /** Localized "sign in to continue" error. */
   signInError: string;
+  /** Copy for the note shown after a positive screen. */
+  followUp: FollowUpCopy;
   /** Called once the responses are accepted by the server. */
   onComplete: (scored: unknown) => void;
 };
@@ -72,20 +87,23 @@ export function ModuleRenderer({
   submittingLabel,
   preferNotToSayLabel,
   signInError,
+  followUp,
   onComplete,
 }: Props) {
   const { theme } = useTheme();
   const [responses, setResponses] = useState<Record<string, number | null>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Crisis modal state. The API's safety eval result lives here briefly
-  // between submission and the user's acknowledgment of the resources.
-  // Once dismissed, we run the parent's onComplete so the session can
-  // advance.
-  const [crisisLevel, setCrisisLevel] = useState<
-    "elevated" | "severe" | null
-  >(null);
+  // Follow-up note state: set when the server suggests a follow-up, so
+  // the next module doesn't render until the member chooses to continue.
+  const [showFollowUp, setShowFollowUp] = useState(false);
   const [pendingScored, setPendingScored] = useState<unknown>(null);
+  const followUpRef = useRef<HTMLDivElement>(null);
+
+  // Move focus to the note so keyboard and screen-reader users land on it.
+  useEffect(() => {
+    if (showFollowUp) followUpRef.current?.focus();
+  }, [showFollowUp]);
 
   function setResponse(itemId: string, value: number | null) {
     setResponses((prev) => ({ ...prev, [itemId]: value }));
@@ -128,14 +146,9 @@ export function ModuleRenderer({
         setSubmitting(false);
         return;
       }
-      // If the server's safety eval returned something concerning, hold
-      // the advance until the user dismisses the crisis modal. This
-      // keeps the resources screen from being scrolled past as the next
-      // module renders behind it.
-      const safetyLevel = json?.safety?.level;
-      if (safetyLevel === "elevated" || safetyLevel === "severe") {
+      if (json?.safety?.followUpSuggested === true) {
         setPendingScored(json.scored);
-        setCrisisLevel(safetyLevel);
+        setShowFollowUp(true);
       } else {
         onComplete(json.scored);
       }
@@ -146,9 +159,9 @@ export function ModuleRenderer({
     }
   }
 
-  function handleCrisisDismiss() {
+  function handleFollowUpContinue() {
     const scored = pendingScored;
-    setCrisisLevel(null);
+    setShowFollowUp(false);
     setPendingScored(null);
     if (scored !== null) onComplete(scored);
   }
@@ -223,7 +236,37 @@ export function ModuleRenderer({
         ))}
       </ol>
 
-      {/* Submit */}
+      {showFollowUp ? (
+        <div
+          ref={followUpRef}
+          tabIndex={-1}
+          role="region"
+          aria-label={followUp.eyebrow}
+          className="mt-12 max-w-xl space-y-4 border-t border-[var(--sh-border-medium)] pt-8 focus:outline-none"
+        >
+          <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-accent-gold)]">
+            {followUp.eyebrow}
+          </p>
+          <p className="text-base leading-relaxed text-[var(--sh-text-primary)]">
+            {followUp.body}
+          </p>
+          <p className="text-sm leading-relaxed text-[var(--sh-text-secondary)]">
+            {followUp.crisisLine}
+          </p>
+          <p className="flex gap-6 text-sm">
+            <a href="tel:988" className="text-[var(--sh-accent-gold)] underline-offset-4 hover:underline">
+              {followUp.call}
+            </a>
+            <a href="sms:988" className="text-[var(--sh-accent-gold)] underline-offset-4 hover:underline">
+              {followUp.text}
+            </a>
+          </p>
+          <div className="pt-4">
+            <MapActionButton label={followUp.continueLabel} onClick={handleFollowUpContinue} />
+          </div>
+        </div>
+      ) : (
+      /* Submit */
       <div className="mt-12 flex flex-col items-start gap-3">
         <MapActionButton
           label={submitLabel}
@@ -238,11 +281,7 @@ export function ModuleRenderer({
           </p>
         )}
       </div>
-
-      {/* Crisis modal — surfaces when the API's safety eval returns
-          elevated or severe. The user must acknowledge before the
-          session advances. */}
-      <CrisisModal level={crisisLevel} onDismiss={handleCrisisDismiss} />
+      )}
     </div>
   );
 }
