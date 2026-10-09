@@ -13,8 +13,8 @@ import { markSecretRotated } from "@/lib/engine";
  * helper (server-only).
  *
  * Auth at this layer is the cookie session (middleware on the
- * /(protected) tree already enforces that the request carries the
- * `eidos_admin_session` cookie). If middleware lets the request
+ * /(protected) tree already enforces that the request carries a valid
+ * signed `eidos_admin_session` cookie). If middleware lets the request
  * through, we trust it.
  */
 
