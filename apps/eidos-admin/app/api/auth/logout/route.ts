@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { SESSION_COOKIE_NAME } from "@/lib/session";
+
 /**
  * Eidos Admin — logout POST.
  *
@@ -11,15 +13,13 @@ import type { NextRequest } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const COOKIE_NAME = "eidos_admin_session";
-
 export async function POST(req: NextRequest) {
   const response = NextResponse.redirect(
     new URL("/login?logged_out=1", req.url),
     { status: 303 },
   );
   response.cookies.set({
-    name: COOKIE_NAME,
+    name: SESSION_COOKIE_NAME,
     value: "",
     httpOnly: true,
     secure: true,

@@ -1,38 +1,38 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { SESSION_COOKIE_NAME, getSessionSecret, verifySessionToken } from "@/lib/session";
+
 /**
  * Eidos Admin — session middleware.
  *
  * Gates everything except /login and /api/auth/* via the HttpOnly
- * session cookie set by the login route. Missing/invalid cookie on a
- * protected URL → 303 redirect to /login?next=<original>.
+ * session cookie set by the login route (a signed, expiring token —
+ * see lib/session.ts). Missing/invalid/expired cookie on a protected URL → 303 redirect to /login?next=<original>.
  *
  * The whole app is the admin surface, so there's no `/admin/` prefix
  * to match — matcher is "everything except the public login flow."
  */
 
-const COOKIE_NAME = "eidos_admin_session";
-
 const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/logout"];
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
   if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return NextResponse.next();
   }
 
-  const adminPassword = process.env.EIDOS_ADMIN_PASSWORD;
-  if (!adminPassword) {
+  const sessionSecret = getSessionSecret();
+  if (!sessionSecret) {
     return NextResponse.redirect(
       new URL("/login?error=unconfigured", req.url),
       { status: 303 },
     );
   }
 
-  const cookie = req.cookies.get(COOKIE_NAME)?.value;
-  if (cookie && cookie === adminPassword) {
+  const cookie = req.cookies.get(SESSION_COOKIE_NAME)?.value;
+  if (await verifySessionToken(cookie, sessionSecret)) {
     return NextResponse.next();
   }
 

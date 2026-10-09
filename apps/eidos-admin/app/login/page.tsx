@@ -1,14 +1,17 @@
+import { safeRedirect } from "@/lib/safeRedirect";
+
 /**
  * Eidos Admin — login page.
  *
  * Single-field form. Token gets POSTed to /api/auth/login which
- * validates against EIDOS_ADMIN_PASSWORD, sets an HttpOnly session
+ * validates against EIDOS_ADMIN_PASSWORD, sets an HttpOnly signed-session
  * cookie, and redirects to either `next` (if provided) or `/`.
  *
  * Surfaces (via search params):
  *   ?error=invalid   — token was wrong on the previous attempt
  *   ?error=missing   — no token was sent
- *   ?error=unconfigured — server missing EIDOS_ADMIN_PASSWORD
+ *   ?error=unconfigured — server missing EIDOS_ADMIN_PASSWORD or EIDOS_ADMIN_SESSION_SECRET
+ *   ?error=throttled — too many failed attempts from this client
  *   ?logged_out=1    — user just signed out
  *   ?next=<path>     — preserved so post-login lands the user where they were going
  */
@@ -27,7 +30,7 @@ export default async function LoginPage({
   const params = await searchParams;
   const errorMessage = pickErrorMessage(params.error);
   const loggedOut = params.logged_out === "1";
-  const nextPath = sanitizeNext(params.next);
+  const nextPath = safeRedirect(params.next);
 
   return (
     <main
@@ -149,8 +152,8 @@ export default async function LoginPage({
             lineHeight: 1.5,
           }}
         >
-          The token is held in an HttpOnly cookie for 7 days. Closing the
-          browser does not sign you out — use the link in the header.
+          Sessions last 12 hours. Closing the browser does not sign you
+          out — use the link in the header.
         </p>
       </section>
     </main>
@@ -164,17 +167,12 @@ function pickErrorMessage(code: string | undefined): string | null {
     case "missing":
       return "Please enter a token.";
     case "unconfigured":
-      return "Server is missing EIDOS_ADMIN_PASSWORD — admin sign-in is disabled.";
+      return "Server is missing admin auth configuration — sign-in is disabled.";
+    case "throttled":
+      return "Too many failed attempts. Try again in 15 minutes.";
     default:
       return null;
   }
-}
-
-function sanitizeNext(next: string | undefined): string {
-  if (!next) return "/";
-  if (!next.startsWith("/")) return "/";
-  if (next.startsWith("/login")) return "/";
-  return next;
 }
 
 function Banner({

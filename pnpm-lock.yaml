@@ -42,6 +42,9 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@20.19.41)(happy-dom@15.11.7)(lightningcss@1.32.0)(terser@5.48.0)
 
   apps/eidos-engine:
     dependencies:
