@@ -12,9 +12,8 @@ import { markSecretRotated } from "@/lib/engine";
  * reaches the client — same pattern as the Stone Harbor → Eidos push
  * helper (server-only).
  *
- * Auth at this layer is the cookie session (middleware on the
- * /(protected) tree already enforces that the request carries a valid
- * signed `eidos_admin_session` cookie). If middleware lets the request
+ * Auth at this layer is the Supabase admin session (middleware already
+ * enforces an active eidos_admin_users row and a TOTP-verified session). If middleware lets the request
  * through, we trust it.
  */
 
