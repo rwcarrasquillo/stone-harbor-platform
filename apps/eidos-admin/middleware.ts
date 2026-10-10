@@ -1,51 +1,105 @@
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { SESSION_COOKIE_NAME, getSessionSecret, verifySessionToken } from "@/lib/session";
+import {
+  classifyPath,
+  decideAccess,
+  toAssuranceLevel,
+  type AssuranceLevel,
+} from "@/lib/adminAccess";
+import { SESSION_COOKIE_OPTIONS, getSupabaseConfig } from "@/lib/supabase/config";
+
+type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
 /**
  * Eidos Admin — session middleware.
  *
- * Gates everything except /login and /api/auth/* via the HttpOnly
- * session cookie set by the login route (a signed, expiring token —
- * see lib/session.ts). Missing/invalid/expired cookie on a protected URL → 303 redirect to /login?next=<original>.
+ * Every request outside the public login paths must carry a Supabase
+ * session that is (1) valid — checked against Supabase Auth on each
+ * request, so revoking a session takes effect immediately, (2) owned by
+ * an active row in eidos_admin_users, and (3) MFA-verified (aal2). See
+ * lib/adminAccess.ts for the rules. Anything less is sent to /login, or to
+ * the TOTP step.
  *
- * The whole app is the admin surface, so there's no `/admin/` prefix
- * to match — matcher is "everything except the public login flow."
+ * The matcher covers everything except Next internals and static assets.
  */
-
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/logout"];
-
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
+  const pathClass = classifyPath(pathname);
+  if (pathClass === "public") return NextResponse.next();
 
-  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
-    return NextResponse.next();
+  const config = getSupabaseConfig();
+  if (!config) return redirectTo(req, "/login?error=unconfigured");
+
+  let response = NextResponse.next({ request: req });
+  const supabase = createServerClient(config.url, config.key, {
+    cookieOptions: SESSION_COOKIE_OPTIONS,
+    cookies: {
+      getAll() {
+        return req.cookies.getAll();
+      },
+      setAll(cookiesToSet: CookieToSet[]) {
+        cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value));
+        response = NextResponse.next({ request: req });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, { ...options, ...SESSION_COOKIE_OPTIONS }),
+        );
+      },
+    },
+  });
+
+  // getUser() validates the token with Supabase Auth (and refreshes it if
+  // expired). It must be the first auth call after creating the client.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let isAdmin = false;
+  let currentLevel: AssuranceLevel | null = null;
+  let nextLevel: AssuranceLevel | null = null;
+  if (user) {
+    const [adminRow, aal] = await Promise.all([
+      // RLS exposes only the caller's own, still-active row.
+      supabase.from("eidos_admin_users").select("user_id").eq("user_id", user.id).maybeSingle(),
+      supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+    ]);
+    isAdmin = Boolean(adminRow.data);
+    currentLevel = toAssuranceLevel(aal.data?.currentLevel);
+    nextLevel = toAssuranceLevel(aal.data?.nextLevel);
   }
 
-  const sessionSecret = getSessionSecret();
-  if (!sessionSecret) {
-    return NextResponse.redirect(
-      new URL("/login?error=unconfigured", req.url),
-      { status: 303 },
-    );
-  }
+  const decision = decideAccess({
+    pathClass,
+    hasUser: Boolean(user),
+    isAdmin,
+    currentLevel,
+    nextLevel,
+  });
 
-  const cookie = req.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (await verifySessionToken(cookie, sessionSecret)) {
-    return NextResponse.next();
-  }
+  if (decision.kind === "allow") return response;
 
-  const nextParam = encodeURIComponent(`${pathname}${search}`);
-  return NextResponse.redirect(
-    new URL(`/login?next=${nextParam}`, req.url),
-    { status: 303 },
-  );
+  if (decision.clearSession) await supabase.auth.signOut({ scope: "local" });
+
+  const target =
+    decision.to === "/login" && pathClass === "protected"
+      ? `/login?next=${encodeURIComponent(`${pathname}${search}`)}`
+      : decision.to === "/login/mfa" || decision.to === "/login/enroll"
+        ? `${decision.to}?next=${encodeURIComponent(`${pathname}${search}`)}`
+        : decision.to;
+  const redirect = redirectTo(req, target);
+  // Carry over any refreshed / cleared session cookies.
+  response.cookies.getAll().forEach((c) => redirect.cookies.set(c));
+  return redirect;
+}
+
+function redirectTo(req: NextRequest, location: string): NextResponse {
+  return NextResponse.redirect(new URL(location, req.url), { status: 303 });
 }
 
 /**
- * Match everything except Next's internals. The PUBLIC_PATHS check
- * inside the function lets the login + auth routes through.
+ * Match everything except Next's internals. The path classification inside
+ * the function lets the login routes through.
  */
 export const config = {
   matcher: [
